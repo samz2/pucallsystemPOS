@@ -1,0 +1,22 @@
+
+.form-group .error{
+    color:#b94a48
+}
+
+.form-group input.error, .login-box .form-group input.error{
+    border-color:#b94a48
+}
+
+.login-box .form-group label.error{
+    display: none !important;
+}
+
+.chosen-container{
+    display:block;
+}
+
+.fotografia, .foto{
+    cursor: pointer;
+}
+
+
