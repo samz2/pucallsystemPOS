@@ -74,7 +74,9 @@
     <div class="col-xs-12">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?></h3>
+                <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?> <button  title="pagar"> <i class="fa fa-credit-card" onclick="cobrar()"></i></button>
+                    <!-- <button  tooltip="Seleccionar Todo"> <i class="fa fa-check" onclick="seleccionarTodo(1)"></i></button> -->
+                </h3>
             </div>
             <!-- /.box-header -->
             <div class="panel-body table-responsive">
@@ -120,13 +122,149 @@
         </div>
     </div>
 </div>
+<!-- modal  -->
+<div class="modal fade" id="AddSale" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <form id="form_vender" action="" method="post" role="form" autocomplete="off">
+        <div class="modal-body">
+          <div class="form-group">
+            <div class="row">
+              <div class="col-lg-12">
+                <h3 id="customerName" style="line-height:1">Cliente : <span></span></h3>
+                <h3 id="zdocumento" style="line-height:1">Documento : <span></span></h3>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-6">
+                <h4 id="MontoPagar2">Total: <span></span></h4>
+              </div>
+              <div class="col-lg-6">
+                <h4 id="ItemsNum2">items: <span></span></h4>
+              </div>
+            </div>
 
+          </div>
+          <div class="form-group">
+            <h2 id="TotalModal"></h2>
+            <input type="hidden" id="zmonto">
+            <input type="hidden" id="zinputdocumento">
+          </div>
+          <div class="form-group" id="ztipocomprobante">
+            <label for="paymentMethod">Tipo de comprobante:</label>
+            <select class="form-control" name="ztcomprobante" id="ztcomprobante">
+              <option value="BOLETA">BOLETA</option>
+              <option value="FACTURA" id="factura">FACTURA</option>
+              <option value="TICKET">TICKET</option>
+            </select>
+          </div>
+          <div class="form-group" id="metodo">
+            <label for="paymentMethod">Metodo de Pago:</label>
+            <select class="form-control" name="metodopago" id="metodopago" onchange="tipoPago()">
+              <option value="EFECTIVO">EFECTIVO</option>
+              <option value="TARJETA">TARJETA</option>
+            </select>
+          </div>
+          <div class="form-group" id="descontado">
+            <label>Descuento</label>
+            <input type="text" class="form-control money" id="zdescuento" name="zdescuento" value="0">
+            <span class="help-block"></span>
+          </div>
+          <div class="form-group" id="pagado">
+            <label>Pagado</label>
+            <input type="text" value="0" name="zpago" class="form-control money" id="zpago">
+            <span class="help-block"></span>
+          </div>
+          <div class="form-group" id="tipocard">
+            <label for="tipotarjeta">Tipo Tarjetas</label>
+            <i class="fa fa-cc-visa fa-2x" id="visa" aria-hidden="true"></i>
+            <i class="fa fa-cc-mastercard fa-2x" id="mastercard" aria-hidden="true"></i>
+            <i class="fa fa-cc-amex fa-2x" id="amex" aria-hidden="true"></i>
+            <i class="fa fa-cc-discover fa-2x" id="discover" aria-hidden="true"></i>
+            <select class="form-control" name="tipotarjeta" id="tipotarjeta">
+              <option value="VISA">VISA</option>
+              <option value="DISCOVER">DISCOVER</option>
+              <option value="MASTERCARD">MASTERCARD</option>
+              <option value="DINERS CLUB">DINERS CLUB</option>
+              <option value="AMERICAN EXPRESS">AMERICAN EXPRESS</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha</label>
+            <input type="date" class="form-control" id="fecha" name="fecha" value="<?= date('Y-m-d') ?>">
+            <span class="help-block"></span>
+          </div>
+          <div class="form-group ReturnChange">
+            <h3 id="zVuelto">Vuelto <span>0</span> Soles</h3>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <!-- <i class='fa fa-spinner fa-spin'></i> -->
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+          <button type="button" id="vendiendo" class="btn btn-add" onclick="saleBtn()">Procesar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- fin_modal -->
+<!-- modal comprobante -->
+<div class="modal fade" id="comprobante" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" style="overflow:auto">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body">
+        <div id="dataventadetalle">
+            <h4 class="text-center" id="cabeceraSerie"></h4>
+            <div style="clear:both;">
+            </div>
+            <span class="float-left" id="cabeceraFecha"></span
+            ><br>
+            <div style="clear:both;">
+            <span class="float-left" id="cabeceraCliente"></span>
+            <div style="clear:both;">
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Descripcion</th>
+                            <th>Cant</th>
+                            <th>SubTotal</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>                        
+        </div>
+        <div class="col-sm-8" id="SendMail">
+        </div>
+        <div class="col-sm-4" id="SendWP">
+        </div>
+      </div>
+      <div class="modal-footer" id="fotter-cerrar">
+      </div>
+    </div>
+  </div>
+</div>
+<!-- fin modal comprobante  -->
 <script type="text/javascript">
     //for save method string
     var table;
     var table_cobro;
+    var subtotal = 0;
+    var cant = 0;
+    var CclienteNombre = 0;
+    // var elementos = array();
+    var cant = 0;
     $(document).ready(function() {
-
+        $('#tipocard').hide();
         $("#cliente").select2({
             language: {
                 noResults: function() {
@@ -191,8 +329,40 @@
                 $('#ReturnChange span').addClass("light-blue");
             }
         });
+        $('#zpago').on('keyup', function() {
+            var change = parseFloat($('#zpago').val()) - parseFloat($("#zmonto").val()) - parseFloat($("#zdescuento").val());
+            if (change < 0) {
+                $('#zVuelto span').text(change.toFixed(2));
+                $('#zVuelto span').addClass("red");
+                $('#zVuelto span').removeClass("light-blue");
+            } else {
+                $('#zVuelto span').text(change.toFixed(2));
+                $('#zVuelto span').removeClass("red");
+                $('#zVuelto span').addClass("light-blue");
+            }
+        });
     });
 
+    function saleBtn() {
+        $('#AddSale').modal('hide');
+        $('#cabeceraSerie').html("Venta Núm:.: " + this.subtotal);
+        var today = new Date();
+        var date = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+        $('#cabeceraFecha').html("Fecha: " + date);
+        $('#cabeceraCliente').html("Cliente: " + this.CclienteNombre);
+
+        $('#comprobante').modal('show');
+    }
+
+    function cobrar() 
+    {
+        $('#AddSale').modal('show');
+    }
+    function tipoPago()
+    {
+        if($("#metodopago").val() == "EFECTIVO") $('#tipocard').hide();
+        else $('#tipocard').show();
+    }
     function generadoCliente() {
         $("#tabla_wrapper").hide();
         $("#tablaCliente").show();
@@ -230,7 +400,56 @@
             },
         });
     }
-
+    function seleccionarTodo(tipo)
+    {
+        var ztable = $('#tablaCliente').DataTable();
+        var numrows = ztable.data().length;
+        var i = 1;
+        if(tipo == 1)
+        {
+            while(i < numrows)
+            {
+                $("#chk_"+i).prop("checked",'checked');
+                i++;
+            }
+            
+        }
+        if(tipo == 2)
+        {
+            while(i < numrows)
+            {
+                $("#chk_"+i).prop("checked",'checked');
+                i++;
+            }
+            
+        }
+    }
+    function agregarPago(id,cantii,tott,cli,zdocumento)
+    {
+        if($("#chk_"+id).is(':checked'))
+        {
+            this.subtotal += Number.parseFloat(tott);
+            this.cant += Number.parseInt(cantii);
+        }else{
+            this.subtotal -= Number.parseFloat(tott);
+            this.cant -= Number.parseInt(cantii);
+        }
+        var clientName = cli;
+        while(clientName.includes("_"))
+        {
+            clientName = clientName.replace("_", " ");
+        }
+        if(zdocumento.length == 11) $("#factura").show();
+        else $("#factura").hide();
+        $("#zmonto").val(this.subtotal);
+        $("#zpago").val(this.subtotal);
+        $("#zinputdocumento").val(zdocumento);
+        $("#customerName span").text(clientName);
+        $("#MontoPagar2 span").text(this.subtotal);
+        $("#ItemsNum2 span").text(this.cant);
+        $("#zdocumento span").text(zdocumento);
+        this.CclienteNombre = clientName;
+    }
     function generado() {
         $("#tablaCliente").hide();
         $("#tabla_wrapper").show();
@@ -429,6 +648,35 @@
     function reload_tablecobro() {
         table_cobro.ajax.reload(null, false); //reload datatable ajax
     };
+
+    function printfcomprobante(idventas) {
+
+        $('#comprobante').modal('show');
+        $('.modal-title').text('COMPROBANTE');
+
+        $.ajax({
+        url: "<?= $this->url ?>/printfcomprobante",
+        data: {
+            "idventa": idventas
+        },
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+            $('#dataventadetalle').html(data.html);
+            $('#fotter-cerrar').html(data.fotter);
+            $("#SendMail").html(data.email);
+            $("#SendWP").html(data.whatsapp);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            Lobibox.notify('error', {
+            size: 'mini',
+            position: "top right",
+            msg: 'Error al obtener datos de ajax'
+            });
+        }
+        });
+
+    }
 
     function borrarpagos(id) {
         bootbox.confirm("Seguro desea Eliminar este registro?", function(result) {

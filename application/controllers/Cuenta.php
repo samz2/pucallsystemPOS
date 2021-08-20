@@ -549,19 +549,20 @@ class Cuenta extends CI_Controller
     $draw = intval($this->input->get("draw"));
     $start = intval($this->input->get("start"));
     $length = intval($this->input->get("length"));
-    $creditos = $this->db->query("select vd.*, v.serie, v.numero, v.created from venta v inner join ventadetalle vd on vd.venta = v.id where v.empresa = $empresa and v.formapago = 'CREDITO' and v.cliente = $cliente and v.estado = '1'");
+    $creditos = $this->db->query("select vd.*, v.serie, v.numero,c.nombre as clientenombre,c.documento, v.created from venta v inner join ventadetalle vd on vd.venta = v.id  join cliente c on v.cliente = c.id where v.empresa = $empresa and v.formapago = 'CREDITO' and v.cliente = $cliente and v.estado = '1'");
     $data = [];
     $no = "";
     $hoy = strtotime(date('Y-m-d'));
     foreach ($creditos->result() as $value) {
-      $no = "<input type='checkbox' id='chk_$value->id' class='form-control' value='$value->subtotal'>";
+      $nombre_cliente = str_replace(" ", "_", $value->clientenombre);
+      $no = "<input type='checkbox' id='chk_$value->id' class='form-control'  onclick=agregarPago('$value->id',$value->cantidad,$value->subtotal,'$nombre_cliente','$value->documento')>";
       // $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
       //add variables for action
       $boton1 = '';
       $boton2 = '';
       $estado = '';
       //add html fodr action
-      // $boton1 = '<a class="btn btn-sm btn-primary" title="Cobrar" onclick="verIngreso(' . $value->id . ', 1)"><i class="fa fa-credit-card"></i></a> ';
+      // $boton1 = '<a class="btn btn-sm btn-primary" title="seleccionar" onclick="Seleccionar(' . $value->id . ', 1)"><i class="fa fa-credit-card"></i></a> ';
       $boton2 = '<a class="btn btn-sm btn-default" title="Cobrar" onclick="verPagos(' . $value->id . ', 1)"><i class="fa fa-eye"></i></a> ';
       // if ($value->montoactual == 0) {
       //   $estado = '<td><span class="label label-success">CANCELADO</span></td>';
