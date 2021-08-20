@@ -555,7 +555,8 @@ class Cuenta extends CI_Controller
     $hoy = strtotime(date('Y-m-d'));
     foreach ($creditos->result() as $value) {
       $nombre_cliente = str_replace(" ", "_", $value->clientenombre);
-      $no = "<input type='checkbox' id='chk_$value->id' class='form-control'  onclick=agregarPago('$value->id',$value->cantidad,$value->subtotal,'$nombre_cliente','$value->documento')>";
+      $nombre_producto = str_replace(" ","_",$value->nombre);
+      $no = "<input type='checkbox' id='chk_$value->id' class='form-control'  onclick=agregarPago('$value->id',$value->cantidad,$value->subtotal,'$nombre_cliente','$value->documento','$nombre_producto')>";
       // $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
       //add variables for action
       $boton1 = '';

@@ -1,4 +1,17 @@
 <?= $this->session->flashdata('mensaje') ?>
+<style>
+    .filaSup {
+        text-align:left; 
+        font-weight:bold; 
+        padding-top:5px;
+    }
+    .filaInf{
+        border-top:1px dashed #000; 
+        padding-top:5px; 
+        text-align:right; 
+        font-weight:bold;
+    }
+</style>
 <div class="row">
     <!-- /.col -->
     <div class="col-md-12">
@@ -164,7 +177,7 @@
           </div>
           <div class="form-group" id="metodo">
             <label for="paymentMethod">Metodo de Pago:</label>
-            <select class="form-control" name="metodopago" id="metodopago" onchange="tipoPago()">
+            <select class="form-control" name="zmetodopago" id="zmetodopago" onchange="tipoPago()">
               <option value="EFECTIVO">EFECTIVO</option>
               <option value="TARJETA">TARJETA</option>
             </select>
@@ -180,12 +193,12 @@
             <span class="help-block"></span>
           </div>
           <div class="form-group" id="tipocard">
-            <label for="tipotarjeta">Tipo Tarjetas</label>
+            <label for="ztipotarjeta">Tipo Tarjetas</label>
             <i class="fa fa-cc-visa fa-2x" id="visa" aria-hidden="true"></i>
             <i class="fa fa-cc-mastercard fa-2x" id="mastercard" aria-hidden="true"></i>
             <i class="fa fa-cc-amex fa-2x" id="amex" aria-hidden="true"></i>
             <i class="fa fa-cc-discover fa-2x" id="discover" aria-hidden="true"></i>
-            <select class="form-control" name="tipotarjeta" id="tipotarjeta">
+            <select class="form-control" name="ztipotarjeta" id="ztipotarjeta">
               <option value="VISA">VISA</option>
               <option value="DISCOVER">DISCOVER</option>
               <option value="MASTERCARD">MASTERCARD</option>
@@ -234,12 +247,16 @@
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Descripcion</th>
-                            <th>Cant</th>
-                            <th>SubTotal</th>
+                            <th><b>#</b></th>
+                            <th><b>Descripcion</b></th>
+                            <th><b>Cant</b></th>
+                            <th><b>SubTotal</b></th>
                         </tr>
+                        
                     </thead>
+                    <tbody id="filaComprobante">
+                        
+                    </tbody>
                 </table>
             </div>                        
         </div>
@@ -249,19 +266,22 @@
         </div>
       </div>
       <div class="modal-footer" id="fotter-cerrar">
-      </div>
+        <button data-dismiss="modal" class="btn btn-sm btn-danger">Cerrar <i class="fa fa-close"></i></button>
+        <button type="submit" class="btn btn-sm btn-success" id="btncomprobante" onclick="Pagar()">Pagar</button>                             
+       </div>
     </div>
   </div>
 </div>
 <!-- fin modal comprobante  -->
 <script type="text/javascript">
     //for save method string
+    var change;
     var table;
     var table_cobro;
     var subtotal = 0;
     var cant = 0;
     var CclienteNombre = 0;
-    // var elementos = array();
+    var elementos = new Array();
     var cant = 0;
     $(document).ready(function() {
         $('#tipocard').hide();
@@ -318,25 +338,25 @@
             }
         });
         $('#pago').on('keyup', function() {
-            var change = parseFloat($('#monto').val()) - parseFloat($(this).val());
-            if (change < 0) {
-                $('#ReturnChange span').text(change.toFixed(2));
+            this.change = parseFloat($('#monto').val()) - parseFloat($(this).val());
+            if (this.change < 0) {
+                $('#ReturnChange span').text(this.change.toFixed(2));
                 $('#ReturnChange span').addClass("red");
                 $('#ReturnChange span').removeClass("light-blue");
             } else {
-                $('#ReturnChange span').text(change.toFixed(2));
+                $('#ReturnChange span').text(this.change.toFixed(2));
                 $('#ReturnChange span').removeClass("red");
                 $('#ReturnChange span').addClass("light-blue");
             }
         });
         $('#zpago').on('keyup', function() {
-            var change = parseFloat($('#zpago').val()) - parseFloat($("#zmonto").val()) - parseFloat($("#zdescuento").val());
-            if (change < 0) {
-                $('#zVuelto span').text(change.toFixed(2));
+            this.change = parseFloat($('#zpago').val()) - parseFloat($("#zmonto").val()) - parseFloat($("#zdescuento").val());
+            if (this.change < 0) {
+                $('#zVuelto span').text(this.change.toFixed(2));
                 $('#zVuelto span').addClass("red");
                 $('#zVuelto span').removeClass("light-blue");
             } else {
-                $('#zVuelto span').text(change.toFixed(2));
+                $('#zVuelto span').text(this.change.toFixed(2));
                 $('#zVuelto span').removeClass("red");
                 $('#zVuelto span').addClass("light-blue");
             }
@@ -348,19 +368,86 @@
         $('#cabeceraSerie').html("Venta Núm:.: " + this.subtotal);
         var today = new Date();
         var date = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
-        $('#cabeceraFecha').html("Fecha: " + date);
-        $('#cabeceraCliente').html("Cliente: " + this.CclienteNombre);
-
+        $('#cabeceraFecha').html("<b>Fecha: </b>" + date);
+        $('#cabeceraCliente').html("<b>Cliente: </b>" + this.CclienteNombre);
+        cont = 0;
+        var texto = "";
+        while(cont < this.elementos.length)
+        {
+            texto += "<tr><td>" + cont + "</td>" +
+            "<td>" + this.elementos[cont].nombre + "</td>"+
+            "<td>" + this.elementos[cont].cantidad + "</td>"+
+            "<td>" + this.elementos[cont].SubTotal + "</td></tr>";
+            
+            cont++;
+        }
+        texto += "<tr>"+
+            "<td style='text-align:left;font-weight:bold;'>Total Items</td>"+
+            "<td style='text-align:right; padding-right:1.5%;' id='comprobanteItems'></td>"+
+            "<td style='text-align:left; padding-left:1.5%;'>Total</td>"+
+            "<td style='text-align:right;font-weight:bold;' id='comprobanteTotal'></td>"+
+        "</tr>"+
+        "<tr>"+
+           "<td colspan='2' class='filaSup'>Grand Total</td>"+
+            "<td colspan='2' class='filaInf' id='comprobanteGT'><span></span></td>"+
+        "</tr>"+
+        "<tr>"+
+           "<td colspan='2' class='filaSup'>Descuento</td>"+
+            "<td colspan='2' class='filaInf' id='comprobanteDescuento'><span></span></td>"+
+        "</tr>"+
+        "<tr>"+       
+            "<td colspan='2' class='filaSup'>Pagado</td>"+
+            "<td colspan='2' class='filaInf' id='comprobantePago'><span></span></td>"+
+        "</tr>"+
+        "<tr>"+
+            "<td colspan='2' class='filaSup'>Recibido</td>"+
+            "<td colspan='2' class='filaInf' id='comprobanteRecibido'><span></span></td>"+
+        "</tr>"+          
+        "<tr>"+
+            "<td colspan='2' class='filaSup'>Vuelto</td>"+
+            "<td colspan='2' class='filaInf' id='comprobanteVuelto'><span></span></td>"+
+        "</tr>";
+        if(this.change === undefined) this.change = 0.0;
+        var desc = $("#zdescuento").val();
+        if(desc === undefined) desc = 0;
+        $('#filaComprobante').html(texto);
+        $("#comprobanteGT span").text(this.subtotal + " Soles");
+        $("#comprobanteVuelto span").text(this.change + " Soles");
+        $("#comprobantePago span").text($("#zmonto").val() + " Soles");
+        $("#comprobanteRecibido span").text($("#zpago").val() + " Soles");
+        $("#comprobanteDescuento span").text(desc + " Soles");
         $('#comprobante').modal('show');
     }
+    function pagar()
+    {
+        $.ajax({
+            url: "<?= $this->url ?>/pagos",
+            type: "POST",
+            data: {
+                "subtotal": this.subtotal,
+                "datos": this.elementos,
+            },
+            dataType: "JSON",
+            success: function(data) {
+                console.log(data); // Set title to Bootstrap modal title
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                Lobibox.notify('error', {
+                    size: 'mini',
+                    position: 'top right',
+                    msg: 'Error al obtener datos de ajax.'
+                });
+            }
+        });
 
+    }
     function cobrar() 
     {
         $('#AddSale').modal('show');
     }
     function tipoPago()
     {
-        if($("#metodopago").val() == "EFECTIVO") $('#tipocard').hide();
+        if($("#zmetodopago").val() == "EFECTIVO") $('#tipocard').hide();
         else $('#tipocard').show();
     }
     function generadoCliente() {
@@ -424,23 +511,48 @@
             
         }
     }
-    function agregarPago(id,cantii,tott,cli,zdocumento)
+    function returnPos(arr,id)
     {
-        if($("#chk_"+id).is(':checked'))
+        var i = 0;
+        while(i < arr.length)
         {
-            this.subtotal += Number.parseFloat(tott);
-            this.cant += Number.parseInt(cantii);
-        }else{
-            this.subtotal -= Number.parseFloat(tott);
-            this.cant -= Number.parseInt(cantii);
+            if(arr[i].id == id) return i;
+            i++;
         }
+    }
+    function agregarPago(id,cantii,tott,cli,zdocumento,prd)
+    {
+        if(zdocumento.length == 11) $("#factura").show();
+        else $("#factura").hide();
         var clientName = cli;
+        var prdName = prd;
+        while(prdName.includes("_"))
+        {
+            prdName = prdName.replace("_", " ");
+        }
         while(clientName.includes("_"))
         {
             clientName = clientName.replace("_", " ");
         }
-        if(zdocumento.length == 11) $("#factura").show();
-        else $("#factura").hide();
+        var datosArray =
+        {
+            "id" : id,
+            "nombre" : prdName,
+            "cantidad" : cantii,
+            "SubTotal" : tott,
+        }
+
+        if($("#chk_"+id).is(':checked'))
+        {
+            this.subtotal += Number.parseFloat(tott);
+            this.cant += Number.parseInt(cantii);
+            this.elementos.push(datosArray);
+        }else{
+            this.subtotal -= Number.parseFloat(tott);
+            this.cant -= Number.parseInt(cantii);
+            this.elementos.splice(returnPos(this.elementos,id),1);
+        }
+        
         $("#zmonto").val(this.subtotal);
         $("#zpago").val(this.subtotal);
         $("#zinputdocumento").val(zdocumento);
@@ -449,6 +561,7 @@
         $("#ItemsNum2 span").text(this.cant);
         $("#zdocumento span").text(zdocumento);
         this.CclienteNombre = clientName;
+        // console.log(this.elementos);
     }
     function generado() {
         $("#tablaCliente").hide();
