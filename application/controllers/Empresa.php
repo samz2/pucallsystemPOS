@@ -180,6 +180,7 @@ class Empresa extends CI_Controller
   public function ajax_edit($id)
   {
     $data = $this->Controlador_model->get_by_id($id, $this->controlador);
+    $data->dataAlamcenes = $this->db->where("empresa",$id)->get("almacen")->result();
     echo json_encode($data);
   }
 

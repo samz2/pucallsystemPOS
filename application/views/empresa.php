@@ -575,6 +575,11 @@
       type: "GET",
       dataType: "JSON",
       success: function(data) {
+        $("#almacen").empty();
+        for(value of data.dataAlamcenes ){
+          $("#almacen").append(`<option value="${value.id}">${value.nombre}</option>`)
+        }
+
         if (data.pasos == 1) {
           $('[name="pasos"]').prop('checked', true);
           $("#content-venta-1").hide();
