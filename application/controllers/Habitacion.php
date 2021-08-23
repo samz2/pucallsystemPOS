@@ -23,10 +23,14 @@ class Habitacion extends CI_Controller
       'contenido' => $this->vista,
       'iconos' => $this->Controlador_model->getAll('icono'),
       'breads' => array(array('ruta' => 'javascript:;', 'titulo' => $this->titulo_controlador)),
-      'zonamesa' => $this->Controlador_model->getAll('zona'),
-      'almacenes' => $this->Controlador_model->getAll('almacen')
+      'habitaciones' => $this->Controlador_model->getAll('habitacion'),
+      'data' => $this->Controlador_model->getAllActives("habitacion"),
     );
     $this->load->view(THEME . TEMPLATE, $data);
   }
-
+  public function lista()
+  {
+    $data = $this->Controlador_model->getAllActives("habitacion");
+    echo json_encode($data);
+  }
 }

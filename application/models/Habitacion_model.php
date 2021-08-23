@@ -33,6 +33,14 @@ class Habitacion_model extends CI_Model {
 		return $this->db->get($tabla)->result();
 	}
 
+	public function getAllActives($tabla) {
+		$this->db->select("tipo_habitacion.nombre,habitacion.*");
+		$this->db->from($tabla);
+		$this->db->join("tipo_habitacion","tipo_habitacion.id = habitacion.Tipo");
+		$query = $this->db->get()->result();
+		return $query;
+	}
+
 	public function getAlls($tabla) {
 		$this->db->from($tabla);
 		return $this->db->count_all_results();

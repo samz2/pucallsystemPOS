@@ -1,32 +1,54 @@
 <div class="row">
-  <div class="col-xs-12">
+  <div class="col-md-12">
     <div class="panel panel-border panel-border-info">
       <div class="panel-heading">
         <h3 class="panel-title text-title-panel">
           Lista de <?= $this->titulo_controlador ?>
         </h3>
         <div class="pull-right">
-          <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-          <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Nuevo"><i class="fa fa-plus"></i></a>
+          <!-- <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a> -->
+          <!-- <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Nuevo"><i class="fa fa-plus"></i></a> -->
         </div>
-        <div class="clearfix"></div>
       </div>
+      <div class="panel-body">
+
       <!-- /.box-header -->
-      <div class="panel-body table-responsive">
-        <table id="tabla" class="table table-bordered table-striped">
-          <thead>
-            <tr class="text-title-panel">
-              <th>#</th>
-              <th>Codigo</th>
-              <th>Concepto</th>
-              <th>Tipo</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+      <div class="row">
+      <?php foreach ($data as $dato) {
+        if($dato->estado == 1) 
+        {
+            $color = "bg-success";
+            $estado = "LIBRE";
+            $texto = "Click para ocupar";
+        }
+        else if($dato->estado == 2) 
+        {
+            $estado = "RESERVADO";
+            $color = "bg-warning";
+            $texto = "Click para ver reserva";
+        }
+        else if($dato->estado == 3) 
+        {
+          $color = "bg-danger";
+          $estado = "OCUPADO";
+          $texto = "Click ver cliente y consumos";
+        }
+        ?>
+        <div class="col-md-3">
+          <div class="card text-white <?=$color ?>">
+            <div class="card-header">Habitacion <?=$dato->correlativo ?></div>
+            <div class="card-body">
+              <h5 class="card-title"><?=$estado ?></h5>
+              <p class="card-text"><?=$texto ?></p>
+            </div>
+          </div>
+        </div>
+            
+      <?php }?>
       <!-- /.box -->
+      </div>
+    </div>
+
     </div>
   </div>
 </div>
@@ -61,10 +83,11 @@ $(document).ready(function() {
         }
     },
     // Load data for the table's content from an Ajax source
-    "ajax": {
-      "url": "<?= $this->url ?>/ajax_list",
-      "type": "POST"
-    },
+    // "ajax":{ 
+    //     "url": "<?php //= $this->url ?>/lista",
+    //     "type": "POST"
+    // }
+
   });
   //set input/textarea/select event when change value, remove class error and remove text help block
   $("input").change(function() {
@@ -171,6 +194,8 @@ function edit(id) {
     }
   });
 };
+
+
 
 function borrar(id) {
   bootbox.confirm("Seguro desea Eliminar este registro?", function(result) {
