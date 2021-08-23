@@ -103,7 +103,8 @@ class Cuenta extends CI_Controller
     $printer->setJustification(Printer::JUSTIFY_LEFT);
     $printer->text("Mesa: " . $mesa->nombre . "\n");
     $printer->text("Camarera: " . $usuario->nombre . ' ' . $usuario->apellido . "\n");
-    $printer->text("Cliente: " . ($pedido->cliente ? $cliente->nombre : 'Cliente sin Registrar') . "\n");
+    $printer->text("Cliente: " .  isset($cliente->nombre) ? $cliente->nombre : 'Cliente sin Registrar' . "\n"); //cambio 22-08-2021
+    // $printer->text("Cliente: " . ($pedido->cliente ? $cliente->nombre : 'Cliente sin Registrar') . "\n");
     $printer->text("------------------------------------------" . "\n");
     $printer->text("CANT  DESCRIPCION    PRECIO U.   TOTAL\n");
     $printer->text("------------------------------------------" . "\n");
@@ -590,6 +591,14 @@ class Cuenta extends CI_Controller
       "recordsTotal" => $creditos->num_rows(),
       "recordsFiltered" => $creditos->num_rows(),
       "data" => $data,
+    );
+    echo json_encode($result);
+  }
+  public function pagos()
+  {
+    $prueba = $this->input->post("datos");
+    $result = array(
+      "prueba" => $prueba,
     );
     echo json_encode($result);
   }
