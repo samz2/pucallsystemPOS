@@ -267,7 +267,7 @@
       </div>
       <div class="modal-footer" id="fotter-cerrar">
         <button data-dismiss="modal" class="btn btn-sm btn-danger">Cerrar <i class="fa fa-close"></i></button>
-        <button type="submit" class="btn btn-sm btn-success" id="btncomprobante" onclick="Pagar()">Pagar</button>                             
+        <button type="submit" class="btn btn-sm btn-success" id="btncomprobante" onclick="pagar()">Pagar</button>                             
        </div>
     </div>
   </div>
@@ -429,7 +429,7 @@
             },
             dataType: "JSON",
             success: function(data) {
-                console.log(data); // Set title to Bootstrap modal title
+                console.log(data);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 Lobibox.notify('error', {
