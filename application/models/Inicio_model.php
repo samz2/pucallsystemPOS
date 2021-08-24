@@ -541,4 +541,31 @@ class Inicio_model extends CI_Model
 		return $this->db->get("venta")->row();
 	}
 
+	function getCajaPagos($idcaja, $tabla, $metodoPago){
+		$this->db->select("SUM(monto) as totalpagos");
+		$this->db->where("tipo", "VENTA");
+		$this->db->where("caja", $idcaja);
+		$this->db->where("metodopago", $metodoPago);
+		return $this->db->get($tabla)->row();
+	}
+
+	function geVentastCaja($idcaja, $tabla){
+		$this->db->where("caja", $idcaja);
+		$this->db->where("estado", "1");
+		return $this->db->get( $tabla)->result();
+	}
+
+	function totalGenerados($idcaja, $metodopago){
+		$this->db->where("caja", $idcaja);
+		$this->db->where("metodopago", $metodopago);
+		$this->db->where("tipo", "VENTA");
+		return $this->db->get("ingreso")->num_rows();
+	}
+
+	function abonosCaja($idcaja){
+		$this->db->where("caja", $idcaja);
+		$this->db->where("tipo", "OPERACION");
+		return $this->db->get("ingreso")->result();
+	}
+	
 }

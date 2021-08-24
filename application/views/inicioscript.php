@@ -4,6 +4,13 @@
     ProductosArr = [];
     var tabledatosPedidosEnviados;
     <?php if ($this->caja) { ?>
+      $('#metodopago').change(() => {
+        if ($('#metodopago').val() == 'EFECTIVO') {
+          $('#tipocard').hide("fast");
+        } else {
+          $('#tipocard').show("fast");
+        }
+      })
       datosProductosVenta();
       categoriaSeleccionar(); //todo: trae todas las categorias
       if ($("#tresPasos").val() == '1') {
@@ -15,7 +22,6 @@
       } else {
         ventasReload() //? traemos todas las ventas pendientes
         drawDataProductoLS(null);
-        $("#CategoriaproductoTodos").load("<?= $this->url ?>/ajax_TodosProductos"); //todo: con esto funciona el buscador
       }
     <?php } ?>
     var down = false;
@@ -126,17 +132,21 @@
       if ($('#formapago').val() == 'CONTADO') {
         $('#metodo').show();
         $('#pagado').show();
-        $("#descontado").show();
         $("#vencimiento").hide();
         $('.ReturnChange').show();
       } else {
         $('#metodo').hide();
         $('#pagado').hide();
-        $("#descontado").hide();
         $("#vencimiento").show();
         $('.ReturnChange').hide();
       }
     })
+
+    $("input").keyup(function() {
+      $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
+      $(this).next().empty();
+    });
 
     $('#descuento').on('keyup', function() {
       var change = parseFloat($('#MontoPagar2 span').text()) - parseFloat($(this).val());
@@ -234,12 +244,11 @@
         },
         error: function(jqXHR, textStatus, errorThrown) {
           $('#aperturar').button('reset');
-          toast.error("Algo inesperado ha sucedido");
-          // Lobibox.notify('error', {
-          //   size: 'mini',
-          //   position: 'top center',
-          //   msg: 'Error al obtener datos de ajax.'
-          // });
+          Lobibox.notify('error', {
+            size: 'mini',
+            position: 'top right',
+            msg: 'Error al obtener datos de ajax.'
+          });
         }
       });
     });
@@ -323,7 +332,6 @@
       });
     });
 
-
   });
 
   function OpenRegister(estado, tienda) {
@@ -343,7 +351,7 @@
   };
 
   function savecliente() {
-    $('#btnSavecliente').text('guardando...'); //change button text
+    $('#btnSavecliente').text('GUARDANDO...'); //change button text
     $('#btnSavecliente').attr('disabled', true); //set button disable
     // ajax adding data to database
     $.ajax({
@@ -371,7 +379,7 @@
             $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
           }
         }
-        $('#btnSavecliente').text('GRABAR'); //change button text
+        $('#btnSavecliente').text('GUARDAR'); //change button text
         $('#btnSavecliente').attr('disabled', false); //set button enable
       },
       error: function(jqXHR, textStatus, errorThrown) {
@@ -380,7 +388,7 @@
         //   size: 'mini',
         //   msg: 'El registro no se pudo crear verifique las validaciones.'
         // });
-        $('#btnSavecliente').text('GRABAR'); //change button text
+        $('#btnSavecliente').text('GUARDAR'); //change button text
         $('#btnSavecliente').attr('disabled', false); //set button enable
       }
     });
@@ -591,20 +599,29 @@
     $('#vendiendo').html("<i class='fa fa-spinner fa-spin'></i>");
     $('#vendiendo').attr("disabled", true);
     var subtotal = parseFloat($(`#MontoPagar2 span`).text() - $(`#descuento`).val());
-    var pago = parseFloat($('#pago').val(), 10);
-    if (pago < subtotal) {
+
+    if ($('#pago').val() != "") {
+      var pago = parseFloat($('#pago').val(), 10);
+      if (pago < subtotal) {
+        $("#pago").closest('div').addClass("has-error");
+        $('#pago').siblings('span').text("Debe colocar un monto mayor o igual que el total");
+        $('#vendiendo').html("Enviar");
+        $('#vendiendo').attr("disabled", false);
+      } else {
+        $("#pago").closest('div').removeClass("has-error");
+        $('#pago').siblings('span').text("");
+        $('#vendiendo').html("<i class='fa fa-spinner fa-spin'></i>");
+        $('#vendiendo').attr("disabled", true);
+        $('#clientes').val("00000000 | CLIENTES VARIOS | ");
+        EnviarPedido(idventa); // TODO: Registra en ventadetalle
+      }
+    } else {
       $("#pago").closest('div').addClass("has-error");
       $('#pago').siblings('span').text("Debe colocar un monto mayor o igual que el total");
       $('#vendiendo').html("Enviar");
       $('#vendiendo').attr("disabled", false);
-    } else {
-      $("#pago").closest('div').removeClass("has-error");
-      $('#pago').siblings('span').text("");
-      $('#vendiendo').html("<i class='fa fa-spinner fa-spin'></i>");
-      $('#vendiendo').attr("disabled", true);
-      $('#clientes').val("00000000 | CLIENTES VARIOS | ");
-      EnviarPedido(idventa); // TODO: Registra en ventadetalle
     }
+
   };
 
 
@@ -616,20 +633,60 @@
     if (key != null) {
       let ProductosDataLS = JSON.parse(key);
       $.ajax({
-        url: "<?= $this->url ?>/ajax_EnviarPedido",
+        url: "<?= $this->url ?>/ajax_procesarVenta",
         type: "POST",
         data: {
           "idventa": idventa,
           "dataproductos": JSON.stringify(ProductosDataLS),
+          'formapago': $(`#formapago`).val(),
+          'metodopago': $(`[name="metodopago"]`).val(),
+          'descuento': parseFloat($(`[name="descuento"]`).val()),
+          'pago': parseFloat($(`[name="pago"]`).val()),
+          'tipotarjeta': $(`[name="tipotarjeta"]`).val(),
+          'operacion': $(`[name="operacion"]`).val(),
+          'vence': $(`[name="vence"]`).val(),
+          'fecha': $(`[name="fecha"]`).val(),
+          'deuda': parseFloat($("#MontoPagar2 span").text())
         },
         dataType: "JSON",
         success: function(data) {
           if (data.proceso.status) {
-            eliminarDataLS(idventa);
-            DatosSecundariosPedido(); //TODO: Cuenta todos los datos de la parte de bottom del va venta
-            pagarSoloUno(idventa); //TODO: Cancela la venta
-            $("#addPct").removeClass("productoIsSelected");
+            // true sin problemas.
+            if (data.proceso.validate) {
+              eliminarDataLS(idventa);
+              DatosSecundariosPedido(); //TODO: Cuenta todos los datos de la parte de bottom del va venta
+              if ($(`#formapago`).val() == "CREDITO") {
+                Lobibox.notify('success', {
+                  size: 'mini',
+                  position: "top right",
+                  msg: 'El credito fue creado correctamente.'
+                });
+              } else {
+                $('#comprobante').modal('show');
+                $('.modal-title').text('COMPROBANTE');
+                $('#modal-dataVenta').html(data.proceso.htmlcomprobante.htmlComprobante);
+                $('#modal-fotter-cerrar').html(data.proceso.htmlcomprobante.htmlFotter);
+              }
 
+              if ($("#cobradorCaja").val() == '1') {
+                datosPedidosEnviados();
+                $("#opcionmenu").show();
+                $("#contenedorPedidosVenta").show();
+                $("#opcionmenuPedidoVenta").hide();
+                $("#contenedorProcesoPago").hide();
+              }
+              ventasReload();
+              alertComprobantes(); //Busca si hay mas Boletas/Facturas sin emitir
+              $('#form_vender')[0].reset();
+              $('#AddSale').modal('hide');
+            } else {
+              for (var i = 0; i < data.proceso.contenido.inputerror.length; i++) {
+                $('[name="' + data.proceso.contenido.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+                $('[name="' + data.proceso.contenido.inputerror[i] + '"]').next().text(data.proceso.contenido.error_string[i]); //select span help-block class set text error string
+              }
+            }
+            $('#vendiendo').text('Enviar');
+            $('#vendiendo').attr("disabled", false);
           } else {
             $("#AddSale").modal("hide");
             eliminarDataLS(idventa);
@@ -642,73 +699,18 @@
 
         },
         error: function(jqXHR, textStatus, errorThrown) {
-          alert("error ajax_EnviarPedido");
+          Lobibox.notify('error', {
+            size: 'mini',
+            position: "top right",
+            msg: 'Codigo de error: ajax_EnviarPedido, contactarse con pucallsystem'
+          });
+          $('#vendiendo').text('Enviar');
+          $('#vendiendo').attr("disabled", false);
         }
       });
 
     }
   }
-
-  function pagarSoloUno(idventas) {
-    $.ajax({
-      url: '<?= $this->url ?>/AddNewSale',
-      type: "POST",
-      data: {
-        'formapago': $(`#formapago`).val(),
-        'metodopago': $(`[name="metodopago"]`).val(),
-        'descuento': parseFloat($(`[name="descuento"]`).val()),
-        'pago': parseFloat($(`[name="pago"]`).val()),
-        'tipotarjeta': $(`[name="tipotarjeta"]`).val(),
-        'operacion': $(`[name="operacion"]`).val(),
-        'vence': $(`[name="vence"]`).val(),
-        'fecha': $(`[name="fecha"]`).val(),
-        'idventa': idventas,
-        'totalpagar': parseFloat($("#MontoPagar2 span").text())
-      },
-      dataType: "JSON",
-      success: function(data) {
-        if (data.status) {
-          if (data.tipopago == "CREDITO") {
-            Lobibox.notify('success', {
-              size: 'mini',
-              position: "top right",
-              msg: 'El credito fue creado correctamente.'
-            });
-          } else {
-            printfcomprobante(idventas);
-          }
-          if ($("#cobradorCaja").val() == '1') {
-            datosPedidosEnviados();
-            $("#opcionmenu").show();
-            $("#contenedorPedidosVenta").show();
-            $("#opcionmenuPedidoVenta").hide();
-            $("#contenedorProcesoPago").hide();
-          }
-          $(".product").removeClass(".productoIsSelected");
-          ventasReload();
-          alertComprobantes(); //Busca si hay mas Boletas/Facturas sin emitir
-          $('#form_vender')[0].reset();
-          $('#AddSale').modal('hide');
-        } else {
-          for (var i = 0; i < data.inputerror.length; i++) {
-            $('[name="' + data.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-            $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
-          }
-        }
-        $('#vendiendo').text('Enviar');
-        $('#vendiendo').attr("disabled", false);
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        Lobibox.notify('error', {
-          size: 'mini',
-          position: "top right",
-          msg: 'El registro no se pudo crear verifique las validaciones'
-        });
-      }
-    });
-
-  }
-
 
   function CrearNewVenta() {
     $.ajax({
@@ -771,17 +773,26 @@
       type: "POST",
       dataType: "JSON",
       success: function(data) {
+        if (data.status) {
+          Lobibox.notify('success', {
+            size: 'mini',
+            position: "top right",
+            msg: 'Correo enviado'
+          });
+        } else {
+          Lobibox.notify('warning', {
+            size: 'mini',
+            position: "top right",
+            msg: 'Ocurrio un problema. vuelve a intentarlo'
+          });
+        }
         $("#enviarcorreo").attr("disabled", false);
         $("#enviarcorreo").html("<i class='fa fa-paper-plane'></i>");
       },
       error: function(jqXHR, textStatus, errorThrown) {
         $("#enviarcorreo").attr("disabled", false);
         $("#enviarcorreo").html("<i class='fa fa-paper-plane'></i>");
-        Lobibox.notify('success', {
-          size: 'mini',
-          position: "top right",
-          msg: 'Correo enviado'
-        });
+
       }
     });
   };
@@ -844,26 +855,35 @@
   }
 
   function CloseRegister() {
+    event.preventDefault();
     let totalventa = $("#ventaspendientes").children().length; // le ponemos meenos uno por que el boton + tiene tambien esa clase
     if (totalventa == 0) {
+      $("#boton-CloseRegister").attr("disabled", true);
+      $("#boton-CloseRegister").html(`<i class="fa fa-spin fa-spinner" style="font-size:30px"></i>`);
+
       $.ajax({
         url: "<?= $this->url ?>/CloseRegister",
         type: "POST",
         dataType: "json",
         success: function(data) {
-          if (data.status) {
-            $('#closeregsection').html(data.data);
-            $('#CloseRegister').modal('show');
-          } else {
-            swal("Mesas Abiertas !!", "" + data.data, "error");
-          }
+          $("#boton-CloseRegister").attr("disabled", false);
+          $("#boton-CloseRegister").html(`<i class="fa fa-times"></i>`);
+          $('#closeregsection').html(data.data);
+          $('#CloseRegister').modal('show');
+          $("input").keyup(function() {
+            $(this).parent().parent().removeClass('has-error');
+            $(this).parent().removeClass('has-error');
+            $(this).next().empty();
+          });
         },
         error: function(jqXHR, textStatus, errorThrown) {
-          toast.error("Ocurrió algo inesperado");
-          // Lobibox.notify('error', {
-          //   size: 'mini',
-          //   msg: 'Error al obtener datos de ajax.'
-          // });
+          $("#boton-CloseRegister").attr("disabled", false);
+          $("#boton-CloseRegister").html(`<i class="fa fa-times"></i>`);
+          Lobibox.notify('error', {
+            size: 'mini',
+            position: "top right",
+            msg: 'Codigo de error de ajax: CloseRegister'
+          });
         }
       });
 
@@ -876,129 +896,72 @@
   };
 
   function SubmitRegister() {
-
-    $("#montototalcaja").keyup(function() {
-      if ($(this).val() != "") {
-        $(this).parent().removeClass("has-error");
-        $(this).next().text("");
-      }
-    });
-
-    $('#cerrarcaja').attr('disabled', true);
-    $('#cerrarcaja').html('<i class="fa fa-spinner fa-spin"></i>');
-
-    swal({
-        title: 'Estas seguro ?',
-        text: 'Usted no será capaz de recuperar las bodegas más tarde!',
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#DD6B55",
-        confirmButtonText: 'Sí, Ciérralo!',
-        closeOnConfirm: false
-      },
-      function() {
-
-        $.when(
+    if ($("#montototalcaja").val() != "") {
+      $('#cerrarcaja').attr('disabled', true);
+      $('#cerrarcaja').html('<i class="fa fa-spinner fa-spin"></i>');
+      $("#montototalcaja").parent().removeClass("has-error");
+      $("#montototalcaja").next().text("");
+      Lobibox.confirm({
+        title: "¡Avertencia!",
+        msg: "¿Estas seguro que deseas cerrar la CAJA?",
+        buttons: {
+          cancel: {
+            text: 'CANCELAR',
+            'class': 'btn'
+          },
+          ok: {
+            text: 'ACEPTAR',
+            'class': 'btn btn-danger'
+          },
+        },
+        callback: function($this, type) {
+          if (type == 'ok') {
             $.ajax({
               url: "<?= $this->url ?>/SubmitRegister",
               type: "POST",
               data: $('#form_cierre').serialize(),
               dataType: "JSON",
+              success: function(data) {
+                if (data.status) {
+                  //? El perfil de 3 es caja
+                  if (data.usuarioperfil == 1 || data.usuarioperfil == 2) {
+                    printfcierre(data.tipoimpresora, data.idcaja); //? le muestra el reporte al cerrar caja
+                  }
+                  location.reload();
+                } else {
+                  $('#cerrarcaja').attr('disabled', false);
+                  $('#cerrarcaja').text('CERRAR CAJA');
+                  for (var i = 0; i < data.inputerror.length; i++) {
+                    $('[name="' + data.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+                    $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+                  }
+                }
+              }
             })
-            /*
-            $.ajax({
-              url: '<?= base_url() ?>venta/enviomasivo/<?= date('Y-m-d') ?>/<?= date('Y-m-d') ?>',
-              method: 'POST',
-              dataType: "JSON",
-            })
-            */
-          ).then(function(response1) {
-            if (response1.status) {
-
-              //toast.success("El registro fue creado exitosamente");
-
-              /*
-              Lobibox.notify('success', {
-                size: 'mini',
-                msg: 'El registro fue creado exitosamente.'
-              });*/
-
-              /*
-              if (response2[0].respuesta == 'ok') {
-                swal({
-                  title: 'Resultado',
-                  text: 'Su comprobante se ha procesado correctamente!',
-                  html: true,
-                  type: "success",
-                  confirmButtonText: "Ok",
-                  confirmButtonColor: "#2196F3"
-                });
-              } else {
-                swal({
-                  title: 'ERROR',
-                  text: 'No Existen comprobantes pendientes de envio',
-                  html: true,
-                  type: "error",
-                  confirmButtonText: "Ok",
-                  confirmButtonColor: "#2196F3"
-                });
-              }
-              */
-
-              //? El perfil de 3 es caja
-              if (response1.usuarioperfil == 1 || response1.usuarioperfil == 2) {
-                printfcierre(); //? le muestra el reporte al cerrar caja
-              }
-
-
-              setTimeout("location.href='<?= $this->url ?>/backup'", 1000);
-            } else {
-              $('#cerrarcaja').attr('disabled', false);
-              $('#cerrarcaja').text('Cerrar registrarse');
-              for (var i = 0; i < response1.inputerror.length; i++) {
-                $('[name="' + response1.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-                $('[name="' + response1.inputerror[i] + '"]').next().text(response1.error_string[i]); //select span help-block class set text error string
-              }
-            }
-          })
-          .fail(function(err) {
-            console.log('Something went wrong', err);
-
-          });
-        swal.close();
-        $('#cerrarcaja').attr('disabled', false);
-        $('#cerrarcaja').text('Cerrar registrarse');
+          } else {
+            $('#cerrarcaja').attr('disabled', false);
+            $('#cerrarcaja').text('CERRAR CAJA');
+          }
+        }
       });
-
+    } else {
+      $("#montototalcaja").parent().addClass("has-error");
+      $("#montototalcaja").next().text("Esta campo es obligatorio");
+    }
 
   };
 
-  function printfcierre() {
-    //Ajax Load data from ajax
-    $.ajax({
-      url: "<?= $this->url ?>/ajax_updatecaja",
-      type: "GET",
-      dataType: "JSON",
-      success: function(data) {
-        if (data.tipoimpresora === '0') {
-          $.ajax({
-            url: '<?= $this->url ?>/imprimircierre',
-            type: 'POST',
-          });
-        }
-        if (data.tipoimpresora === '1') {
-          var Url = '<?= $this->url ?>/showcierre';
-          window.open(Url, 'Pruebas', 'fullscreen=yes, scrollbars=auto');
-        }
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        toast.error("Ocurrió algo inesperado");
-        // Lobibox.notify('error', {
-        //   size: 'mini',
-        //   msg: 'Error al obtener datos de ajax.'
-        // });
-      }
-    });
+  function printfcierre(tipoimpresora, idcaja) {
+    if (tipoimpresora === '0') {
+      $.ajax({
+        url: '<?= $this->url ?>/imprimircierre/' + idcaja,
+        type: 'POST',
+      });
+    }
+    if (tipoimpresora === '1') {
+      var Url = '<?= $this->url ?>/showcierre/' + idcaja;
+      window.open(Url, 'Pruebas', 'fullscreen=yes, scrollbars=auto');
+    }
   };
 
   //TODO----------------------------------------------------------------------------------------------------------------------------------------
@@ -1346,7 +1309,7 @@
             agregaarventa(data.producto, data.precio, {
               statusvariantes: false
             }, data.nombre_producto);
-            DatosSecundariosPedido(null, null);
+            DatosSecundariosPedido();
           } else {
             for (var i = 0; i < data.inputerror.length; i++) {
               $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
@@ -1754,11 +1717,15 @@
         msg: "Tienes que crear una venta",
       });
     } else {
+      $(`#boton-producto-${idproducto}`).attr("disabled", true);
+      $(`#boton-producto-${idproducto}`).html("<i class='fa fa-spinner fa-spin'></i>");
       $.ajax({
         url: '<?= $this->url ?>/ajax_agregarAdicionales/' + idproducto,
         type: "POST",
         dataType: "JSON",
         success: function(data) {
+          $(`#boton-producto-${idproducto}`).attr("disabled", false);
+          $(`#boton-producto-${idproducto}`).html("<i class='fa fa-shopping-cart'></i>");
           document.getElementById("ColumnaVariante").className = '';
           document.getElementById("ColumnaExtra").className = '';
           document.getElementById("ColumnaLotes").className = '';
@@ -1777,6 +1744,8 @@
         },
         error: function(jqXHR, textStatus, errorThrown) {
           alert("Codigo de error de ajax: agregarAdicionales")
+          $(`#boton-producto-${idproducto}`).attr("disabled", false);
+          $(`#boton-producto-${idproducto}`).html("<i class='fa fa-shopping-cart'></i>");
         }
       });
     }
@@ -2110,7 +2079,7 @@
                       success: function(data) {
                         if (data.proceso.status) {
                           eliminarDataLS(idventa);
-                          DatosSecundariosPedido();
+                          //DatosSecundariosPedido();
                           ventasReload();
                           $("#referencia").val("");
                           Lobibox.notify('success', {
@@ -2160,10 +2129,8 @@
                 }
                 if ($('#metodopago').val() == 'EFECTIVO') {
                   $('#tipocard').hide();
-                  //$('#numberoperacion').hide();
                 } else {
                   $('#tipocard').show();
-                  //($('#numberoperacion').show();
                 }
               }
             }
@@ -2386,7 +2353,8 @@
       },
     });
   }
-  function refrescarData(){
+
+  function refrescarData() {
     tableDataProductos.ajax.reload(null, false);
   }
 </script>

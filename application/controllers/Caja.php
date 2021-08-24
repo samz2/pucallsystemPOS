@@ -44,19 +44,18 @@ class Caja extends CI_Controller
     $this->load->view(THEME . TEMPLATE, $data);
   }
 
-  public function restaurar($id)
+  public function restaurar()
   {
-    if ($id) {
-      $queryValidate = $this->db->where("estado", '0')->get("caja")->row();
+    $idcaja = $this->input->post("idcaja");
+    $empresa = $this->input->post("empresa");
+      $queryValidate = $this->db->where("empresa", $empresa)->where("estado", '0')->get("caja")->row();
       if ($queryValidate) {
         echo json_encode(["status" => FALSE]);
       } else {
-        $this->Controlador_model->restaurar($id, $this->controlador);
+        $this->Controlador_model->restaurar($idcaja, $this->controlador);
         echo json_encode(["status" => TRUE]);
       }
-    } else {
-      show_404();
-    }
+    
   }
 
   public function general($finicio, $factual, $empresa)
@@ -154,10 +153,9 @@ class Caja extends CI_Controller
       <th>S.I.</th>
       <th>Contado</th>
       <th>Credito</th>
-      <th>Efectivo</th>
-      <th>Tarjeta</th>
+      <th>Efectivo a contado</th>
+      <th>Tarjeta a contado</th>
       <th>Gasto</th>
-      <th>S.F.</th>
     </tr>
     </thead>
     <tbody>';
@@ -168,10 +166,10 @@ class Caja extends CI_Controller
       $usuario = $this->Controlador_model->get($data->usuario, 'usuario');
       $contado += $data->contado;
       $credito += $data->credito;
-      $efectivo += $data->efectivo;
-      $tarjeta += $data->tarjeta;
+      $efectivo += $data->efectivocontado;
+      $tarjeta += $data->tarjetacontado;
       $gasto += $data->gasto;
-      $total += $data->saldoinicial + $data->efectivo - $data->gasto;
+      $total += $data->saldoinicial + $data->efectivocontado - $data->gasto;
       $mostrar .= '
       <tr>
       <td>' . $i . '</td>
@@ -181,23 +179,31 @@ class Caja extends CI_Controller
       <td align="center">';
       $mostrar .= '<a class="btn btn-default btn-sm" onclick="showTicket(' . $data->id . ')" title="Detalle"><i class="fa fa-ticket"></i></a> ';
       if ($this->perfil == 1 || $this->perfil == 2) {
-        $mostrar .= '<button class="btn btn-danger btn-sm restaurar" onclick="restaurarcaja(' . $data->id . ')"  title="Restaurar Caja"><i class="fa fa-repeat fa-spin"></i></button> ';
+        $mostrar .= '<button class="btn btn-danger btn-sm restaurar" onclick="restaurarcaja(' . $data->id . ', '.$data->empresa.')"  title="Restaurar Caja"><i class="fa fa-repeat fa-spin"></i></button> ';
       }
       $mostrar .= '<a class="btn btn-warning btn-sm" onclick="imprimir(' . $data->id . ', ' . $empresa->tipoimpresora . ')" title="Imprimir"><i class="fa fa-print"></i></a> ';
       $mostrar .= '</td>
       <td align="right">' . $data->saldoinicial . '</td>
       <td align="right">' . $data->contado . '</td>
       <td align="right">' . $data->credito . '</td>
-      <td align="right">' . $data->efectivo . '</td>
-      <td align="right">' . $data->tarjeta . '</td>
+      <td align="right">' . $data->efectivocontado . '</td>
+      <td align="right">' . $data->tarjetacontado . '</td>
       <td align="right">' . $data->gasto . '</td>
-      <td align="right">' . number_format($data->saldoinicial + $data->efectivo - $data->gasto, 2) . '</td>
       </tr>';
     }
-    $mostrar .= '</tbody><tfoot><tr><td colspan="4"></td><td align="center"><b>Total:</b></td><td></td>
-    <td align="right">' . number_format($contado, 2) . '</td><td align="right">' . number_format($credito, 2) . '</td>
-    <td align="right">' . number_format($efectivo, 2) . '</td><td align="right">' . number_format($tarjeta, 2) . '</td>
-    <td align="right">' . number_format($gasto, 2) . '</td><td align="right">' . number_format($total, 2) . '</td></tr></tfoot></table>';
+    $mostrar .= '</tbody>
+    <tfoot>
+    <tr>
+    <td colspan="5"></td>
+    <td align="center"><b>Total:</b></td>
+    <td align="right">' . number_format($contado, 2) . '</td>
+    <td align="right">' . number_format($credito, 2) . '</td>
+    <td align="right">' . number_format($efectivo, 2) . '</td>
+    <td align="right">' . number_format($tarjeta, 2) . '</td>
+    <td align="right">'.number_format($gasto, 2).'</td>
+    </tr>
+    </tfoot>
+    </table>';
     echo $mostrar;
   }
 
@@ -497,27 +503,9 @@ class Caja extends CI_Controller
   public function cpepdf($id)
   {
     $monedero = $this->db->where('caja', $id)->get('monedero')->row();
-    $diezcentimos = $monedero->diezcentimos * 0.10;
-    $veintecentimos = $monedero->veintecentimos * 0.20;
-    $cincuentacentimos = $monedero->cincuentacentimos * 0.50;
-    $unsol = $monedero->unsol * 1;
-    $dossoles = $monedero->dossoles * 2;
-    $cincosoles = $monedero->cincosoles * 5;
-    $diezsoles = $monedero->diezsoles * 10;
-    $veintesoles = $monedero->veintesoles * 20;
-    $cincuentasoles = $monedero->cincuentasoles * 50;
-    $ciensoles = $monedero->ciensoles * 100;
-    $doscientossoles = $monedero->doscientossoles * 200;
-    if ($monedero->status == '1') {
-      $montototal = $monedero->montototal;
-    } else {
-      $montototal = $diezcentimos + $veintecentimos + $cincuentacentimos + $unsol + $dossoles + $cincosoles + $diezsoles + $veintesoles + $cincuentasoles + $ciensoles + $doscientossoles;
-    }
-
-
     $data = array(
       'monedero' => $monedero,
-      'montototal' => $montototal,
+      'montoCerrarCaja' => $monedero->montototal,
       'caja' => $caja = $this->Controlador_model->get($id, 'caja'),
       'usuario' => $this->Controlador_model->get($caja->usuario, 'usuario'),
       'empresa' => $this->Controlador_model->get($caja->empresa, 'empresa'),

@@ -3,7 +3,9 @@
     <div class="col-md-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">Filtro por fecha</h3>
+          <h3 class="panel-title">
+            Filtro por fecha
+          </h3>
         </div>
         <form class="form-horizontal" autocomplete="off">
           <div class="panel-body">
@@ -16,12 +18,19 @@
                 <input type="date" class="form-control" id="factual" name="factual" value="<?= date('Y-m-d') ?>">
               </div>
             </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tipo de egreso<span class="required">*</span></label>
+              <div class="col-sm-10">
+                <select class="form-control" id="tipoegreso">
+                  <option value="CAJA">CAJA</option>
+                  <option value="EMPRESA">EMPRESA</option>
+                </select>
+              </div>
+            </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generado()" class="btn btn-warning" data-toggle="tooltip" title="GENERAR"><i class="fa fa-upload"></i></a>
-            <a onclick="add()" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-            <a onclick="location.reload()" class="btn btn-success" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-
+            <a onclick="generado()" class="btn btn-warning btn-sm" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
+            <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
           </div>
         </form>
       </div>
@@ -30,18 +39,40 @@
     <div class="col-xs-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title text-dark">Lista de <?= $this->titulo_controlador ?></h3>
+          <h3 class="panel-title text-dark" style="display:flex; align-items: center;justify-content: space-between;">
+            <span>Lista de <?= $this->titulo_controlador ?></span>
+            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO EGRESO <i class="fa fa-plus"></i></a>
+          </h3>
         </div>
-        <!-- /.box-header -->
-        <div class="panel-body table-responsive">
-          <table id="tabla" class="table table-striped table-bordered">
+        <div class="panel-body table-responsive" id="content-tablaCaja">
+          <table id="tablaCaja" class="table table-striped table-bordered">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Nº Doc.</th>
-                <th>Razon Social</th>
+                <th>Empresa</th>
+                <th>Usuario</th>
+                <th>Caja</th>
                 <th>Concepto</th>
                 <th>Observacion</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="panel-body table-responsive" id="content-tablaEmpresa">
+          <table id="tablaEmpresa" class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Empresa</th>
+                <th>Proveedor</th>
+                <th>Usuario</th>
+                <th>Concepto</th>
+                <th>Detalle</th>
                 <th>Monto</th>
                 <th>Fecha</th>
                 <th></th>
@@ -70,8 +101,8 @@
             <div class="form-group">
               <label class="control-label col-md-3">Caja<span class="required">*</span></label>
               <div class="col-md-9">
-              <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
-                    <?=$caja?>
+                <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
+                  <?= $caja ?>
                 </select>
                 <span class="help-block"></span>
               </div>
@@ -105,7 +136,7 @@
             <div class="form-group">
               <label class="control-label col-md-3">Fecha</label>
               <div class="col-md-9">
-                <input id="fecha" name="fecha" class="form-control" type="date" value="<?= date('Y-m-d') ?>">
+                <input id="fecha" name="fecha" readonly class="form-control" type="date" value="<?= date('Y-m-d') ?>">
                 <span class="help-block"></span>
               </div>
             </div>
@@ -149,9 +180,9 @@
       $(this).next().empty();
     });
     $("select").change(function() {
-      if(this.id == "concepto") {
+      if (this.id == "concepto") {
         $(this).next().next().empty();
-      }else{
+      } else {
         $(this).next().empty();
       }
       $(this).parent().parent().removeClass('has-error');
@@ -164,7 +195,17 @@
   });
 
   function generado() {
-    table = $('#tabla').DataTable({
+    let tablaDataTable;
+    if ($("#tipoegreso").val() == "CAJA") {
+      $('#content-tablaCaja').show();
+      $('#content-tablaEmpresa').hide();
+      tablaDataTable = $('#tablaCaja');
+    } else {
+      $('#content-tablaCaja').hide();
+      $('#content-tablaEmpresa').show();
+      tablaDataTable = $('#tablaEmpresa');
+    }
+    table = tablaDataTable.DataTable({
       language: {
         "decimal": "",
         "emptyTable": "No hay información",
@@ -188,7 +229,7 @@
       "destroy": true,
       // Load data for the table's content from an Ajax source
       "ajax": {
-        "url": "<?= $this->url ?>/ajax_list/" + $('#finicio').val() + '/' + $('#factual').val(),
+        "url": "<?= $this->url ?>/ajax_list/" + $('#finicio').val() + '/' + $('#factual').val() + '/' + $("#tipoegreso").val(),
         "type": "GET"
       },
     });
@@ -255,14 +296,20 @@
           type: "POST",
           dataType: "JSON",
           success: function(data) {
-            //if success reload ajax table
-            $('#modal_form').modal('hide');
-            reload_table();
-            Lobibox.notify('success', {
-              size: 'mini',
-              position: "top right",
-              msg: 'El registro fue eliminado exitosamente.'
-            });
+            if (data.status) {
+              $('#modal_form').modal('hide');
+              reload_table();
+              Lobibox.notify('success', {
+                size: 'mini',
+                position: "top right",
+                msg: 'El registro fue eliminado exitosamente.'
+              });
+            } else {
+              Lobibox.alert("info", {
+                title: "INFORMACION",
+                msg: "NO SE PUEDE ELIMINAR PORQUE LA CAJA YA ESTA CERRADA"
+              });
+            }
           },
           error: function(jqXHR, textStatus, errorThrown) {
             Lobibox.notify('error', {

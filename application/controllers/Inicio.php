@@ -170,7 +170,7 @@ class Inicio extends CI_Controller
 
 
     $data .= '<li data-toggle="tooltip" data-html="true" data-placement="left" title="Cerrar&nbsp;Caja">
-    <a href="javascript:void(0)" onclick="CloseRegister()"><i class="fa fa-times" aria-hidden="true"></i></a>
+    <a onclick="CloseRegister()" id="boton-CloseRegister"><i class="fa fa-times" aria-hidden="true"></i></a>
    </li>';
 
     $data .= '<li data-toggle="tooltip" data-html="true" data-placement="left" title="Cargar&nbsp;Pagina">
@@ -416,122 +416,6 @@ class Inicio extends CI_Controller
     }
   }
 
-  private function _validatprocesar()
-  {
-    $data = array();
-    $data['error_string'] = array();
-    $data['inputerror'] = array();
-    $data['status'] = TRUE;
-
-    $venta = $this->Controlador_model->get($this->input->post("idventa"), 'venta');
-    $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
-    $datapago = $this->input->post('totalpagar') - $this->input->post("descuento");
-
-    if ($this->input->post('pago') >= $datapago) {
-    } else {
-      $data['inputerror'][] = 'pago';
-      $data['error_string'][] = 'No puedes cancelar la venta con el monto isertado';
-      $data['status'] = FALSE;
-    }
-
-    if ($this->input->post('fecha') == '') {
-      $data['inputerror'][] = 'fecha';
-      $data['error_string'][] = 'Este campo es obligatorio.';
-      $data['status'] = FALSE;
-    }
-
-
-
-    if ($venta->tipoventa == 'FACTURA' && $cliente->tipodocumento == 'DNI') {
-      $data['inputerror'][] = 'pago';
-      $data['error_string'][] = 'Debe agregar cliente con RUC.';
-      $data['status'] = FALSE;
-    }
-
-    if ($venta->tipoventa == 'BOLETA' && $cliente->tipodocumento == 'RUC') {
-      $data['inputerror'][] = 'pago';
-      $data['error_string'][] = 'Debe agregar cliente con DNI.';
-      $data['status'] = FALSE;
-    }
-
-    if ($this->input->post('formapago') == 'CONTADO') {
-      if ($this->input->post('metodopago') == 'EFECTIVO') {
-        if ($this->input->post('pago') == '') {
-          $data['inputerror'][] = 'pago';
-          $data['error_string'][] = 'Este campo es obligatorio.';
-          $data['status'] = FALSE;
-        }
-      } else {
-        /*
-        if ($this->input->post('operacion') == '') {
-          $data['inputerror'][] = 'operacion';
-          $data['error_string'][] = 'Este campo es obligatorio.';
-          $data['status'] = FALSE;
-        }
-        */
-      }
-    }
-
-    if ($data['status'] === FALSE) {
-      echo json_encode($data);
-      exit();
-    }
-  }
-
-  public function AddNewSale()
-  {
-    $this->_validatprocesar();
-    $idventa = $this->input->post('idventa');
-    $venta = $this->Controlador_model->get($idventa, 'venta');
-    $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
-    $serie = substr($venta->tipoventa, 0, 1) . substr($empresa->serie, 1, 3);
-    $numero = $this->Controlador_model->codigos($venta->tipoventa, $serie);
-    $numeros = $numero ? $numero->consecutivo + 1 : 1;
-    $cadena = "";
-    $montopago = $this->input->post("pago") + $this->input->post("descuento");
-    for ($i = 0; $i < 6 - strlen($numeros); $i++) {
-      $cadena = $cadena . '0';
-    }
-    $dataventa['serie'] = $serie;
-    $dataventa['numero'] = $cadena . $numeros;
-    $dataventa['consecutivo'] = $numeros;
-    if ($this->input->post('formapago') == 'CONTADO') {
-      $deudaactual = $venta->montoactual - $this->input->post("descuento");
-      if ($this->input->post('pago') >= $deudaactual) {
-        $montoactual =  0;
-        $dataventa['descuento'] = $venta->descuento + $this->input->post('descuento');
-        $dataventa['montoactual'] = 0;
-        $dataventa['estado'] = '1';
-        $dataingreso['monto'] = $venta->montoactual - $this->input->post('descuento');
-      } else {
-        $montoactual = $venta->montoactual - $this->input->post('pago');
-        $dataingreso['monto'] = $this->input->post('pago');
-        $dataventa['descuento'] = $venta->descuento + $this->input->post('descuento');
-        $dataventa['montoactual'] = $venta->montoactual - $this->input->post('pago');
-      }
-      $dataventa['pago'] = $venta->pago + $this->input->post('pago');
-      $dataingreso['empresa'] = $this->empresa;
-      $dataingreso['usuario'] = $this->usuario;
-      $dataingreso['concepto'] = 3;
-      $dataingreso['caja'] = $this->caja;
-      $dataingreso['venta'] = $idventa;
-      $dataingreso['metodopago'] = $this->input->post('metodopago');
-      $dataingreso['tipotarjeta'] = $this->input->post('tipotarjeta');
-      $dataingreso['created'] = date('Y-m-d');
-      $this->Controlador_model->save('ingreso', $dataingreso);
-    } else {
-      $dataventa['estado'] = '1';
-    }
-    $dataventa['formapago'] = $this->input->post('formapago');
-    $dataventa['created'] = $this->input->post('fecha');
-    $dataventa['vence'] = $this->input->post('vence');
-    $dataventa['hf_procesado'] = date("Y-m-d H:i:s");
-    $this->Controlador_model->update(array('id' => $idventa), $dataventa, 'venta');
-    $this->Controlador_model->UpdateVentaDetalleDeuda($idventa);
-    $this->NewVenta();
-    echo json_encode(array("status" => TRUE, 'tipopago' => $this->input->post('formapago')));
-  }
-
   function NewVenta()
   {
     $queryVentas = $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $this->empresa);
@@ -550,129 +434,100 @@ class Inicio extends CI_Controller
   }
 
 
-  public function printfcomprobante()
+  public function printfcomprobante($idventa, $metodoPago)
   {
-    $idventa = $this->input->post("idventa");
     $venta = $this->Controlador_model->get($idventa, 'venta');
     $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
-    $usuario = $this->Controlador_model->get($venta->usuario_creador, 'usuario');
     $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
-
-    $ticket = '
-    <div class="col-md-12">
-    <h4 class="text-center">Venta Núm:.: ' . $venta->serie . '-' . $venta->numero . '</h4>
-   <div style="clear:both;">
-   </div>
-   <span class="float-left">Fecha: ' . $venta->created . '</span
-   ><br>
-   <div style="clear:both;">
-   <span class="float-left">
-   Cliente: ' . ($cliente ? $cliente->nombre : '') . '</span>
-   <div style="clear:both;">
-
-   <table class="table">
-   <thead>
-   <tr>
-   <th>#</th>
-   <th>Descripcion</th>
-   <th>Cant</th>
-   <th>SubTotal</th>
-   </tr>
-   </thead>
-   <tbody>';
+    $htmlComprobante = "
+       <h4 class='text-center'> $venta->serie - $venta->numero</h4>
+          <span class='float-left'>Fecha: $venta->created</span><br>
+          <span class='float-left'>Cliente: " . ($cliente ? $cliente->nombre : 'SIN DATOS') . "</span>
+        <table class='table'>
+        <thead>
+          <tr>
+            <th class='text-center'>#</th>
+            <th class='text-center'>Descripcion</th>
+            <th class='text-center'>Cant</th>
+            <th class='text-right;' style='width:100px'>Importe S/</th>
+          </tr>
+        </thead>
+        <tbody>";
     if ($venta->consumo == '1') {
-      $ticket .= '
-    <tr>
-    <td style="text-align:center; width:30px;">1</td>
-    <td style="text-align:left; width:180px;">Por consumo</td>
-    <td style="text-align:center; width:50px;">1</td>
-    <td style="text-align:right; width:70px; ">' . number_format($venta->montototal, 2) . ' Soles</td>
-    </tr>';
+      $htmlComprobante .=
+        "<tr>
+          <td class='text-center'>1</td>
+          <td class='text-center'>Por consumo</td>
+          <td class='text-center'>1</td>
+          <td class='text-right'>" . number_format($venta->deudatotal, 2) . "</td>
+        </tr>";
     } else {
       $ventadetalle = $this->Controlador_model->pedidodetalle($idventa);
       foreach ($ventadetalle as $key => $value) {
-        $producto = $this->Controlador_model->get($value->producto, 'producto');
-        $ticket .= '
-    <tr>
-    <td style="text-align:center; width:30px;">' . ($key + 1) . '</td>
-    <td style="text-align:left; width:180px;">' . $value->nombre . ' [' . ($value->variante ? ($value->cantidadvariante * $value->cantidad) : $value->cantidad) . ']</td>
-    <td style="text-align:center; width:50px;">' .  $value->cantidad . '</td>
-    <td style="text-align:right; width:70px; ">' . number_format($value->cantidad * $value->precio, 2) . ' Soles</td>
-    </tr>';
+        $htmlComprobante .=
+          "<tr>
+            <td class='text-center'>" . ($key + 1) . "</td>
+            <td class='text-center'> $value->nombre [" . ($value->variante ? ($value->cantidadvariante * $value->cantidad) : $value->cantidad) . "]</td>
+            <td class='text-center'>$value->cantidad</td>
+            <td class='text-right'>" . number_format($value->cantidad * $value->precio, 2) . "</td>
+            </tr>";
       }
     }
 
-    $ticket .= '</tbody>
-    </table>
-    <table class="table" cellspacing="0" border="0" style="margin-bottom:8px;">
-   <tbody>
-   <tr>
-   <td style="text-align:left;">Total Items</td>
-   <td style="text-align:right; padding-right:1.5%;">' . $venta->totalitems . '</td>
-   <td style="text-align:left; padding-left:1.5%;">Total</td>
-   <td style="text-align:right;font-weight:bold;">' . $venta->montototal . ' Soles</td>
-   </tr>';
-    $ticket .= '<tr>
-    <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Grand Total</td>
-   <td colspan="2" style="border-top:1px dashed #000; padding-top:5px; text-align:right; font-weight:bold;">' . $venta->montototal . ' Soles</td>
-   </tr>
-   <tr>';
-    $ticket .= '<tr>
-    <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Descuento</td>
-   <td colspan="2" style="border-top:1px dashed #000; padding-top:5px; text-align:right; font-weight:bold;">' . $venta->descuento . ' Soles</td>
-   </tr>
-   <tr>';
-    $pagos = $this->Controlador_model->pagos($idventa);
-    $vuelto = 0;
-    foreach ($pagos as $value) {
-      if ($value->metodopago == 'EFECTIVO') {
-        $vuelto = $venta->pago - $value->monto;
-      }
-      $ticket .= '
-      <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Pagado (' . strtolower($value->metodopago) . ')</td>
-     <td colspan="2" style="padding-top:5px; text-align:right; font-weight:bold;">' . number_format($value->monto, 2) . ' Soles</td>
-     </tr>';
-    }
-    $ticket .= '
-      <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Recibio</td>
-      <td colspan="2" style="padding-top:5px; text-align:right; font-weight:bold;">' . number_format($venta->pago, 2) . ' Soles</td></tr>';
-
-    $ticket .= '
-    <tr>
-      <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Vuelto</td>
-      <td colspan="2" style="padding-top:5px; text-align:right; font-weight:bold;">' . number_format($vuelto, 2) . ' Soles</td>
-   </tr>
-
-   </tbody>
-   </table>';
+    $htmlComprobante .= "
+    </tbody>
+    <tfoot>
+      <tr>
+          <td colspan='3' style='text-align:right; font-weight:bold;'>Total S/</td>
+          <td style='text-align:right; font-weight:bold;'> $venta->montototal</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none'>Descuento S/</td>
+        <td style='text-align:right; font-weight:bold; border:none'> $venta->descuento</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none; color:#36a229''>Pagado($metodoPago) S/</td>
+        <td style='text-align:right; font-weight:bold; border:none; color:#36a229'> $venta->deudatotal</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none;'>Recibido S/</td>
+        <td style='text-align:right; font-weight:bold; border:none;'>$venta->pago</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none'>Vuelto S/</td>
+        <td style='text-align:right; font-weight:bold; border:none'>$venta->vuelto</td>
+      </tr>
+    </tfoot>
+    </table>";
 
     $telefono = $cliente->telefono != "" ? $cliente->telefono : "";
     $email = $cliente->correo != "" ? $cliente->correo : "";
-    $correo = '<div class="input-group input-group-sm">';
-    $correo .= '<input type="email" id="correo" class="form-control" placeholder="correo@pucallsystem.com" value="' . $email . '">';
-    $correo .= '<span class="input-group-btn" id="span-print">';
-    $correo .= '<button id="enviarcorreo" class="btn btn-success" onclick="sendMail(' . $idventa . ')" type="button">';
-    $correo .= '<i class="fa fa-paper-plane" aria-hidden="true"></i>';
-    $correo .= '</button>';
-    $correo .= '</span>';
-    $correo .= ' </div>';
-    $WP = '
-    <div class="input-group input-group-sm">
-    <span class="input-group-addon" id="sizing-addon3">+51</span>
-    <input type="text" id="telefonoWP" class="form-control" placeholder="999999999" value="' . $telefono . '" autocomplete="off">
-    <span class="input-group-btn" id="span-print">
-      <button class="btn btn-success" onclick="sentTicketWA(' . $idventa . ')" type="button"><i class="fa fa-whatsapp" aria-hidden="true"></i></button>
-    </span> 
-    </div>';
+    $htmlFotter = "
+    <div class='row' style='margin-bottom:10px'>
+      <div class='col-md-6'>
+        <div class='input-group input-group-sm'>
+          <input type='email' id='correo' class='form-control' placeholder='correo@pucallsystem.com' value='$email'>
+          <span class='input-group-btn' id='span-print'>
+            <button id='enviarcorreo' class='btn btn-success' onclick='sendMail($idventa)' type='button'>
+            <i class='fa fa-paper-plane' aria-hidden='true'></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class='col-md-6'>
+        <div class='input-group input-group-sm'>
+        <span class='input-group-addon' id='sizing-addon3'>+51</span>
+        <input type='text' id='telefonoWP' class='form-control' placeholder='999999999' value='$telefono' autocomplete='off'>
+        <span class='input-group-btn' id='span-print'>
+          <button class='btn btn-success' onclick='sentTicketWA($idventa)' type='button'><i class='fa fa-whatsapp' aria-hidden='true'></i></button>
+        </span> 
+        </div>
+      </div>
+    </div>
+   <button data-dismiss='modal' class='btn btn-default hiddenpr'>Cerrar</button>
+   <button class='btn btn-add' onclick='imprimircomprobante($empresa->tipoimpresora , $idventa)' id='btncomprobante'>Imprimir</button>";
 
-    $fotter = '
-  <button data-dismiss="modal" class="btn btn-default hiddenpr">Cerrar</button>
-  <button type="submit" class="btn btn-add" onclick="imprimircomprobante(' . $empresa->tipoimpresora . ',' . $idventa . ' )" id="btncomprobante">Imprimir</button>';
-
-
-    if ($venta->montoactual == 0) {
-      echo  json_encode(['html' => $ticket, 'fotter' => $fotter, "email" => $correo, "whatsapp" => $WP]);
-    }
+    return ["htmlComprobante" => $htmlComprobante, "htmlFotter" => $htmlFotter];
   }
 
   function sendemail()
@@ -690,6 +545,7 @@ class Inicio extends CI_Controller
     $password = "=ACn*SH^QYh6";
     $name = "PucallSystem";
     $mail = $this->phpmailer_lib->load();
+
     //$mail->isSMTP();                      // Establecer el correo electrónico para utilizar SMTP
     $mail->Host = 'mail.pucallsystem.com';  // Especificar el servidor de correo a utilizar 
     $mail->SMTPAuth = true;                 // Habilitar la autenticacion con SMTP
@@ -731,79 +587,22 @@ class Inicio extends CI_Controller
     $mail->addStringAttachment($fichero, $archivo);
     // }
 
-    if (!$mail->send()) {
-      echo json_encode(array('status' => FALSE));
-    } else {
+    if ($mail->send()) {
       echo json_encode(array('status' => TRUE));
+      exit();
+    } else {
+      echo json_encode(array('status' => FALSE));
+      exit();
     }
   }
 
   public function CloseRegister()
   {
-    $c = 0;
-    $mesasAbiertas = '';
-    $queryVentasSinGenerar = $this->db->where("caja", $this->caja)->where("estado", "0")->get("venta")->result();
-
-    if ($c == 0) {
-      $empresa = $this->Controlador_model->get($this->empresa, 'empresa');
-      $registro = $this->Controlador_model->get($this->caja, 'caja');
-      $usuario = $this->Controlador_model->get($registro->usuario, 'usuario');
-      $sales = $this->Controlador_model->getCaja($this->caja, 'venta');
-      $payaments = $this->Controlador_model->getCaja($this->caja, 'ingreso');
-      $expences = $this->Controlador_model->getCaja($this->caja, 'egreso');
-      $desc = 0;
-      $cash = 0;
-      $cc = 0;
-      $cont = 0;
-      $cred = 0;
-      $gasto = 0;
-      foreach ($payaments as $payament) {
-        if ($payament->metodopago == 'EFECTIVO') {
-          $cash += $payament->monto;
-        } else {
-          $cc += $payament->monto;
-        }
-      }
-      foreach ($sales as $sale) {
-        if ($sale->estado == '1') {
-          if ($sale->formapago == 'CONTADO') {
-            $cont += $sale->montototal;
-            $desc += $sale->descuento;
-          } else {
-            $cred += $sale->montototal;
-          }
-        }
-      }
-      foreach ($expences as $expence) {
-        $gasto += $expence->montototal;
-      }
-
-      $data = '<div class="col-md-3"><blockquote><footer>ENCARGADO</footer><p>' . $usuario->nombre . '</p></blockquote></div>
-      <div class="col-md-3"><blockquote><footer>SALDO EFECTIVO</footer><p>' . number_format($cash, 2) . ' SOLES</p></blockquote></div>
-      <div class="col-md-4"><blockquote><footer>FECHA DE APERTURA</footer><p>' . $registro->apertura . '</p></blockquote></div>
-      <div class="col-md-2"><img src="' . site_url() . '/assets/adminlte/img/register.svg" alt=""></div>
-      <h2 class="text-center">RESUMEN DE CAJA DIARIO ' . strtoupper($registro->descripcion) . '</h2>
-      <table class="table table-striped"><tr><th width="25%">TIPO DE PAGO</th><th width="25%">MONTOS (Soles)</th></tr>
-      <tr><td>SALDO INICIAL</td><td>' . number_format($registro->saldoinicial, 2) . '</td></tr>
-      <tr><td>VENTA DIARIO</td><td>' . number_format($cont + $cred, 2) . '</td></tr>
-      <tr><td>EFECTIVO</td><td>' . number_format($cash, 2) . '</td></tr>
-      <tr><td>CREDITO</td><td>' . number_format($cred, 2) . '</td></tr>
-      <tr><td>TARJETA</td><td>' . number_format($cc, 2) . '</td></tr>
-      <tr><td>GASTO</td><td>' . number_format($gasto, 2) . '</td></tr>
-      <tr class="warning"><td>TOTAL</td><td>' . number_format(($registro->saldoinicial + $cont + $cred - $gasto), 2) . '</td></tr></table>
-      <input type="hidden" name="contado" id="contado" value="' . $cont . '">
-      <input type="hidden" name="descuento" id="descuento" value="' . $desc . '">
-      <input type="hidden" name="credito" id="credito" value="' . $cred . '">
-      <input type="hidden" name="efectivo" id="efectivo" value="' . $cash . '">
-      <input type="hidden" name="tarjeta" id="tarjeta" value="' . $cc . '">
-      <input type="hidden" name="gasto" id="gasto" value="' . $gasto . '">';
-
-      $mostrar = '
-         <div class="col-md-3"><blockquote><footer>ENCARGADO</footer><p>' . $usuario->nombre . '</p></blockquote></div>
-      <div class="col-md-3"><blockquote><footer>SALDO EFECTIVO</footer><p>0.00 SOLES</p></blockquote></div>
-      <div class="col-md-4"><blockquote><footer>FECHA DE APERTURA</footer><p>' . $registro->apertura . '</p></blockquote></div>
-      <div class="col-md-2"><img src="' . site_url() . '/assets/adminlte/img/register.svg" alt=""></div>
-      <h2 class="text-center">RESUMEN DE CAJA DIARIO ' . $registro->descripcion . '</h2>
+    $mostrar = '
+      <h2 class="text-center">
+      RESUMEN DE CAJA
+      <img src="' . site_url() . '/assets/adminlte/img/register.svg" alt="" style="width:100px">
+      </h2>
        
      <input type="hidden" value="1" name="tipoproceso" id="tipoproceso">
    
@@ -861,28 +660,11 @@ class Inicio extends CI_Controller
              <tr><td>100.00</td><td><input type="text" class="form-control" name="ciensoles" id="ciensoles" value="0"></td></tr>
              <tr><td>200.00</td><td><input type="text" class="form-control" name="doscientossoles" id="doscientossoles" value="0"></td></tr>
            </table>
-   
-   
-   
            </div>
          </div>
        </div>
-     </div>
-      
-      <input type="hidden" class="form-control" name="contado" id="contado" value="' . $cont . '">
-      <input type="hidden" class="form-control" name="descuento" id="descuento" value="' . $desc . '">
-      <input type="hidden" class="form-control" name="credito" id="credito" value="' . $cred . '">
-      <input type="hidden" class="form-control" name="efectivo" id="efectivo" value="' . $cash . '">
-      <input type="hidden" class="form-control" name="tarjeta" id="tarjeta" value="' . $cc . '">
-      <input type="hidden" class="form-control" name="gasto" id="gasto" value="' . $gasto . '">';
-
-
-
-
-      echo json_encode(array('data' => $mostrar, 'status' => TRUE));
-    } else {
-      echo json_encode(array('data' => $mesasAbiertas, 'status' => FALSE));
-    }
+     </div>';
+    echo json_encode(array('data' => $mostrar, 'status' => TRUE));
   }
 
   private function _validateCierre()
@@ -908,24 +690,65 @@ class Inicio extends CI_Controller
   {
     if ($this->input->post('tipoproceso') == 1) {
       $this->_validateCierre();
-    } else {
     }
-    $data['contado'] = $this->input->post('contado');
-    $data['descuento'] = $this->input->post('descuento');
-    $data['credito'] = $this->input->post('credito');
-    $data['efectivo'] = $this->input->post('efectivo');
-    $data['tarjeta'] = $this->input->post('tarjeta');
-    $data['gasto'] = $this->input->post('gasto');
+
+    $queryVentas = $this->Controlador_model->geVentastCaja($this->caja, 'venta');
+    $expences = $this->Controlador_model->getCaja($this->caja, 'egreso');
+    $ventasContado = 0;
+    $montoCreditos = 0;
+    $totalVentasCredito = 0;
+    $gasto = 0;
+    $totalVentasContados = 0;
+    $totalGastos = 0;
+
+    $pagosEfectivo = $this->Controlador_model->getCajaPagos($this->caja, 'ingreso', "EFECTIVO"); //VENTA
+    $pagosEfectivoGenerados = $this->Controlador_model->totalGenerados($this->caja, "EFECTIVO"); // VENTA GENERADOS
+    $pagosTarjeta = $this->Controlador_model->getCajaPagos($this->caja, 'ingreso', "TARJETA"); //VENTA
+    $pagosTarjetaGenerados = $this->Controlador_model->totalGenerados($this->caja, "TARJETA"); // VENTA GENERADOS
+
+    $abonosCaja =  $this->Controlador_model->abonosCaja($this->caja);
+    $totalAbono = 0;
+    $totalAbonoGenerado = 0;
+    foreach($abonosCaja as $abono){
+      $totalAbono += $abono->monto;
+      $totalAbonoGenerado += 1;
+    }
+
+    foreach ($queryVentas as $venta) {
+      if ($venta->formapago == 'CONTADO') {
+        $ventasContado += $venta->deudatotal;
+        $totalVentasContados += 1;
+      } else {
+        $montoCreditos += $venta->deudatotal;
+        $totalVentasCredito += 1;
+      }
+    }
+
+    foreach ($expences as $expence) {
+      $gasto += $expence->montototal;
+      $totalGastos += 1;
+    }
+
+    $dataEmpresa = $this->Controlador_model->get($this->empresa,"empresa");
+    $data['usuario_cierre'] = $this->usuario;
+    $data['contado'] = $ventasContado;
+    $data['contadosgenerados'] = $totalVentasContados;
+    $data['credito'] = $montoCreditos;
+    $data['creditosgenerados'] = $totalVentasCredito;
+    $data['efectivocontado'] = $pagosEfectivo->totalpagos;
+    $data['efectivogenerados'] = $pagosEfectivoGenerados;
+    $data['tarjetacontado'] = $pagosTarjeta->totalpagos;
+    $data['tarjetagenerados'] = $pagosTarjetaGenerados;
+    $data['gasto'] = $gasto;
+    $data['gastosgenerados'] = $totalGastos;
+    $data['abonos'] = $totalAbono;
+    $data['abonosgenerados'] = $totalAbonoGenerado;
     $data['estado'] = '1';
-
     $this->Controlador_model->update(array('id' => $this->caja), $data, 'caja');
-
-
     $datamonedero['empresa'] = $this->empresa;
     $datamonedero['usuario'] = $this->usuario;
     $datamonedero['caja'] = $this->caja;
     $datamonedero['status'] = $this->input->post('tipoproceso');
-
     if ($this->input->post('tipoproceso') == "0") {
       $diezcentimos = $this->input->post('diezcentimos');
       $veintecentimos = $this->input->post('veintecentimos');
@@ -938,7 +761,6 @@ class Inicio extends CI_Controller
       $cincuentasoles = $this->input->post('cincuentasoles');
       $ciensoles = $this->input->post('ciensoles');
       $doscientossoles = $this->input->post('doscientossoles');
-
       $datamonedero['diezcentimos'] = $diezcentimos;
       $datamonedero['veintecentimos'] = $veintecentimos;
       $datamonedero['cincuentacentimos'] = $cincuentacentimos;
@@ -955,49 +777,14 @@ class Inicio extends CI_Controller
     } else {
       $datamonedero['montototal'] = $this->input->post('montototalcaja');
     }
-
-
+    $idCajaAntesDeVaciar = $this->caja;
     $this->Controlador_model->save('monedero', $datamonedero);
-
-
-    $this->deleteCPETemp();
-    //perfil 3 = caja
-    echo json_encode(array("status" => TRUE, "usuarioperfil" => $this->perfil));
+    $CI = &get_instance();
+    $CI->session->set_userdata('caja', NULL);
+    echo json_encode(array("status" => TRUE, "usuarioperfil" => $this->perfil, "tipoimpresora" => $dataEmpresa->tipoimpresora, "idcaja" => $idCajaAntesDeVaciar));
     exit();
-    $data['contado'] = $this->input->post('contado');
-    $data['descuento'] = $this->input->post('descuento');
-    $data['credito'] = $this->input->post('credito');
-    $data['efectivo'] = $this->input->post('efectivo');
-    $data['tarjeta'] = $this->input->post('tarjeta');
-    $data['gasto'] = $this->input->post('gasto');
-    $data['estado'] = '1';
-    $this->Controlador_model->update(array('id' => $this->caja), $data, 'caja');
-    $datamonedero['empresa'] = $this->empresa;
-    $datamonedero['usuario'] = $this->usuario;
-    $datamonedero['caja'] = $this->caja;
-    $datamonedero['diezcentimos'] = $this->input->post('diezcentimos');
-    $datamonedero['veintecentimos'] = $this->input->post('veintecentimos');
-    $datamonedero['cincuentacentimos'] = $this->input->post('cincuentacentimos');
-    $datamonedero['unsol'] = $this->input->post('unsol');
-    $datamonedero['dossoles'] = $this->input->post('dossoles');
-    $datamonedero['cincosoles'] = $this->input->post('cincosoles');
-    $datamonedero['diezsoles'] = $this->input->post('diezsoles');
-    $datamonedero['veintesoles'] = $this->input->post('veintesoles');
-    $datamonedero['cincuentasoles'] = $this->input->post('cincuentasoles');
-    $datamonedero['ciensoles'] = $this->input->post('ciensoles');
-    $datamonedero['doscientossoles'] = $this->input->post('doscientossoles');
-    $this->Controlador_model->save('monedero', $datamonedero);
-    $this->deleteCPETemp();
-    echo json_encode(array("status" => TRUE));
   }
 
-  public function ajax_updatecaja()
-  {
-    $datas = $this->Controlador_model->get($this->caja, 'caja');
-    $empresa = $this->Controlador_model->get($datas->empresa, 'empresa');
-    $data['tipoimpresora'] = $empresa->tipoimpresora;
-    echo json_encode($data);
-  }
 
   public function imprimircomanda()
   {
@@ -1325,12 +1112,12 @@ class Inicio extends CI_Controller
     echo json_encode($data);
   }
 
-  public function imprimircierre()
+  public function imprimircierre($idcaja)
   {
-    $caja = $this->Controlador_model->get($this->caja, 'caja');
+    $caja = $this->Controlador_model->get($idcaja, 'caja');
     $empresa = $this->Controlador_model->get($caja->empresa, 'empresa');
     $usuario = $this->Controlador_model->get($caja->usuario, 'usuario');
-    $monedero = $this->db->where('caja', $this->caja)->get('monedero')->row();
+    $monedero = $this->db->where('caja', $idcaja)->get('monedero')->row();
     $diezcentimos = $monedero->diezcentimos * 0.10;
     $veintecentimos = $monedero->veintecentimos * 0.20;
     $cincuentacentimos = $monedero->cincuentacentimos * 0.50;
@@ -1401,7 +1188,7 @@ class Inicio extends CI_Controller
     $printer->setJustification(Printer::JUSTIFY_CENTER);
     $printer->text("------------------------------------------------" . "\n");
     $printer->text("PRODUCTOS VENDIDOS\n");
-    $posales = $this->Controlador_model->resumenventa($this->caja);
+    $posales = $this->Controlador_model->resumenventa($idcaja);
     $totalventas = 0;
     foreach ($posales as $value) {
       $producto = $this->Controlador_model->get($value->producto, 'producto');
@@ -1427,32 +1214,16 @@ class Inicio extends CI_Controller
     $printer->close();
   }
 
-  public function showcierre()
+  public function showcierre($idcaja)
   {
-    $monedero = $this->db->where('caja', $this->caja)->get('monedero')->row();
-    $diezcentimos = $monedero->diezcentimos * 0.10;
-    $veintecentimos = $monedero->veintecentimos * 0.20;
-    $cincuentacentimos = $monedero->cincuentacentimos * 0.50;
-    $unsol = $monedero->unsol * 1;
-    $dossoles = $monedero->dossoles * 2;
-    $cincosoles = $monedero->cincosoles * 5;
-    $diezsoles = $monedero->diezsoles * 10;
-    $veintesoles = $monedero->veintesoles * 20;
-    $cincuentasoles = $monedero->cincuentasoles * 50;
-    $ciensoles = $monedero->ciensoles * 100;
-    $doscientossoles = $monedero->doscientossoles * 200;
-    if ($monedero->status == '1') {
-      $montototal = $monedero->montototal;
-    } else {
-      $montototal = $diezcentimos + $veintecentimos + $cincuentacentimos + $unsol + $dossoles + $cincosoles + $diezsoles + $veintesoles + $cincuentasoles + $ciensoles + $doscientossoles;
-    }
+    $monedero = $this->db->where('caja', $idcaja)->get('monedero')->row();
     $data = array(
       'monedero' => $monedero,
-      'montototal' => $montototal,
-      'caja' => $caja = $this->Controlador_model->get($this->caja, 'caja'),
+      'montoCerrarCaja' => $monedero->montototal,
+      'caja' => $caja = $this->Controlador_model->get($idcaja, 'caja'),
       'usuario' => $this->Controlador_model->get($caja->usuario, 'usuario'),
       'empresa' => $this->Controlador_model->get($caja->empresa, 'empresa'),
-      'posales' => $this->Controlador_model->resumenventa($this->caja)
+      'posales' => $this->Controlador_model->resumenventa($idcaja)
     );
     $this->load->view('imprimircierre', $data);
   }
@@ -1773,177 +1544,6 @@ class Inicio extends CI_Controller
     echo $html;
   }
 
-  function ajax_TodosProductos()
-  {
-    $html = "";
-    $productos = $this->Controlador_model->getAll('producto');
-    $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");
-    foreach ($productos as $key => $value) {
-      $EstadoProducto = FALSE;
-      $datacategoria = $this->Controlador_model->get($value->categoria, "productocategoria");
-      if ($value->estado == '1' or $value->categoria == 14) {
-        //todo: Ignora los productos desactivados
-        continue;
-      }
-      if ($value->tipo == '0') {
-        //todo: El tipo de producto 0 es estandar
-        $registro = $this->Controlador_model->get($this->caja, 'caja');
-        if ($value->status_lote == '1') {
-          $totalLote = $this->Controlador_model->dataLotes($value->id, $dataEmpresa->almacen, $this->empresa);
-          if ($totalLote->num_rows() > 1) {
-            $existenciaStock = TRUE;
-          } else {
-            $dataproductolote = $totalLote->row();
-            if ($dataproductolote) {
-              $existenciaStock = TRUE;
-            } else {
-              $existenciaStock = FALSE;
-            }
-          }
-        } else {
-          $existenciaStock = $this->db->where('empresa',  $this->empresa)->where('producto',  $value->id)->where('almacen', $dataEmpresa->almacen)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
-        }
-        if ($existenciaStock) {
-          if ($value->status_lote == '1') {
-            $totalLote2 = $this->Controlador_model->dataLotes($value->id, $dataEmpresa->almacen, $this->empresa);
-            if ($totalLote2->num_rows() > 1) {
-              $stok_D = FALSE; //? PARA QUE NO SE BLOQUEE Y MUESTRE EL MODAL DONDE ESTAN TODOS SUS LOTES
-            } else {
-              $stok_D = $this->db->where('lote IS NOT NULL')->where('empresa', $registro->empresa)->where('almacen', $dataEmpresa->almacen)->where('producto', $value->id)->where("cantidad <=", 0)->get('stock')->row();
-            }
-          } else {
-            $stok_D = $this->db->where('empresa', $registro->empresa)->where('almacen', $dataEmpresa->almacen)->where('producto', $value->id)->where("cantidad <=", 0)->get('stock')->row();
-          }
-          if ($stok_D) {
-            $EstadoProducto = TRUE;
-          } else {
-            $EstadoProducto = FALSE;
-          }
-        } else {
-          $EstadoProducto = TRUE;
-        }
-      } else if ($value->tipo == '2') {
-        //todo: El tipo de producto 2 es combo
-        $combo = $this->db->where('producto',  $value->id)->get('combo')->result(); //todo: verificamos si el tiene registro en la tabal combo
-        if ($combo) {
-          foreach ($combo as $key => $value2) {
-            //Si no cuenta con sufuciente STOCK el como saldra como agotado
-            $existenciaStockCombo = $this->db->where('producto',  $value2->item_id)->where('almacen', $dataEmpresa->almacen)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
-            if ($existenciaStockCombo) {
-              $productoStock = $this->db->where('producto', $value2->item_id)->where('cantidad <', $value2->cantidad)->where('almacen', $dataEmpresa->almacen)->get('stock')->row();
-              if ($productoStock) {
-                $EstadoProducto = TRUE; //cuando $EstadoProducto es TRUE ara que el div/boton este desahabilitado
-                break;
-              } else {
-                $EstadoProducto = FALSE;
-              }
-            } else {
-              $EstadoProducto = TRUE;
-              break;
-            }
-          }
-        } else {
-          //todo: si no tine que productos en el combo se desahanilita el producto es tipo combo
-          $EstadoProducto = TRUE;
-        }
-      } else {
-        $EstadoProducto = FALSE;
-      }
-      $queryLotes = $this->Controlador_model->queryLotes($this->empresa, $value->id, $dataEmpresa->almacen);
-      if ($value->variante == "1" or $datacategoria->estadoextras == "1" or ($value->status_lote == "1" and $queryLotes->num_rows() > 1)) {
-        $evento = ' onclick="agregarAdicionales(' . $value->id . ')" ';
-      } else {
-        if ($value->status_lote == "1" and $queryLotes->num_rows() == 1) {
-          $dataLote = $queryLotes->row();
-          $lote = $dataLote ? $dataLote->lote : null;
-          $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : ' . $lote . ' ,statuslote : ' . ($lote ? true : false) . '} ,\'\')"';
-        } else {
-          $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : null, statuslote: false} ,\'\')"';
-        }
-      }
-      if ($value->variante == "1") {
-        $dataMask = '<span class="label label-info" style="display:block">' . ($value->variante == TRUE ? "variante" : "") . '</span>';
-      } else {
-        $dataMask = '<div class="mask" style="color:#D6D6D6">' . number_format($value->precioventa, 2, '.', '') . ' Soles </div>';
-      }
-
-      if ($datacategoria->estadoextras == "1") {
-        $textextras = "<label class='label label-success' style='display:block'>Extras</label>";
-      } else {
-        $textextras = "";
-      }
-
-      if ($value->status_lote == "1") {
-        $textLotes = "<label class='label label-default' style='display:block'>Lotes</label>";
-      } else {
-        $textLotes = "";
-      }
-
-      if ($EstadoProducto) {
-        $disabled = "disabled";
-      } else {
-        $disabled = "";
-      }
-
-      $html .= '
-      <div class="col-sm-2 col-xs-4 text-center" id="content-producto-' . $value->id . '">
-
-      <input type="hidden" id="tipomedida-' . $value->id . '" value="UND"/>
-      <input type="hidden" id="cantidad-tm' . $value->id . '" value="1"/>
-      <input type="hidden" id="nombre-producto-' . $value->id . '" value="' . $value->nombre . '"/>
-      <input type="hidden" id="precio-producto-' . $value->id . '" value="' . $value->precioventa . '"/>
-
-      <button ' . $disabled . ' 
-      style="display:inline-block; border-width:0px; position:relative" href="javascript:void(0)" 
-      class="addPct" 
-      id="boton-product-' . $value->id . '"  ' . $evento . ' >';
-
-      if ($value->tipo == 2) {
-        $EstiloCajaCombo = "border: 0px solid #00fcb8; box-shadow:0px 0px 30px 5px #00fcb8";
-      } else {
-        $EstiloCajaCombo = '';
-      }
-
-      if ($EstadoProducto) {
-        $html .= '<label id="Agotado' . $value->id . '" class="agotado" >AGOTADO</label>';
-      }
-
-      if ($EstadoProducto) {
-        $EstadoProductoData = "opacar_div";
-      } else {
-        $EstadoProductoData = "";
-      }
-
-      //TODO: Esta clase da color cuando seleccina algo .productoIsSelected
-      $html .= '
-          <div class="product ' . $value->color . ' flat-box  ' . $EstadoProductoData . ' " style="' . $EstiloCajaCombo . ' "     id="ProductoLista' . $value->id . '">
-            <h3 id="proname">
-            ' . $value->nombre . '
-            ' . $dataMask . '
-            ' . $textLotes . '
-            ' . $textextras . '
-            </h3>';
-
-      if ($value->photo) {
-        $html .= '<img src="' . base_url() . 'files/products/' . $value->photothumb . '" alt="' . $value->nombre . '">';
-      }
-
-      $botonStock = '<button class="btn  btn-info btn-sm" id="verStock-' . $value->id . '-0" onclick="verstockactual(' . $value->id . ', 0)" style="padding:1px; font-size:10px"title="Ver Stock">STOCK <i class="fa fa-search"></i></button>';
-      $botonverimg = '<button class="btn  btn-warning btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')" style="padding:1px; font-size:10px" title="Ver Imagen">VER <i class="fa fa-eye"></i></button>';
-      $botonverimg2 = '<button class="btn  btn-warning btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')" style="padding:1px; font-size:10px" title="Ver Imagen">VER <i class="fa fa-eye"></i></button>';
-      if ($value->tipo == 02) {
-        $html .= '<label style="font-size: 20px; font-weight:900; color:#00fcb8">COMBO</label>';
-      }
-      $html .= '
-      </div>
-      </button>
-      ' . ($value->tipo == "0" ? $botonStock : "") . '
-      ' . ($value->tipo == "0" ? $botonverimg : "") . '
-      ' . ($value->tipo == "2" ? $botonverimg2 : "") . '
-      </div>';
-    }
-    echo $html;
-  }
 
   public function ajax_productos_categoria()
   {
@@ -2323,50 +1923,160 @@ class Inicio extends CI_Controller
     return min($cantidadRestante);
   }
 
+  private function _validatprocesar()
+  {
+    $data = array();
+    $data['error_string'] = array();
+    $data['inputerror'] = array();
+    $data['status'] = TRUE;
+
+    $venta = $this->Controlador_model->get($this->input->post("idventa"), 'venta');
+    $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
+
+    if ($this->input->post('pago') == "") {
+      $data['inputerror'][] = 'pago';
+      $data['error_string'][] = 'Este campor es obligatorio';
+      $data['status'] = FALSE;
+    } else {
+      $deudatotalVenta = $this->input->post('deuda') - $this->input->post("descuento");
+      if ($deudatotalVenta > $this->input->post('pago')) {
+        $data['inputerror'][] = 'pago';
+        $data['error_string'][] = 'No puedes cancelar la venta con el monto isertado';
+        $data['status'] = FALSE;
+      }
+    }
 
 
-  function ajax_EnviarPedido()
+    if ($this->input->post('fecha') == '') {
+      $data['inputerror'][] = 'fecha';
+      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+    if ($venta->tipoventa == 'FACTURA' && $cliente->tipodocumento == 'DNI') {
+      $data['inputerror'][] = 'pago';
+      $data['error_string'][] = 'Debe agregar cliente con RUC.';
+      $data['status'] = FALSE;
+    }
+
+    if ($venta->tipoventa == 'BOLETA' && $cliente->tipodocumento == 'RUC') {
+      $data['inputerror'][] = 'pago';
+      $data['error_string'][] = 'Debe agregar cliente con DNI.';
+      $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('formapago') == 'CONTADO') {
+      if ($this->input->post('metodopago') == 'EFECTIVO') {
+        if ($this->input->post('pago') == '') {
+          $data['inputerror'][] = 'pago';
+          $data['error_string'][] = 'Este campo es obligatorio.';
+          $data['status'] = FALSE;
+        }
+      }
+    }
+    return $data;
+  }
+
+
+  function ajax_procesarVenta()
   {
     $dataPerfil = $this->Controlador_model->get($this->perfil, 'perfil');
     $dataEmpresa = $this->Controlador_model->get($this->empresa, 'empresa');
     $idventa = $this->input->post("idventa");
     $dataventa = $this->db->where("id", $idventa)->where("estado", "0")->or_where("estado", '4')->get("venta")->row();
     if ($dataventa) {
-      $dataproductos = json_decode($this->input->post("dataproductos"));
-      if ($dataPerfil->cobradorcaja == '1' and $dataEmpresa->pasos == '1') {
-        $this->db->where("venta", $idventa)->delete("ventadetalle");
-      }
-      $data = "";
-      $CantidadItem = 0;
-      $DeudaTotal = 0;
-      foreach ($dataproductos as $value) {
-        $producto = $value->id_producto;
-        $cantidad_V = $value->cantidad_variante;
-        $productodata = $this->Controlador_model->get($producto, 'producto');
-        $cantidadEscogido = $value->cantidad;
-        $cantidadDescontar = $value->statusvariante ? $value->cantidad_variante_total :  $value->cantidad;
+      $respuestaValidate = $this->_validatprocesar();
+      if ($respuestaValidate["status"] === FALSE) {
+        echo json_encode(["proceso" => ["status" => TRUE, "validate" => FALSE, "contenido" => $respuestaValidate]]);
+      } else {
+        $dataproductos = json_decode($this->input->post("dataproductos"));
+        if ($dataPerfil->cobradorcaja == '1' and $dataEmpresa->pasos == '1') {
+          $this->db->where("venta", $idventa)->delete("ventadetalle");
+        }
+        $CantidadItem = 0;
+        $DeudaTotal = 0;
+        foreach ($dataproductos as $value) {
+          $producto = $value->id_producto;
+          $cantidad_V = $value->cantidad_variante;
+          $productodata = $this->Controlador_model->get($producto, 'producto');
+          $cantidadEscogido = $value->cantidad;
+          $cantidadDescontar = $value->statusvariante ? $value->cantidad_variante_total :  $value->cantidad;
+          $dataVentaDetalle =  [
+            "venta" => $idventa,
+            'producto' => $producto,
+            "variante" => ($value->statusvariante ? $value->id_variante : NULL),
+            'lote' => ($value->statuslote ? $value->lote : NULL),
+            'nombre' => $value->text_proudcto,
+            'precio' => $value->precio_producto,
+            'preciocompra' => $productodata->preciocompra,
+            "cantidad" => $value->cantidad,
+            "subtotal" => $value->total_pagar,
+            "cantidadvariante" => ($value->statusvariante ? $cantidad_V : NULL),
+            "time" => date("H:i:s"),
+            "estado" => '1' // TODO Estado "1" Significa que cocina ya lo antendio
+          ];
+          $CantidadItem += $cantidadEscogido;
+          $DeudaTotal += $value->total_pagar;
+          $this->Controlador_model->save('ventadetalle', $dataVentaDetalle);
+          $this->ajax_descontar_stock($producto, $cantidadDescontar, $value->lote);
+        }
+        //? pagar venta
+        $venta = $this->Controlador_model->get($idventa, 'venta');
+        $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
+        $serie = substr($venta->tipoventa, 0, 1) . substr($empresa->serie, 1, 3);
+        $numero = $this->Controlador_model->codigos($venta->tipoventa, $serie);
+        $numeros = $numero ? $numero->consecutivo + 1 : 1;
+        $cadena = "";
+        for ($i = 0; $i < 6 - strlen($numeros); $i++) {
+          $cadena = $cadena . '0';
+        }
+        $deudaTotal = $this->input->post("deuda") - $this->input->post("descuento");
+        $dataventaUpdate['caja'] = $this->caja;
+        $dataventaUpdate['serie'] = $serie;
+        $dataventaUpdate['numero'] = $cadena . $numeros;
+        $dataventaUpdate['consecutivo'] = $numeros;
+        $dataventaUpdate['usuario_proceso'] = $this->usuario;
+        $dataventaUpdate['atender'] = "1";
+        $dataventaUpdate['sound'] = "1";
+        $dataventaUpdate['hf_procesado'] = date("Y-m-d H:i:s");
+        $dataventaUpdate['vence'] = $this->input->post('vence');
+        $dataventaUpdate['formapago'] = $this->input->post('formapago');
+        $dataventaUpdate['created'] = $this->input->post('fecha');
+        $dataventaUpdate['totalitems'] = $CantidadItem;
+        $dataventaUpdate['estado'] = '1';
+        //Datos deuda de la venta
+        $dataventaUpdate['montototal'] = $this->input->post("deuda");
+        $dataventaUpdate['descuento'] = $this->input->post("descuento");
+        $dataventaUpdate['deudatotal'] = $deudaTotal;
+        if ($this->input->post('formapago') == 'CONTADO') {
+          $dataventaUpdate['montoactual'] = 0;
+          $dataventaUpdate['pago'] = $this->input->post('pago');
+          $dataventaUpdate['vuelto'] = $this->input->post('pago') - $deudaTotal;
+          //? REGISTRO EN LA TABLA INGRESO
+          $dataingreso['tipo'] = 'VENTA';
+          $dataingreso['monto'] = $deudaTotal;
+          $dataingreso['empresa'] = $this->empresa;
+          $dataingreso['usuario'] = $this->usuario;
+          //? CONCEPTO 3 ES INGRESO EN EFECTIVO
+          //? CONCEPTO 23 ES INGRESO TRANSF. DINERO AREAS
+          $dataingreso['concepto'] = $this->input->post('metodopago') == "EFECTIVO" ? 3 : 28;
+          $dataingreso['caja'] = $this->caja;
+          $dataingreso['venta'] = $idventa;
+          $dataingreso['metodopago'] = $this->input->post('metodopago');
+          $dataingreso['tipotarjeta'] = $this->input->post('metodopago') == "TARJETA" ? $this->input->post('tipotarjeta') : NULL;
+          $dataingreso['created'] = date('Y-m-d');
+          $dataingreso['hora'] = date('H:i:s');
+          $this->Controlador_model->save('ingreso', $dataingreso);
+        } else {
+          $dataventaUpdate['montoactual'] = $deudaTotal;
+        }
+        $this->Controlador_model->update(array('id' => $idventa), $dataventaUpdate, 'venta');
+        $htmlComprobante = $this->input->post('formapago') == 'CONTADO' ? $this->printfcomprobante($idventa, $this->input->post('metodopago')) : "";
+        $this->NewVenta();
 
-        $dataVentaDetalle =  [
-          "venta" => $idventa,
-          'producto' => $producto,
-          "variante" => ($value->statusvariante ? $value->id_variante : NULL),
-          'lote' => ($value->statuslote ? $value->lote : NULL),
-          'nombre' => $value->text_proudcto,
-          'precio' => $value->precio_producto,
-          'preciocompra' => $productodata->preciocompra,
-          "cantidad" => $value->cantidad,
-          "subtotal" => $value->total_pagar,
-          "cantidadvariante" => ($value->statusvariante ? $cantidad_V : NULL),
-          "time" => date("H:i:s"),
-          "estado" => '1' // TODO Estado "1" Significa que cocina ya lo antendio
-        ];
-        $CantidadItem += $cantidadEscogido;
-        $DeudaTotal += $value->total_pagar;
-        $insert = $this->Controlador_model->save('ventadetalle', $dataVentaDetalle);
-        $this->ajax_descontar_stock($producto, $cantidadDescontar, $value->lote);
+
+        echo json_encode(["proceso" => ["status" => TRUE, "validate" => TRUE, "htmlcomprobante" => $htmlComprobante]]);
       }
-      $this->Actualiar_venta($CantidadItem, $DeudaTotal, $idventa);
-      echo json_encode(["proceso" => ["status" => TRUE]]);
     } else {
       $dataVenta = $this->db->where("id", $idventa)->where("estado", "1")->get("venta")->row();
       if ($dataVenta) {
@@ -2413,17 +2123,6 @@ class Inicio extends CI_Controller
 
   function Actualiar_venta($CantidadItem, $DeudaTotal, $idventa)
   {
-    $venta = $this->Controlador_model->get($idventa, 'venta');
-    $dataVenta = [
-      'usuario_proceso' => $this->usuario,
-      'montototal' => $venta->montototal + $DeudaTotal,
-      'montoactual' => $venta->montoactual + $DeudaTotal,
-      'totalitems' => $venta->totalitems + $CantidadItem,
-      'atender' => '1',
-      'sound' => '1',
-      'created' => date("Y-m-d")
-    ];
-    $updateVenta = $this->Controlador_model->update(['id' => $venta->id],  $dataVenta, 'venta');
   }
 
   function ajax_stockactual()
@@ -2618,8 +2317,6 @@ class Inicio extends CI_Controller
         $textTipo = "<label class='label label-purple' style='display:flex; justify-content:center; align-items:center'>COMBO $dataextrasProducto</label>";
       }
 
-     
-
       $queryLotes = $this->Controlador_model->queryLotes($this->empresa, $value->id, $dataEmpresa->almacen);
       if ($value->variante == "1" or $datacategoria->estadoextras == "1" or ($value->status_lote == "1" and $queryLotes->num_rows() > 1)) {
         $evento = ' onclick="agregarAdicionales(' . $value->id . ')" ';
@@ -2637,10 +2334,10 @@ class Inicio extends CI_Controller
       if ($value->tipo == '0') {
         $boton .= '<button class="btn  btn-info btn-sm" id="verStock-' . $value->id . '-0" onclick="verstockactual(' . $value->id . ', 0)" title="Ver Stock">STOCK <i class="fa fa-search"></i></button> ';
       }
-      $boton .= " <button  class='btn btn-sm btn-success' title='AGREGAR' $evento><i class='fa fa-shopping-cart'></i></button>";
+      $boton .= " <button  class='btn btn-sm btn-success' id='boton-producto-$value->id' title='AGREGAR' $evento><i class='fa fa-shopping-cart'></i></button>";
       $data[] = array(
         $key + 1,
-        $textTipo.$nombreProducto.$dataAdicionales,
+        $textTipo . $nombreProducto . $dataAdicionales,
         $value->codigoBarra,
         $datacategoria ? $datacategoria->nombre : "SIN DATOS",
         $value->precioventa,

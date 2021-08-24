@@ -21,7 +21,7 @@
                     <span class="help-block"></span>
                   </div>
                   <div class="col-lg-3">
-                    <button type="submit" onclick="detallesproductos()" id="botonprocesar" class="btn btn-primary">Procesar</button>
+                    <button onclick="detallesproductos()" id="botonprocesar" class="btn btn-primary">Procesar</>
                   </div>
                 </div>
               </div>
@@ -764,7 +764,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrado</button>
-          <button type="button" id="btnSave" onclick="savecategoria()" class="btn btn-primary">Guardar</button>
+          <button type="button" id="btnSaveCategoria" onclick="savecategoria()" class="btn btn-primary">Guardar</button>
         </div>
       </form>
     </div>
@@ -786,6 +786,7 @@
       max: 100
     });
     */
+   $("#nombrecategoria").mayusculassintildes();
     $("#nombrevariante").mayusculassintildes();
     $("#nombre").mayusculassintildes();
     $("#unidad").mayusculassintildes();
@@ -1958,19 +1959,15 @@
   }
 
   function savecategoria() {
-    $('#btnSavecategoria').text('GUARDANDO...'); //change button text
-    $('#btnSavecategoria').attr('disabled', true); //set button disable
-    var url;
-
+    $('#btnSaveCategoria').text('Guardando...'); //change button text
+    $('#btnSaveCategoria').attr('disabled', true); //set button disable
     if ($("#chkExtras").is(":checked")) {
       $("#chkExtras").val("1");
     } else {
       $("#chkExtras").val("0");
     }
-
-    // ajax adding data to database
     $.ajax({
-      url: "<?= $this->url ?>/ajax_addcategoria",
+      url: "<?= $this->url ?>/ajax_addcategoria/" + $("#tipo").val(),
       type: "POST",
       data: new FormData($("#formcategoria")[0]), //guardar un objeto o un arreglo en una base de datos metodo serialize.
       dataType: "JSON",
@@ -1978,6 +1975,8 @@
       processData: false,
       success: function(parametrorecibido) {
         if (parametrorecibido.status) {
+          $("#numero").val(parametrorecibido.codigoproducto.numero);
+          $("#codigo").val(parametrorecibido.codigoproducto.codigo);
           $('#categoria').empty();
           $('#categoria').append(`<option value=0>SELECCIONE</option>`)
           for (value of parametrorecibido.karl) {
@@ -1998,8 +1997,8 @@
           }
         }
 
-        $('#btnSavecategoria').text('Guardar'); //change button text
-        $('#btnSavecategoria').attr('disabled', false); //set button enable
+        $('#btnSaveCategoria').text('Guardar'); //change button text
+        $('#btnSaveCategoria').attr('disabled', false); //set button enable
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
@@ -2007,8 +2006,8 @@
           position: "top right",
           msg: '¡Error! Contactatese con el administrador'
         });
-        $('#btnSavecategoria').text('Guardar'); //change button text
-        $('#btnSavecategoria').attr('disabled', false); //set button enable
+        $('#btnSaveCategoria').text('Guardar'); //change button text
+        $('#btnSaveCategoria').attr('disabled', false); //set button enable
       },
     });
 

@@ -36,6 +36,7 @@ class Producto_model extends CI_Model
 		$this->db->where('categoria', $categoria);
 		return $this->db->get('producto')->row();
 	}
+	
 	public function codigoscategoria(){
 		return $this->db->select_max('numero')->where('empresa', $this->empresa)->get('productocategoria')->row();
 	}

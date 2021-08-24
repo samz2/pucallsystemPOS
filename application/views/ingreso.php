@@ -18,9 +18,8 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generado()" class="btn btn-warning" data-toggle="tooltip" data-placement="top" title="GENERAR"><i class="fa fa-upload"></i></a>
-            <a onclick="add()" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-            <a onclick="location.reload()" class="btn btn-success" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+            <a onclick="generado()" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top">BUSCAR <i class="fa fa-search"></i></a>
+            <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
           </div>
         </form>
       </div>
@@ -28,8 +27,9 @@
     <!-- /.col -->
     <div class="col-xs-12">
       <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="panel-heading" style="display:flex; align-items: center; justify-content: space-between">
           <h3 class="panel-title text-dark">Lista de <?= $this->titulo_controlador ?></h3>
+          <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO INGRESO <i class="fa fa-plus"></i></a>
         </div>
         <!-- /.box-header -->
         <div class="panel-body table-responsive">
@@ -37,11 +37,15 @@
             <thead>
               <tr>
                 <th>#</th>
+                <th>Caja</th>
+                <th>Metodo de ingreso</th>
+                <th>Usuario Responsable</th>
+                <th>Tipo ingreso</th>
                 <th>Recibo</th>
                 <th>Concepto</th>
                 <th>Observacion</th>
                 <th>Monto</th>
-                <th>Fecha</th>
+                <th>Fecha / Hora</th>
                 <th></th>
               </tr>
             </thead>
@@ -68,8 +72,8 @@
             <div class="form-group">
               <label class="control-label col-md-3">Caja<span class="required">*</span></label>
               <div class="col-md-9">
-              <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
-                    <?=$caja?>
+                <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
+                  <?= $caja ?>
                 </select>
                 <span class="help-block"></span>
               </div>
@@ -103,7 +107,7 @@
             <div class="form-group">
               <label class="control-label col-md-3">Fecha</label>
               <div class="col-md-9">
-                <input id="fecha" name="fecha" class="form-control" type="date" value="<?= date('Y-m-d') ?>">
+                <input id="fecha" name="fecha" class="form-control" type="date" value="<?= date('Y-m-d') ?>" readonly>
                 <span class="help-block"></span>
               </div>
             </div>
@@ -111,8 +115,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btnSave" onclick="save()" class="btn btn-primary">Guardar</button>
         <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+        <button type="button" id="btnSave" onclick="save()" class="btn btn-primary">Guardar</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
@@ -245,14 +249,20 @@
           type: "POST",
           dataType: "JSON",
           success: function(data) {
-            //if success reload ajax table
-            $('#modal_form').modal('hide');
-            reload_table();
-            Lobibox.notify('success', {
-              size: 'mini',
-              position: "top right",
-              msg: 'El registro fue eliminado exitosamente.'
-            });
+            if (data.status) {
+              $('#modal_form').modal('hide');
+              reload_table();
+              Lobibox.notify('success', {
+                size: 'mini',
+                position: "top right",
+                msg: 'El registro fue eliminado exitosamente.'
+              });
+            } else {
+              Lobibox.alert("info", {
+                title: "INFORMACION",
+                msg: "NO SE PUEDE ELIMINAR PORQUE LA CAJA YA ESTA CERRADA"
+              });
+            }
           },
           error: function(jqXHR, textStatus, errorThrown) {
             Lobibox.notify('error', {

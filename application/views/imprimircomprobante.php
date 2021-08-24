@@ -37,34 +37,29 @@
 </head>
 
 <body>
+  <div>
+    <img src="<?= base_url() . 'files/Setting/' . $empresa->ruc ?>.png" width="100%">
+  </div>
   <table>
     <tbody>
       <tr>
-        <td align="center"><img src="<?= base_url() . 'files/Setting/' . $empresa->ruc ?>.png" width="100%"></td>
+        <td align="center" class="negrita"><?= $empresa->nombre ?></td>
       </tr>
-      <?php if ($empresa->tipo == 0) { ?>
-        <tr>
-          <td align="center" class="negrita"><?= $empresa->nombre ?></td>
-        </tr>
-        <tr>
-          <td align="center"><?= $empresa->razonsocial ?></td>
-        </tr>
-      <?php } else { ?>
-        <tr>
-          <td align="center" class="negrita"><?= $empresa->razonsocial ?></td>
-        </tr>
-      <?php } ?>
+      <tr>
+        <td align="center"><?= $empresa->razonsocial ?></td>
+      </tr>
       <tr>
         <td align="center" class="negrita"><?= substr($empresa->direccion, 0, 30) ?></td>
       </tr>
+      <!-- Uno es direccion filcal y otro es la direccion donde se esta emitienedo el comprobante -->
       <tr>
         <td align="center" class="negrita"><?= $empresa->distrito . ' - ' . $empresa->provincia . ' - ' . $empresa->departamento ?></td>
       </tr>
       <tr>
-        <td align="center" class="negrita">RUC <?= $empresa->ruc ?></td>
+        <td align="center" class="negrita">R.U.C: <?= $empresa->ruc ?></td>
       </tr>
       <tr>
-        <td align="center"><?= ' TELF. ' . $empresa->telefono ?></td>
+        <td align="center">TELF: <?= $empresa->telefono ?></td>
       </tr>
       <tr>
         <td align="center" class="negrita"><?= $venta->tipoventa == 'OTROS' ? 'NOTA DE VENTA' : $venta->tipoventa . ' DE VENTA ELECTRONICA' ?></td>
@@ -103,97 +98,79 @@
   </table>
   <hr>
   <table>
-    <tr>
-      <th style="width: 20%;">[CANT.]</th>
-      <th style="width: 50%;">DESCRIPCION</th>
-      <th>P/U</th>
-      <th align="right">TOTAL</th>
-    </tr>
-    <?php if ($venta->consumo == '1') {  ?>
+    <thead>
       <tr>
-        <td colspan="4">Por consumo</td>
+        <th>DESCRIPCION</th>
+        <th>P/U</th>
+        <th style="text-align:center">[CANT.]</th>
+        <th align="right">IMPORTE</th>
       </tr>
-      <tr>
-        <td colspan="2">1</td>
-        <td><?= $venta->montototal ?></td>
-        <td align="right"><?= number_format($venta->montototal, 2) ?></td>
-      </tr>
-    <?php } else { ?>
-      <?php foreach ($ventadetalle as $value) { ?>
-        <?php if ($value->tipo == '0') { ?>
-          <?php
-          $producto = $this->Controlador_model->get($value->producto, 'producto');
-          $suma = $this->Controlador_model->sumacomanda($venta->id, $value->producto);
-          ?>
-          <tr>
-            <td colspan="4"><?= $value->nombre ?></td>
-          </tr>
-          <tr>
-            <?php if ($value->variante != NULL) { ?>
-              <?php $datavariante = $this->Controlador_model->get($value->variante, "productovariante") ?>
-              <td colspan="2">[ <?= ($suma->cantidad *  $datavariante->cantidad) ?> ] <?= $producto->codigo ?></td>
-
-            <?php } else { ?>
-              <td colspan="2">[ <?= $suma->cantidad ?> ] <?= $producto->codigo ?></td>
-            <?php } ?>
-
-
-            <td><?= $value->precio ?></td>
-            <td align="right"><?= number_format($suma->cantidad * $value->precio, 2) ?></td>
-          </tr>
-        <?php } else { ?>
-          <tr>
-            <td colspan="4"><?= $value->nombre ?></td>
-          </tr>
-          <tr>
-            <td colspan="2">[ <?= 1 ?> ]</td>
-            <td><?= $value->subtotal ?></td>
-            <td align="right"><?= number_format($value->subtotal, 2) ?></td>
-          </tr>
+    </thead>
+    <tbody>
+      <?php if ($venta->consumo == '1') {  ?>
+        <tr>
+          <td>POR CONSUMO</td>
+          <td style="text-align:center"><?= number_format($venta->montototal, 2) ?></td>
+          <td style="text-align:center">1</td>
+          <td align="right"><?= number_format($venta->montototal, 2) ?></td>
+        </tr>
+      <?php } else { ?>
+        <?php foreach ($ventadetalle as $value) { ?>
+          <?php if ($value->tipo == '0') { ?>
+            <?php
+            $producto = $this->Controlador_model->get($value->producto, 'producto');
+            $suma = $this->Controlador_model->sumacomanda($venta->id, $value->producto);
+            ?>
+            <tr>
+              <?php $datavariante = $this->Controlador_model->get($value->variante, "productovariante");
+              $totalItems = $value->variante ? $suma->cantidad *  $datavariante->cantidad : $suma->cantidad;
+              ?>
+              <td><?= $value->nombre . " " . $producto->codigo ?>[<?= $totalItems ?>]</td>
+              <td style="text-align:center"><?= $value->precio ?></td>
+              <td style="text-align:center">[ <?= $suma->cantidad ?> ]</td>
+              <td align="right"><?= number_format($suma->cantidad * $value->precio, 2) ?></td>
+            </tr>
+          <?php } else { ?>
+            <tr>
+              <td><?= $value->nombre ?></td>
+              <td><?= $value->subtotal ?></td>
+              <td style="text-align:center"><?= $value->cantidad ?></td>
+              <td align="right"><?= number_format($value->subtotal, 2) ?></td>
+            </tr>
+          <?php } ?>
         <?php } ?>
       <?php } ?>
-    <?php } ?>
+    </tbody>
+
 
   </table>
   <hr>
   <table>
+    <tr>
+      <th align="right" colspan="3">DESCUENTO</th>
+      <th align="right"><?= $venta->descuento ?></th>
+    </tr>
     <?php if ($venta->tipoventa <> 'OTROS') { ?>
       <tr>
-        <th align="right" colspan="2">OP. EXONERADA</th>
-        <th align="center">S/</th>
-        <th align="right"><?= $venta->montototal ?></th>
-      </tr>
-      <tr>
-        <th align="right" colspan="2">IGV</th>
-        <th align="center">S/</th>
+        <th align="right" colspan="3">IGV S/</th>
         <th align="right">0.00</th>
       </tr>
-    <?php } ?>
-    <tr>
-      <th align="right" colspan="2">TOTAL</th>
-      <th align="center">S/</th>
-      <th align="right"><?= $venta->montototal ?></th>
-    </tr>
-    <?php $vuelto = 0; ?>
-    <?php foreach ($ingresos as $value) { ?>
-      <?php if ($value->metodopago == 'EFECTIVO') { ?>
-        <?php $vuelto = $venta->pago - $value->monto; ?>
-      <?php } ?>
       <tr>
-        <th align="right" colspan="2">PAGO (<?= $value->metodopago ?>)</th>
-        <th align="center">S/</th>
-        <th align="right"><?= $value->monto ?></th>
+        <th align="right" colspan="3">OP. EXONERADA S/</th>
+        <th align="right"><?= $venta->deudatotal ?></th>
       </tr>
     <?php } ?>
     <tr>
-      <th align="right" colspan="2">RECIBIO</th>
-      <th align="center">S/</th>
+      <th align="right" colspan="3">TOTAL S/</th>
+      <th align="right"><?= $venta->deudatotal ?></th>
+    </tr>
+    <tr>
+      <th align="right" colspan="3">RECIBIO S/</th>
       <th align="right"><?= $venta->pago ?></th>
     </tr>
     <tr>
-      <th align="right" colspan="2">VUELTO</th>
-      <th align="center">S/</th>
-      <th align="right"><?= number_format($vuelto, 2) ?></th>
+      <th align="right" colspan="3">VUELTO S/</th>
+      <th align="right"><?= number_format($venta->vuelto, 2) ?></th>
     </tr>
   </table>
   <hr>
@@ -213,7 +190,7 @@
   <hr>
   <table>
     <?php if ($venta->tipoventa == 'OTROS') { ?>
-      <!-- <tr>
+       <tr>
           <td align="center">PUEDE CAMBIAR POR BOLETA/FACTURA</td>
         </tr>
         <tr>
@@ -224,7 +201,7 @@
         </tr>
         <tr>
           <td align="center">GRACIAS POR SU COMPRA</td>
-        </tr> -->
+        </tr> 
     <?php } else { ?>
       <tr>
         <td align="center">NO SE ACEPTAN DEVOLUCIONES Y/O</td>
@@ -236,7 +213,7 @@
         <td>&nbsp;</td>
       </tr>
       <tr>
-        <td align="center"><img src="<?= $qrcode ?>" alt="" width="50"></td>
+        <td align="center"><img src="<?= $qrcode ?>" alt="" width="80"></td>
       </tr>
       <tr>
         <td>&nbsp;</td>

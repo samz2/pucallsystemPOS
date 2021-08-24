@@ -89,7 +89,7 @@
                 </div>
                 <div class="col-md-12" id="content-cantidadcompra">
                   <div class="form-group">
-                    <label for="cantidad">cantidad de compra</label>
+                    <label for="cantidad">cantidad de ingreso</label>
                     <input type="number" class="form-control" id="cantidad" name="cantidad" onchange="if(event.keyCode == 13) { savedetalle() }">
                     <span class="help-block"></span>
                   </div>
@@ -98,7 +98,7 @@
 
               <div class="row">
                 <div class="col-lg-12 text-right">
-                  <button type="submit" class="btn btn-success waves-effect waves-light" id="btnSaveDetalle" onclick="savedetalle()">Agregar</button>
+                  <button type="submit" class="btn btn-success waves-effect waves-light" id="btnSaveDetalle" onclick="savedetalle()">AGREGAR <i class="fa fa-shopping-cart"></i></button>
                 </div>
               </div>
             </form>
@@ -754,7 +754,7 @@
   };
 
   function savedetalle() {
-    $('#btnSaveDetalle').html('Agregar <i class="fa fa-spin fa-spinner"></i>'); //change button text
+    $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-spin fa-spinner"></i>'); //change button text
     $('#btnSaveDetalle').attr('disabled', true); //set button disable
     // ajax adding data to database
     $.ajax({
@@ -782,7 +782,7 @@
             $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
           }
         }
-        $('#btnSaveDetalle').text('Agregar'); //change button text
+        $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-shopping-cart"></i>'); //change button text
         $('#btnSaveDetalle').attr('disabled', false); //set button enable
       },
       error: function(jqXHR, textStatus, errorThrown) {
@@ -791,7 +791,7 @@
           position: "top right",
           msg: 'El registro no se pudo crear verifique las validaciones.'
         });
-        $('#btnSaveDetalle').text('Agregar'); //change button text
+        $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-shopping-cart"></i>'); //change button text
         $('#btnSaveDetalle').attr('disabled', false); //set button enable
       }
     });

@@ -3,6 +3,7 @@
   <div class="row">
     <div class="col-md-12">
       <div class="panel panel-default">
+
         <div class="panel-heading">
           <h3 class="panel-title"><?= $this->titulo_controlador ?> Especifico</h3>
         </div>
@@ -379,8 +380,7 @@
     }
   };
 
-  function restaurarcaja(idcaja) {
-
+  function restaurarcaja(idcaja, empresa) {
     Lobibox.confirm({
       title: "¡Avertencia!",
       msg: "¿Estas seguro que de restablecer este CAJA?",
@@ -397,8 +397,12 @@
       callback: function($this, type) {
         if (type == 'ok') {
           $.ajax({
-            url: "<?= $this->url ?>/restaurar/" + idcaja,
+            url: "<?= $this->url ?>/restaurar",
             type: "POST",
+            data: {
+              idcaja : idcaja,
+              empresa : empresa
+            },
             dataType: 'JSON',
             success: function(data) {
               if(data.status){

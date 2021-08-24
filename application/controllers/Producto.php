@@ -282,12 +282,6 @@ class Producto extends CI_Controller
     }
 
     if ($this->input->post('tipo') == '0') {
-      if ($this->input->post('categoria') == '') {
-        $data['inputerror'][] = 'categoria';
-        $data['error_string'][] = 'Este campo es obligatorio.';
-        $data['status'] = FALSE;
-      }
-
       if ($this->input->post('preciocompra') == '') {
         $data['inputerror'][] = 'preciocompra';
         $data['error_string'][] = 'Este campo es obligatorio.';
@@ -307,6 +301,12 @@ class Producto extends CI_Controller
       }
     }
 
+    if ($this->input->post('categoria') == '0') {
+      $data['inputerror'][] = 'categoria';
+      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
     if ($data['status'] === FALSE) {
       echo json_encode($data);
       exit();
@@ -315,13 +315,11 @@ class Producto extends CI_Controller
 
   public function ajax_add()
   {
+    $this->_validate();
     $variante = 0;
     if (!is_null($this->input->post('chkVariante'))) {
       $variante = $this->input->post('chkVariante');
     }
-
-
-    $this->_validate();
     $config['upload_path'] = './files/products/';
     $config['encrypt_name'] = TRUE;
     $config['allowed_types'] = 'gif|jpg|jpeg|png';
@@ -657,6 +655,8 @@ class Producto extends CI_Controller
       show_404();
     }
   }
+
+  
 
   function insertarNew()
   {
@@ -1854,8 +1854,25 @@ class Producto extends CI_Controller
     }
   }
 
+  public function conseguircodigo($tipoproducto, $categoria)
+  {
+      $tipo = $tipoproducto;
+      $categoria = $categoria;
+      $numero = $this->Controlador_model->codigos($tipo, $categoria);
+      $numeros = $numero ? $numero->numero + 1 : 1;
+      $cadena = "";
+      for ($i = 0; $i < 3 - strlen($numeros); $i++) {
+        $cadena = $cadena . '0';
+      }
+      $categorias = $this->Controlador_model->get($categoria, 'productocategoria');
+      $codigo1 = $categorias ? $categorias->id : '00';
+      $codigo = substr($categorias->nombre, 0, 1) . $tipo . $codigo1 . $cadena . $numeros;
+      $output = array("codigo" => $codigo, "numero" => $numeros);
+      return $output;
+  }
 
-  function ajax_addcategoria()
+
+  function ajax_addcategoria($tipoproducto)
   {
     $this->_validateCategoria();
 
@@ -1904,8 +1921,9 @@ class Producto extends CI_Controller
     $insert = $this->Controlador_model->save("productocategoria", $data);
 
     if ($insert) {
+      $dataCodigo = $this->conseguircodigo($tipoproducto, $insert);
       $categorias = $this->db->order_by("nombre", "ASC")->get("productocategoria")->result();
-      echo json_encode(["status" => TRUE, "karl" => $categorias, "idregistrado" => $insert]);
+      echo json_encode(["status" => TRUE, "karl" => $categorias, "idregistrado" => $insert, "codigoproducto" => $dataCodigo]);
     }
   }
 

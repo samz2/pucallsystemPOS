@@ -109,12 +109,13 @@ class Venta extends CI_Controller
       $data[] = array(
         $no,
         $caja->descripcion,
+        $value->formapago,
         $value->tipoventa,
         $value->serie . '-' . $value->numero,
         $cliente->nombre,
         '<span class="label label-success">GENERADO</span>',
         $estado_sunat[$value->emision],
-        $value->montototal,
+        $value->deudatotal,
         $value->created,
         $boton
       );
@@ -133,6 +134,7 @@ class Venta extends CI_Controller
       $data[] = array(
         $no,
         $caja->descripcion,
+        $value->formapago,
         $value->tipoventa,
         $value->serie . '-' . $value->numero,
         $cliente->nombre,
@@ -880,131 +882,101 @@ class Venta extends CI_Controller
     return $cabecera;
   }
 
-  public function ShowTicket($id)
+  public function printfcomprobante($idventa)
   {
-    $sale = $this->Controlador_model->get($id, 'venta');
-    $cliente = $this->Controlador_model->get($sale->cliente, 'cliente');
-    $empresa = $this->Controlador_model->get($sale->empresa, 'empresa');
-    $posales = $this->Controlador_model->getVentaDetalle($id);
-    $ticket = '
-    <div class="col-md-12">
-    <div class="text-center">' . $empresa->razonsocial . '</div>
-    <div class="text-center">RUC: ' . $empresa->ruc . '</div>
-    <h4 class="text-center">Venta Núm: ' . $sale->serie . '-' . $sale->numero . '</h4>
-    <div>Fecha: ' . $sale->created . ' ' . $sale->hora . '</div>
-    <div>Documento: ' . ($sale->cliente ? $cliente->documento : '') . '</div>
-    <div>Cliente: ' . ($sale->cliente ? substr($cliente->nombre, 0, 50) : '') . '</div>
-    <div>Direccion: ' . ($sale->cliente ? substr($cliente->direccion, 0, 50) : '') . '</div>';
-    if ($sale->estado == "3") {
-      $ticket .= "<div>Motivo: $sale->anular_motivo </div>";
-    }
-    $ticket .= '
-    <table class="table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Descripcion</th>
-        <th>Precio</th>
-        <th>Cant</th>
-        <th>SubTotal</th>
-    </tr>
-   </thead>
-   <tbody>';
-    $i = 1;
-    foreach ($posales as $posale) {
-      $producto = $this->Controlador_model->get($posale->producto, 'producto');
-      $ticket .= '
-      <tr>
-        <td>' . $i . '</td>
-        <td>' . $posale->nombre . '</td>
-        <td>' . $posale->precio . '</td>
-        <td>' . $posale->cantidad . '</td>
-        <td style="text-align:right;">' . number_format(($posale->precio * $posale->cantidad), 2) . '</td>
-      </tr>';
-      $i++;
-    }
-    // barcode codding type
-    $ticket .= '
-    </tbody>
-    </table>
-
-    <table class="table" cellspacing="0" border="0" style="margin-bottom:8px;">
-    <tbody>
-      <tr>
-        <td colspan="2" style="text-align:left;">Total de Venta</td>
-        <td colspan="2" style="text-align:right;font-weight:bold;">' . number_format(($sale->montototal - $sale->descuento), 2) . ' Soles</td>
-      </tr>
-
-      <tr>
-        <td colspan="2" style="text-align:left;">IGV</td>
-        <td colspan="2" style="text-align:right;font-weight:bold;">' . number_format(0, 2) . ' Soles</td>
-      </tr>';
-    $ticket .= '
-      <tr>
-        <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Grand Total</td>
-        <td colspan="2" style="border-top:1px dashed #000; padding-top:5px; text-align:right; font-weight:bold;">' . number_format($sale->montototal, 2) . ' Soles</td>
-      </tr>
-
-      ';
-    $ticket .= '
-      <tr>
-        <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Descuento</td>
-        <td colspan="2" style="border-top:1px dashed #000; padding-top:5px; text-align:right; font-weight:bold;">' . $sale->descuento . ' Soles</td>
-      </tr>
-
-    ';
-    $payements = $this->Controlador_model->getDetalle($id, 'ingreso');
-    $vuelto = 0;
-    foreach ($payements as $pay) {
-      if ($pay->metodopago == 'EFECTIVO') {
-        $vuelto = $sale->pago - $pay->monto;
+    $venta = $this->Controlador_model->get($idventa, 'venta');
+    $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
+    $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
+    $ingreso = $this->db->where("venta", $idventa)->get('ingreso')->row();
+    $htmlComprobante = "
+       <h4 class='text-center'> $venta->serie - $venta->numero</h4>
+          <span class='float-left'>Fecha: $venta->created</span><br>
+          <span class='float-left'>Cliente: " . ($cliente ? $cliente->nombre : 'SIN DATOS') . "</span>
+        <table class='table'>
+        <thead>
+          <tr>
+            <th class='text-center'>#</th>
+            <th class='text-center'>Descripcion</th>
+            <th class='text-center'>Cant</th>
+            <th class='text-right;' style='width:100px'>Importe S/</th>
+          </tr>
+        </thead>
+        <tbody>";
+    if ($venta->consumo == '1') {
+      $htmlComprobante .=
+        "<tr>
+          <td class='text-center'>1</td>
+          <td class='text-center'>Por consumo</td>
+          <td class='text-center'>1</td>
+          <td class='text-right'>" . number_format($venta->deudatotal, 2) . "</td>
+        </tr>";
+    } else {
+      $ventadetalle = $this->Controlador_model->pedidodetalle($idventa);
+      foreach ($ventadetalle as $key => $value) {
+        $htmlComprobante .=
+          "<tr>
+            <td class='text-center'>" . ($key + 1) . "</td>
+            <td class='text-center'> $value->nombre [" . ($value->variante ? ($value->cantidadvariante * $value->cantidad) : $value->cantidad) . "]</td>
+            <td class='text-center'>$value->cantidad</td>
+            <td class='text-right'>" . number_format($value->cantidad * $value->precio, 2) . "</td>
+            </tr>";
       }
-      $ticket .= '
-       <tr>
-        <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Pago (' . $pay->metodopago . ')</td>
-        <td colspan="2" style="padding-top:5px; text-align:right; font-weight:bold;">' . number_format($pay->monto, 2) . ' Soles</td>
-      </tr>';
     }
-    $ticket .= '
-    <tr>
-      <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Recibio</td>
-      <td colspan="2" style="padding-top:5px; text-align:right; font-weight:bold;">' . number_format($sale->pago, 2) . ' Soles</td>
-    </tr>';
-    $ticket .= '
-    <tr>
-      <td colspan="2" style="text-align:left; font-weight:bold; padding-top:5px;">Vuelto</td>
-      <td colspan="2" style="padding-top:5px; text-align:right; font-weight:bold;">' . number_format($vuelto - $sale->descuento, 2) . ' Soles</td>
-    </tr>
 
+    $htmlComprobante .= "
     </tbody>
-    </table>';
+    <tfoot>
+      <tr>
+          <td colspan='3' style='text-align:right; font-weight:bold;'>Total S/</td>
+          <td style='text-align:right; font-weight:bold;'> $venta->montototal</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none'>Descuento S/</td>
+        <td style='text-align:right; font-weight:bold; border:none'> $venta->descuento</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none; color:#36a229''>Pagado(".($ingreso ? $ingreso->metodopago : 'SIN DATOS').") S/</td>
+        <td style='text-align:right; font-weight:bold; border:none; color:#36a229'> $venta->deudatotal</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none;'>Recibido S/</td>
+        <td style='text-align:right; font-weight:bold; border:none;'>$venta->pago</td>
+      </tr>
+      <tr>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none'>Vuelto S/</td>
+        <td style='text-align:right; font-weight:bold; border:none'>$venta->vuelto</td>
+      </tr>
+    </tfoot>
+    </table>";
 
-    $htmlEnvio = '<div class="row">';
-    $htmlEnvio .= '<div class="col-lg-6">';
-    $htmlEnvio .= '<div class="input-group input-group-sm">';
-    $htmlEnvio .= '<input type="email" id="correo" class="form-control" autocomplete="off" placeholder="correo@pucallsystem.com" value="' . ($cliente->correo != "" ? $cliente->correo : "") . '">';
-    $htmlEnvio .= '<span class="input-group-btn" id="span-print">';
-    $htmlEnvio .= '<button id="enviarcorreo" class="btn btn-success" onclick="sendMail(' . $sale->id . ')" type="button">';
-    $htmlEnvio .= '<i class="fa fa-paper-plane" aria-hidden="true"></i>';
-    $htmlEnvio .= '</button>';
-    $htmlEnvio .= '</span>';
-    $htmlEnvio .= ' </div>';
-    $htmlEnvio .= '</div>';
-
-    $htmlEnvio .= '
-    <div class="col-lg-6">
-    <div class="input-group input-group-sm">
-    <span class="input-group-addon" id="sizing-addon3">+51</span>
-    <input type="text" id="telefonoWP" class="form-control" placeholder="999999999" value="' . ($cliente->telefono != "" ? $cliente->telefono : "")  . '" autocomplete="off">
-    <span class="input-group-btn" id="span-print">
-      <button class="btn btn-success" onclick="sentTicketWA(' . $sale->id . ')" type="button"><i class="fa fa-whatsapp" aria-hidden="true"></i></button>
-    </span> 
+    $telefono = $cliente->telefono != "" ? $cliente->telefono : "";
+    $email = $cliente->correo != "" ? $cliente->correo : "";
+    $htmlFotter = "
+    <div class='row' style='margin-bottom:10px'>
+      <div class='col-md-6'>
+        <div class='input-group input-group-sm'>
+          <input type='email' id='correo' class='form-control' placeholder='correo@pucallsystem.com' value='$email'>
+          <span class='input-group-btn' id='span-print'>
+            <button id='enviarcorreo' class='btn btn-success' onclick='sendMail($idventa)' type='button'>
+            <i class='fa fa-paper-plane' aria-hidden='true'></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class='col-md-6'>
+        <div class='input-group input-group-sm'>
+        <span class='input-group-addon' id='sizing-addon3'>+51</span>
+        <input type='text' id='telefonoWP' class='form-control' placeholder='999999999' value='$telefono' autocomplete='off'>
+        <span class='input-group-btn' id='span-print'>
+          <button class='btn btn-success' onclick='sentTicketWA($idventa)' type='button'><i class='fa fa-whatsapp' aria-hidden='true'></i></button>
+        </span> 
+        </div>
+      </div>
     </div>
-    </div>';
+   <button data-dismiss='modal' class='btn btn-default hiddenpr'>Cerrar</button>
+   <button class='btn btn-add' onclick='imprimircomprobante($empresa->tipoimpresora , $idventa)' id='btncomprobante'>Imprimir</button>";
 
-    $htmlEnvio .= '</div>';
-
-    echo json_encode(["htmlTable" => $ticket, "htmlEnvio" => $htmlEnvio]);
+    echo json_encode(["htmlComprobante" => $htmlComprobante, "htmlFotter" => $htmlFotter]);
   }
 
   public function imprimir($id)

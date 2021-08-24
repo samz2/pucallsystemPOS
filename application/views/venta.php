@@ -28,8 +28,8 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="verventas()" class="btn btn-warning" data-toggle="tooltip" title="GENERAR"><i class="fa fa-upload"></i></a>
-            <a onclick="enviomasivo_documento_electronico()" class="btn btn-danger" data-toggle="tooltip" title="ENVIO MASIVO"><i class="fa fa-upload"></i></a>
+            <a onclick="verventas()" class="btn btn-warning" data-toggle="tooltip">Buscar <i class="fa fa-search"></i></a>
+            <a onclick="enviomasivo_documento_electronico()" class="btn btn-danger" data-toggle="tooltip">Envio masivo <i class="fa fa-upload"></i></a>
             <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
           </div>
         </form>
@@ -50,6 +50,7 @@
               <tr>
                 <th>#</th>
                 <th>Caja</th>
+                <th>Metodo pago</th>
                 <th>Tipo</th>
                 <th>Venta</th>
                 <th>Cliente</th>
@@ -70,16 +71,16 @@
 
 <!-- Modal ticket -->
 <div class="modal fade in" id="modal_ventadetalle" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title">COMPROBANTE</h4>
       </div>
       <div class="modal-body">
-        <div class="form-body table-responsive" id="printSection"></div>
+        <div class="form-body table-responsive" id="modal-dataVenta"></div>
       </div>
-      <div class="modal-footer" id="envioventa">
+      <div class="modal-footer" id="modal-fotter-cerrar">
 
       </div>
     </div>
@@ -322,15 +323,15 @@
     }
   };
 
-  function showTicket(id) {
+  function showTicket(id, metodopago) {
     $.ajax({
-      url: "<?= $this->url ?>/ShowTicket/" + id,
+      url: "<?= $this->url ?>/printfcomprobante/" + id ,
       type: "POST",
       dataType: "JSON",
       success: function(data) {
-        $('#printSection').html(data.htmlTable);
-        $('#envioventa').html(data.htmlEnvio);
-
+        $('.modal-title').text('COMPROBANTE');
+        $('#modal-dataVenta').html(data.htmlComprobante);
+        $('#modal-fotter-cerrar').html(data.htmlFotter);
         $('#modal_ventadetalle').modal('show');
       },
       error: function(jqXHR, textStatus, errorThrown) {

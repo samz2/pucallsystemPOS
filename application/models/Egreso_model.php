@@ -47,4 +47,11 @@ class Egreso_model extends CI_Model {
     return $dataHtmlCaja;
   }
 
+  function getEgresoEmpresa($finicio, $factual, $tabla){
+    $this->db->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
+    $this->db->where("compra IS NOT NULL");
+    $this->db->order_by('id', 'desc');
+    return $this->db->get($tabla)->result();
+  }
+
 }

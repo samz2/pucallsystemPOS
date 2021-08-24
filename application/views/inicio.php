@@ -387,6 +387,10 @@
     </div>
   </div>
 <?php } else { ?>
+  <?php
+  $dataCaja = $this->Controlador_model->get($this->caja, "caja");
+  $dataUsuario = $this->Controlador_model->get($dataCaja->usuario, "usuario");
+  ?>
   <input id="tresPasos" type="hidden" value="<?= $empresa->pasos ?>">
   <ul class="cbp-vimenu" id="opcionmenu"></ul>
   <ul class="cbp-vimenu" id="opcionmenuPedidoVenta" style="display:none">
@@ -394,7 +398,12 @@
       <a onclick="salirPedidoVenta()" id="botonSalirVenta"><i class="fa fa-arrow-left" style="font-size:35px" aria-hidden="true"></i></a>
     </li>
   </ul>
-  <?php $dataPerfil = $this->Controlador_model->get($this->perfil, "perfil"); ?>
+  <?php 
+  $dataPerfil = $this->Controlador_model->get($this->perfil, "perfil");
+  $seperar = explode(" ", $dataCaja->apertura);
+  $diassemana = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
+  $meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  ?>
   <?php if ($dataPerfil->cobradorcaja === '1') { ?>
     <?php $datosCaja = $this->Controlador_model->get($this->caja, "caja"); ?>
     <input id="cobradorCaja" value="1" type="hidden">
@@ -433,275 +442,242 @@
     </div>
 
     <div class="cajon" id="contenedorProcesoPago" style="display:none">
-      <div class="col-lg-8 col-md-8 CategriaSeleccionar" id="izquierda" style="height:87vh; overflow:auto">
-        <div class="panel panel-border-default">
-          <div class="panel-heading">
-            <h3 class="panel-title text-title-panel">
-            <a onclick="refrescarData()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529">Recargar productos <i class="fa fa-retweet" style="font-size:16px;"></i></a>
-            </h3>
-          </div>
-          <div class="panel-body table-responsive">
-            <table id="tableDataProductos" class="table table-striped table-bordered">
-              <thead>
-                <tr class="text-title-panel">
-                  <th>#</th>
-                  <th>Nombre</th>
-                  <th>C. Barra</th>
-                  <th>Categoria</th>
-                  <th>Precio</th>
-                  <th> <span style="padding-right:50px">Acciones BTN</span> </th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-        <!-- Trae todas las categorias-->
-        <!-- <div class="row" id="topbuscador">
-          <div class="col-sm-6">
-            <div id="searchContaner">
-              <div class="input-group stylish-input-group">
-                <input type="text" id="searchProd" class="form-control" placeholder="Buscar" autocomplete="off">
-                <span class="input-group-addon">
-                  <button type="submit"><span class="glyphicon glyphicon-search"></span></button>
-                </span>
-              </div>
+
+      <div class="row">
+        <div class="col-lg-8 col-md-8">
+          <label class="label label-default" style="font-size: 12px;display: flex;justify-content: space-around;margin: 0px;padding: 3px;border-radius: 0px 3px;">
+            <span><?= $dataCaja->descripcion ?></span>
+            <span>ENCARGADO: <?= strtoupper($dataUsuario->usuario) ?></span>
+            <span>APERTURADO: <?= strtoupper($diassemana[date("w", strtotime($seperar[0]))])." ".date("d", strtotime($seperar[0]))." DE ".strtoupper($meses[date("n", strtotime($seperar[0])) - 1]).". HORA: ".date("g:i A", strtotime($seperar[1])); ?></span>
+          </label>
+          <div class="panel panel-border-default CategriaSeleccionar" id="izquierda" style="height: 82vh;overflow:auto;margin: 0px;">
+            <div class="panel-heading">
+              <h3 class="panel-title text-title-panel">
+                <a onclick="datosProductosVenta()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529">Recargar productos <i class="fa fa-retweet" style="font-size:16px;"></i></a>
+              </h3>
+            </div>
+            <div class="panel-body table-responsive">
+              <table id="tableDataProductos" class="table table-striped table-bordered">
+                <thead>
+                  <tr class="text-title-panel">
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>C. Barra</th>
+                    <th>Categoria</th>
+                    <th>Precio</th>
+                    <th> <span style="padding-right:50px">Acciones BTN</span> </th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
           </div>
-          <div class="col-sm-6 col-xs-6 text-right" id="retrocederFila">
-            <button class="btn btn-amarillo col-xs-12 col-md-12" style="margin:5px 0px" onclick="retroceder()">Regresar</button>
-          </div>
-        </div> -->
-        <!--
-        <div id="CategriaSeleccionar" class="CategriaSeleccionar" style="height:80vh; overflow:auto">
+          <label class="label label-default" style="font-size: 15px;display: flex;justify-content: space-around;margin: 0px;padding: 3px;border-radius: 3px 0px;">
+            <span>PUCALLSYSTEM</span>
+          </label>
         </div>
-        <div id="Categoriaproducto" style="height:79vh; overflow-y:auto; overflow-x:hidden">
-        </div>-->
-        <!--Aca se rellena todos los productos de todas las categorias -->
-        <!--
-        <div id="CategoriaproductoTodos" class="CategriaSeleccionar" style="display:none; height:80vh; overflow:auto">
-        </div>-->
-        <!-- <span class="categories selectedGat" id=""><i class="fa fa-home"></i></span> -->
-      </div>
-      <div class="col-lg-4 col-md-4" id="derecha">
-        <!-- ............................. -->
-        <div class="row">
-          <div class="col-lg-12" style="margin:10px">
-            <input id="ventaseleccionada" type="hidden">
-            <form action="" class="form-horizontal" id="form_principal" method="POST" role="form">
-              <div class="row" id="content-referencia" style="display:none">
-                <div class="col-sm-12">
-                  <input type="text" class="form-control" name="referencia" id="referencia" placeholder="Referencia..." autocomplete="off">
-                  <span class="help-block"></span>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-sm-12" style="margin-bottom:10px">
-                  <div class="input-group">
-                    <span class="input-group-addon" id="busquedacodigobarra">
-                      <i class="fa fa-search"></i>
-                    </span>
-                    <input autocomplete="off" type="text" id="codigodebarra" name="codigodebarra" class="form-control" placeholder="Codigo de barra">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-sm-12" style="margin-bottom:10px">
-                  <div class="input-group">
-                    <input type="text" class="form-control limpiar" placeholder="CLIENTE" name="clientes" id="clientes">
-                    <span class="help-block"></span>
-                    <input type="hidden" class="form-control" name="cliente" id="cliente">
-                    <span class="input-group-btn">
-                      <button type="button" class="btn waves-effect waves-light btn-primary" onclick="grabarcliente()"><i class="fa fa-user-plus"></i></button>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-sm-12 col-xs-12">
-                  <select id="tipoventa" name="tipoventa" class="form-control" onchange="save()">
-                    <option value="OTROS">TICKET</option>
-                    <option value="BOLETA">BOLETA</option>
-                    <option value="FACTURA">FACTURA</option>
-                  </select>
-                  <span class="help-block"></span>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-        <!-- // ? Esto es la parte CENTER -->
-        <div class="row partecenter">
+        <div class="col-lg-4 col-md-4" id="derecha">
+          <!-- ............................. -->
           <div class="row">
-            <div class="col-lg-12" id="pedidosventa">
+            <div class="col-lg-12" style="margin:10px">
+              <input id="ventaseleccionada" type="hidden">
+              <form action="" class="form-horizontal" id="form_principal" method="POST" role="form">
+                <div class="row" id="content-referencia" style="display:none">
+                  <div class="col-sm-12">
+                    <input type="text" class="form-control" name="referencia" id="referencia" placeholder="Referencia..." autocomplete="off">
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-12" style="margin-bottom:10px">
+                    <div class="input-group">
+                      <span class="input-group-addon" id="busquedacodigobarra">
+                        <i class="fa fa-search"></i>
+                      </span>
+                      <input autocomplete="off" type="text" id="codigodebarra" name="codigodebarra" class="form-control" placeholder="Codigo de barra">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-12" style="margin-bottom:10px">
+                    <div class="input-group">
+                      <input type="text" class="form-control limpiar" placeholder="CLIENTE" name="clientes" id="clientes">
+                      <span class="help-block"></span>
+                      <input type="hidden" class="form-control" name="cliente" id="cliente">
+                      <span class="input-group-btn">
+                        <button type="button" class="btn waves-effect waves-light btn-primary" onclick="grabarcliente()"><i class="fa fa-user-plus"></i></button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-12 col-xs-12">
+                    <select id="tipoventa" name="tipoventa" class="form-control" onchange="save()">
+                      <option value="OTROS">TICKET</option>
+                      <option value="BOLETA">BOLETA</option>
+                      <option value="FACTURA">FACTURA</option>
+                    </select>
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-        <!-- ............................. -->
-        <!-- // ? Esto es la parte BOTTOM -->
-        <div class="row">
-          <div class="col-lg-12">
-            <table class="table">
-              <tr>
-                <td class="active" width="40%" style="font-weight: bold;">Totales</td>
-                <td class="whiteBg" width="60%">
-                  <span class="float-left">
-                    <span id="ItemsNumVenta"><span></span> Item</span>
-                  </span>
-                  <span id="SubtotVenta"></span>
-                </td>
-              </tr>
-            </table>
-            <button type="button" id="ProcesarVenta" class="btn btn-green col-xs-12 col-md-12" onclick="grabar()">PROCESAR VENTA</button>
+          <!-- // ? Esto es la parte CENTER -->
+          <div class="row partecenter">
+            <div class="row">
+              <div class="col-lg-12" id="pedidosventa">
+              </div>
+            </div>
           </div>
+          <!-- ............................. -->
+          <!-- // ? Esto es la parte BOTTOM -->
+          <div class="row">
+            <div class="col-lg-12">
+              <table class="table">
+                <tr>
+                  <td class="active" width="40%" style="font-weight: bold;">Totales</td>
+                  <td class="whiteBg" width="60%">
+                    <span class="float-left">
+                      <span id="ItemsNumVenta"><span></span> Item</span>
+                    </span>
+                    <span id="SubtotVenta"></span>
+                  </td>
+                </tr>
+              </table>
+              <button type="button" id="ProcesarVenta" class="btn btn-green col-xs-12 col-md-12" onclick="grabar()">PROCESAR VENTA</button>
+            </div>
+          </div>
+          <!-- ............................. -->
         </div>
-        <!-- ............................. -->
       </div>
     </div>
 
   <?php } else {  ?>
     <input id="cobradorCaja" value="0" type="hidden">
     <div class="cajon">
-      <div class="col-lg-8 col-md-8 CategriaSeleccionar" id="izquierda" style="height:87vh; overflow:auto">
-        <div class="panel panel-border-default">
-          <div class="panel-heading">
-            <h3 class="panel-title text-title-panel">
-              <a onclick="refrescarData()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529">Recargar productos <i class="fa fa-retweet" style="font-size:16px;"></i></a>
-            </h3>
-          </div>
-          <div class="panel-body table-responsive">
-            <table id="tableDataProductos" class="table table-striped table-bordered">
-              <thead>
-                <tr class="text-title-panel">
-                  <th>#</th>
-                  <th>Nombre</th>
-                  <th>C. Barra</th>
-                  <th>Categoria</th>
-                  <th>Precio</th>
-                  <th> <span style="padding-right:50px">Acciones BTN</span> </th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-        <!-- Trae todas las categorias-->
-        <!-- 
-    <div class="row" id="topbuscador">
-              <div class="col-sm-6">
-                <div id="searchContaner">
-                  <div class="input-group stylish-input-group">
-                    <input type="text" id="searchProd" class="form-control" placeholder="Buscar" autocomplete="off">
-                    <span class="input-group-addon">
-                      <button type="submit"><span class="glyphicon glyphicon-search"></span></button>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-6 col-xs-6 text-right" id="retrocederFila">
-                <button class="btn btn-amarillo col-xs-12 col-md-12" style="margin:5px 0px" onclick="retroceder()">Regresar</button>
-              </div>
-        </div>
-        -->
-        <!-- 
-        <div id="CategriaSeleccionar" class="CategriaSeleccionar" style="height:80vh; overflow:auto">
-        </div>
-        <div id="Categoriaproducto" style="height:79vh; overflow-y:auto; overflow-x:hidden">
-        </div>
-      -->
-        <!--Aca se rellena todos los productos de todas las categorias -->
-        <!--
-        <div id="CategoriaproductoTodos" class="CategriaSeleccionar" style="display:none; height:80vh; overflow:auto">
-          
-        </div>-->
-        <!-- <span class="categories selectedGat" id=""><i class="fa fa-home"></i></span> -->
-      </div>
-      <div class="col-lg-4 col-md-4" id="derecha">
-        <div class="row">
-          <div class="col-lg-12" style="margin:10px">
-            <input id="ventaseleccionada" type="hidden">
-            <div class="row">
-              <div class="col-lg-2 col-md-2 col-sm-2">
-                <button type="button" id="eliminarventa" class="categories" id="eliminarventas" onclick="ELiminarVenta()"><i class="fa fa-minus"></i></button>
-              </div>
-              <div class="col-lg-8 col-md-8 col-sm-8">
-                <div class="row-horizon" id="ventaspendientes">
-                </div>
-              </div>
-              <div class="col-lg-2 col-md-2 col-sm-2">
-                <button id="agregarnewventa" class="categories" onclick="agregarnewventa()"><i class="fa fa-plus"></i></button>
-              </div>
+      <div class="row">
+        <div class="col-lg-8 col-md-8" id="izquierda">
+          <label class="label label-default" style="font-size: 12px;display: flex;justify-content: space-around;margin: 0px;padding: 3px;border-radius: 0px 3px;">
+            <span><?= $dataCaja->descripcion ?></span>
+            <span>ENCARGADO: <?= strtoupper($dataUsuario->usuario) ?></span>
+            <span>APERTURADO: <?= strtoupper($diassemana[date("w", strtotime($seperar[0]))])." ".date("d", strtotime($seperar[0]))." DE ".strtoupper($meses[date("n", strtotime($seperar[0])) - 1]).". HORA: ".date("g:i A", strtotime($seperar[1])); ?></span>
+          </label>
+          <div class="panel panel-border-default CategriaSeleccionar" style="height: 82vh;overflow:auto;margin: 0px;">
+            <div class="panel-heading">
+              <h3 class="panel-title text-title-panel">
+                <a onclick="datosProductosVenta()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529">Recargar productos <i class="fa fa-retweet" style="font-size:16px;"></i></a>
+              </h3>
             </div>
-            <br>
-            <form action="" class="form-horizontal" id="form_principal" method="POST" role="form">
-              <div class="row">
-                <div class="col-sm-12" style="margin-bottom:10px">
-                  <div class="input-group">
-                    <span class="input-group-addon" id="busquedacodigobarra">
-                      <i class="fa fa-search"></i>
-                    </span>
-                    <input autocomplete="off" type="text" id="codigodebarra" name="codigodebarra" class="form-control" placeholder="Codigo de barra">
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-sm-12" style="margin-bottom:10px">
-                  <div class="input-group">
-                    <input type="text" class="form-control limpiar" placeholder="CLIENTE" name="clientes" id="clientes">
-                    <span class="help-block"></span>
-                    <input type="hidden" class="form-control" name="cliente" id="cliente">
-                    <span class="input-group-btn">
-                      <button type="button" class="btn waves-effect waves-light btn-primary" onclick="grabarcliente()"><i class="fa fa-user-plus"></i></button>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="row" id="content-referencia" style="display:none">
-                <div class="col-sm-12">
-                  <input type="text" class="form-control" name="referencia" id="referencia" placeholder="Referencia..." autocomplete="off">
-                  <span class="help-block"></span>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-sm-12 col-xs-12">
-                  <select id="tipoventa" name="tipoventa" class="form-control" onchange="save()">
-                    <option value="OTROS">TICKET</option>
-                    <option value="BOLETA">BOLETA</option>
-                    <option value="FACTURA">FACTURA</option>
-                  </select>
-                  <span class="help-block"></span>
-                </div>
-              </div>
-            </form>
+            <div class="panel-body table-responsive">
+              <table id="tableDataProductos" class="table table-striped table-bordered">
+                <thead>
+                  <tr class="text-title-panel">
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>C. Barra</th>
+                    <th>Categoria</th>
+                    <th>Precio</th>
+                    <th> <span style="padding-right:50px">Acciones BTN</span> </th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
+          <label class="label label-default" style="font-size: 15px;display: flex;justify-content: space-around;margin: 0px;padding: 3px;border-radius: 3px 0px;">
+            <span>PUCALLSYSTEM</span>
+          </label>
         </div>
-        <!-- // ? Esto es la parte CENTER -->
-        <div class="row partecenter">
+        <div class="col-lg-4 col-md-4" id="derecha">
           <div class="row">
-            <div class="col-lg-12" id="pedidosventa">
+            <div class="col-lg-12" style="margin:10px">
+              <input id="ventaseleccionada" type="hidden">
+              <div class="row">
+                <div class="col-lg-2 col-md-2 col-sm-2">
+                  <button type="button" id="eliminarventa" class="categories" id="eliminarventas" onclick="ELiminarVenta()"><i class="fa fa-minus"></i></button>
+                </div>
+                <div class="col-lg-8 col-md-8 col-sm-8">
+                  <div class="row-horizon" id="ventaspendientes">
+                  </div>
+                </div>
+                <div class="col-lg-2 col-md-2 col-sm-2">
+                  <button id="agregarnewventa" class="categories" onclick="agregarnewventa()"><i class="fa fa-plus"></i></button>
+                </div>
+              </div>
+              <br>
+              <form action="" class="form-horizontal" id="form_principal" method="POST" role="form">
+                <div class="row">
+                  <div class="col-sm-12" style="margin-bottom:10px">
+                    <div class="input-group">
+                      <span class="input-group-addon" id="busquedacodigobarra">
+                        <i class="fa fa-search"></i>
+                      </span>
+                      <input autocomplete="off" type="text" id="codigodebarra" name="codigodebarra" class="form-control" placeholder="Codigo de barra">
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-12" style="margin-bottom:10px">
+                    <div class="input-group">
+                      <input type="text" class="form-control limpiar" placeholder="CLIENTE" name="clientes" id="clientes">
+                      <span class="help-block"></span>
+                      <input type="hidden" class="form-control" name="cliente" id="cliente">
+                      <span class="input-group-btn">
+                        <button type="button" class="btn waves-effect waves-light btn-primary" onclick="grabarcliente()"><i class="fa fa-user-plus"></i></button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="row" id="content-referencia" style="display:none">
+                  <div class="col-sm-12">
+                    <input type="text" class="form-control" name="referencia" id="referencia" placeholder="Referencia..." autocomplete="off">
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-sm-12 col-xs-12">
+                    <select id="tipoventa" name="tipoventa" class="form-control" onchange="save()">
+                      <option value="OTROS">TICKET</option>
+                      <option value="BOLETA">BOLETA</option>
+                      <option value="FACTURA">FACTURA</option>
+                    </select>
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-        <!-- ............................. -->
-        <!-- // ? Esto es la parte BOTTOM -->
-        <div class="row">
-          <div class="col-lg-12">
-            <table class="table">
-              <tr>
-                <td class="active" width="40%" style="font-weight: bold;">Totales</td>
-                <td class="whiteBg" width="60%">
-                  <span class="float-left">
-                    <span id="ItemsNumVenta"><span></span> Item</span>
-                  </span>
-                  <span id="SubtotVenta"></span>
-                </td>
-              </tr>
-            </table>
-            <button type="button" id="ProcesarVenta" class="btn btn-green col-xs-12 col-md-12" onclick="grabar()">PROCESAR VENTA</button>
+          <!-- // ? Esto es la parte CENTER -->
+          <div class="row partecenter">
+            <div class="row">
+              <div class="col-lg-12" id="pedidosventa">
+              </div>
+            </div>
           </div>
+          <!-- ............................. -->
+          <!-- // ? Esto es la parte BOTTOM -->
+          <div class="row">
+            <div class="col-lg-12">
+              <table class="table">
+                <tr>
+                  <td class="active" width="40%" style="font-weight: bold;">Totales</td>
+                  <td class="whiteBg" width="60%">
+                    <span class="float-left">
+                      <span id="ItemsNumVenta"><span></span> Item</span>
+                    </span>
+                    <span id="SubtotVenta"></span>
+                  </td>
+                </tr>
+              </table>
+              <button type="button" id="ProcesarVenta" class="btn btn-green col-xs-12 col-md-12" onclick="grabar()">PROCESAR VENTA</button>
+            </div>
+          </div>
+          <!-- ............................. -->
         </div>
-        <!-- ............................. -->
       </div>
+
+
     </div>
   <?php } ?>
 <?php } ?>
@@ -738,20 +714,16 @@
 
 
 <div class="modal fade" id="comprobante" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" style="overflow:auto">
-  <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title"></h4>
       </div>
-      <div class="modal-body">
-        <div id="dataventadetalle"></div>
-        <div class="col-sm-8" id="SendMail">
-        </div>
-        <div class="col-sm-4" id="SendWP">
-        </div>
+      <div class="modal-body" id="modal-dataVenta">
+
       </div>
-      <div class="modal-footer" id="fotter-cerrar">
+      <div class="modal-footer" id="modal-fotter-cerrar">
       </div>
     </div>
   </div>
@@ -861,16 +833,6 @@
               <option value="TARJETA">TARJETA</option>
             </select>
           </div>
-          <div class="form-group" id="descontado">
-            <label>Descuento</label>
-            <input type="text" class="form-control money" id="descuento" name="descuento" value="0">
-            <span class="help-block"></span>
-          </div>
-          <div class="form-group" id="pagado">
-            <label>Pagado</label>
-            <input type="text" value="0" name="pago" class="form-control money" id="pago">
-            <span class="help-block"></span>
-          </div>
           <div class="form-group" id="tipocard">
             <label for="tipotarjeta">Tipo Tarjetas</label>
             <i class="fa fa-cc-visa fa-2x" id="visa" aria-hidden="true"></i>
@@ -885,16 +847,19 @@
               <option value="AMERICAN EXPRESS">AMERICAN EXPRESS</option>
             </select>
           </div>
-          <!--
-          <div class="form-group" id="numberoperacion">
-            <label>Número de operacion</label>
-            <input type="text" name="operacion" class="form-control" id="operacion">
+          <div class="form-group" id="descontado">
+            <label>Descuento</label>
+            <input type="text" class="form-control money" id="descuento" name="descuento" value="0">
             <span class="help-block"></span>
           </div>
-          -->
+          <div class="form-group" id="pagado">
+            <label>Pagado</label>
+            <input type="text" value="0" name="pago" class="form-control money" id="pago">
+            <span class="help-block"></span>
+          </div>
           <div class="form-group">
             <label>Fecha</label>
-            <input type="date" class="form-control" id="fecha" name="fecha" value="<?= date('Y-m-d') ?>">
+            <input type="date" class="form-control" id="fecha" name="fecha" value="<?= date('Y-m-d') ?>" readonly>
             <span class="help-block"></span>
           </div>
           <div class="form-group" id="vencimiento">
@@ -974,7 +939,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
-          <button type="button" id="btnSavecliente" onclick="savecliente()" class="btn btn-primary">GRABAR</button>
+          <button type="button" id="btnSavecliente" onclick="savecliente()" class="btn btn-primary">GUARDAR</button>
         </div>
       </form>
     </div>
@@ -1045,12 +1010,12 @@
 </div>
 
 <!-- Modal close register -->
-<div class="modal fade" id="CloseRegister" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="CloseRegister" role="dialog" aria-labelledby="myModalLabel" style="overflow:auto">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Cerrar&nbsp;registrarse</h4>
+        <h4 class="modal-title" id="myModalLabel"></h4>
       </div>
       <div class="modal-body">
         <form action="#" role="form" id="form_cierre" autocomplete="off">
@@ -1058,7 +1023,7 @@
         </form>
       </div>
       <div class="modal-footer">
-        <a id="cerrarcaja" data-loading-text="<i class='fa fa-spinner fa-spin'></i>" onclick="SubmitRegister()" class="btn btn-red col-xs-12 col-md-12 flat-box-btn">Cerrar&nbsp;registrarse</a>
+        <a id="cerrarcaja" style="width:100%" data-loading-text="<i class='fa fa-spinner fa-spin'></i>" onclick="SubmitRegister()" class="btn btn-red">CERRAR CAJA</a>
       </div>
     </div>
   </div>

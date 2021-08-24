@@ -157,8 +157,8 @@ class Notaingreso extends CI_Controller
       if ($data->estado == '0') {
         $row .= '<a onclick="grabar(' . $data->id . ')" class="btn btn-success" data-toggle="tooltip">GENERAR</a> ';
       } else {
-        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><i class="fa fa-print"></i> <span class="hidden-xs">IMPRIMIR</span></a> ';
-        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip">NUEVO</a> ';
+        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><span class="hidden-xs">IMPRIMIR</span> <i class="fa fa-print"></i></a> ';
+        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a> ';
       }
     }
     echo $row;
@@ -392,7 +392,7 @@ class Notaingreso extends CI_Controller
         $value->medida . $medidacantidad,
         $value->precio,
         $value->cantidad,
-        $value->cantidaditem,
+        $value->totalitem,
         $value->subtotal,
         $boton1,
       );
@@ -479,6 +479,8 @@ class Notaingreso extends CI_Controller
     $data['medida'] = $this->input->post('tipocantidad');
     $data['medidacantidad'] =  $medidacantidad;
     $data['cantidaditem'] = $totalCantidad;
+    $data['cantidaditemregalo'] = 0;
+    $data['totalitem'] = 0 + $totalCantidad;
     $data['almacen'] = $this->input->post('almacen');
     $data['lote'] = $this->input->post('lote') ? $this->input->post('lote') : NULL;
 
@@ -569,17 +571,26 @@ class Notaingreso extends CI_Controller
       $producto = $this->Controlador_model->get($value->producto, 'producto');
       $movimiento['empresa'] = $notaingreso->empresa;
       $movimiento['usuario'] = $this->usuario;
+      $movimiento['tipooperacion'] = "NI";
       $movimiento['notaingreso'] = $this->notaingreso;
       $movimiento['tipo'] = 'ENTRADA';
+      $movimiento['detalle'] = 'ENTRADA DE STOCK POR NOTA DE INGRESO';
       $movimiento['producto'] = $value->producto;
       $movimiento['lote'] = $value->lote ? $value->lote : NULL;
       $movimiento['almacen'] = $value->almacen;
-      $movimiento['cantidad'] = $value->cantidaditem;
+      $movimiento['medida'] = $value->medida;
+      $movimiento['medidacantidad'] = $value->medidacantidad;
+      $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+      $movimiento['cantidaditem'] = $value->cantidaditem;
+      $movimiento['cantidaditemregalo'] = $value->cantidaditemregalo;
+      $movimiento['totalitemoperacion'] = $value->totalitem;
       $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
-      $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $value->cantidaditem;
-      $movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
+      $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $value->totalitem;
+      //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
       $movimiento['created'] = date('Y-m-d');
+      $movimiento['hora'] = date('H:i:s');
       $this->Controlador_model->save('movimiento', $movimiento);
+      
       if ($cantidad) {
         $stockUpdate['cantidad'] = $cantidad->cantidad + $value->cantidaditem;
         $this->db->where('id', $cantidad->id)->update('stock', $stockUpdate);
@@ -592,6 +603,7 @@ class Notaingreso extends CI_Controller
         $stockRegister['costopromedio'] = $producto->preciocompra;
         $this->Controlador_model->save('stock', $stockRegister);
       }
+
     }
     $data['created'] = date('Y-m-d');
     $data['estado'] = '1';

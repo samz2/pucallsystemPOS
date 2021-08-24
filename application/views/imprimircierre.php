@@ -30,6 +30,11 @@
       padding: 0;
     }
 
+    .tabla-contado tr td {
+      border: 0.5px solid #000;
+      border-collapse: collapse !important;
+    }
+
     .negrita {
       font-weight: bold;
     }
@@ -37,35 +42,7 @@
 </head>
 
 <body>
-  <table>
-    <?php if ($empresa->tipo == 0) { ?>
-      <tr>
-        <td align="center" class="negrita"><?= $empresa->nombre ?></td>
-      </tr>
-      <tr>
-        <td align="center"><?= $empresa->razonsocial ?></td>
-      </tr>
-    <?php } else { ?>
-      <tr>
-        <td align="center" class="negrita"><?= $empresa->razonsocial ?></td>
-      </tr>
-    <?php } ?>
-    <tr>
-      <td align="center" class="negrita"><?= substr($empresa->direccion, 0, 30) ?></td>
-    </tr>
-    <tr>
-      <td align="center" class="negrita"><?= $empresa->distrito . ' - ' . $empresa->provincia . ' - ' . $empresa->departamento ?></td>
-    </tr>
-    <tr>
-      <td align="center" class="negrita">RUC <?= $empresa->ruc ?></td>
-    </tr>
-    <tr>
-      <td align="center">TELF. <?= $empresa->telefono ?></td>
-    </tr>
-    <tr>
-      <td>&nbsp;</td>
-    </tr>
-  </table>
+  <div style="font-size:20px; text-align:center"><b><?= $caja->descripcion ?></b></div>
   <hr>
   <?php
   $fechahoraApertura =  explode(" ", $caja->apertura, 2);
@@ -73,22 +50,15 @@
   ?>
   <table>
     <tr>
-      <td align="center" class="negrita">CIERRRE CAJA DIARIO</td>
+      <td align="center"><b>ENCARGADO:</b> <?= $usuario->nombre . ' ' . $usuario->apellido ?></td>
     </tr>
     <tr>
-      <td align="center">ENCARGADO: <?= $usuario->nombre . ' ' . $usuario->apellido ?></td>
+      <td align="center"><b>APERTURADO:</b> <?= $fechahoraApertura[0] . " / " . $fechahoraApertura[1] ?></td>
     </tr>
     <tr>
-      <td align="center">FECHA/HORA DE APERTURA: <?= $fechahoraApertura[0] . " / " . $fechahoraApertura[1] ?></td>
-    </tr>
-    <tr>
-      <td align="center">FECHA/HORA DE CIERRE: <?= $fechahoraCierre[0] . " / " . $fechahoraCierre[1] ?></td>
-    </tr>
-    <tr>
-      <td>&nbsp;</td>
+      <td align="center"><b>CERRADO:</b> <?= $fechahoraCierre[0] . " / " . $fechahoraCierre[1] ?></td>
     </tr>
   </table>
-  <hr>
 
   <table>
     <?php if ($monedero->status == '0') { ?>
@@ -151,123 +121,214 @@
           <td colspan="2" align="center">----------------------------------------------------------------------</td>
         </tr>
       <?php } ?>
-      <tr>
-        <td>CIERRE DE CAJA:</td>
-        <td align="right"><?= number_format($montototal, 2) ?></td>
-      </tr>
     </tfoot>
   </table>
 
 
   <hr>
-  <table>
+  <table style="margin-bottom:5px">
     <thead>
       <tr>
-        <th colspan="2" align="center">RESUMEN DE CAJA</th>
+        <th><span style="border-bottom:1px solid #000">RESUMEN DE CAJA</span></th>
+      </tr>
+    </thead>
+  </table>
+  <table class="tabla-contado" style="text-align:center">
+    <thead>
+      <tr>
+        <th colspan="3" style="border: 0.5px solid #000">VENTAS A CONTADO</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <table>
-          <tr>
-            <td>VENTAS EN EFECTIVO: </td>
-            <td style="text-align: right;"><?= $caja->efectivo ?></td>
-          </tr>
-          <tr>
-            <td>VENTAS CON TARJETA</td>
-            <td style="text-align: right;"><?= $caja->tarjeta ?></td>
-          </tr>
-          <tr style="border-top: 1px solid #000; margin-top:10px; border-top-style:dashed">
-            <td colspan="2" style="padding-top: 5px;"></td>
-          </tr>
-          <tr>
-            <td>TOTAL DE VENTAS A CONTADO</td>
-            <td style="text-align: right;"><?= $caja->contado ?></td>
-          </tr>
-        </table>
+        <td>TIPO DE VENTA</td>
+        <td>GENERADOS</td>
+        <td>ACUMULADO</td>
+      </tr>
+      <tr>
+        <td>EFECTIVO</td>
+        <td><?= $caja->efectivogenerados ?></td>
+        <td>S/. <?= number_format($caja->efectivocontado, 2) ?></td>
+      </tr>
+      <tr>
+        <td>TARJETA</td>
+        <td><?= $caja->tarjetagenerados ?></td>
+        <td>S/. <?= number_format($caja->tarjetacontado, 2) ?></td>
       </tr>
     </tbody>
+    <tfoot>
+      <tr>
+        <td>TOTAL</td>
+        <td><?= $caja->efectivogenerados + $caja->tarjetagenerados ?></td>
+        <td>S/. <?= number_format($caja->efectivocontado +  $caja->tarjetacontado, 2) ?></td>
+      </tr>
+    </tfoot>
   </table>
-  <hr>
-
-  <table>
-    <tr>
-      <td>TOTAL DE VENTAS A CREDITO</td>
-      <td style="text-align: right;"><?= $caja->credito ?></td>
-    </tr>
-  </table>
-  <hr>
-
-  <table>
+  <br>
+  <table class="tabla-contado" style="text-align:center">
     <thead>
       <tr>
-        <th colspan="2" align="center">CUADRE DE CAJA</th>
+        <th colspan="2" style="border: 0.5px solid #000">VENTAS A CREDITO</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <table>
-          <?php
-          $montoefectivo = ($caja->saldoinicial + $caja->efectivo);
-          $montototalefectivo = ($caja->saldoinicial + $caja->efectivo) - $caja->gasto;
-          ?>
-          <tr>
-            <td colspan="2">
-              <table>
-                <tr>
-                  <td>VENTAS EN EFECTIVO: </td>
-                  <td style="text-align: right;"><?= number_format($caja->efectivo, 2) ?></td>
-                </tr>
-                <tr>
-                  <td>SALDO INICIAL: </td>
-                  <td style="text-align: right;"><?= number_format($caja->saldoinicial, 2) ?></td>
-                </tr>
+        <td>GENERADOS</td>
+        <td>ACUMULADO</td>
+      </tr>
+      <tr>
+        <td><?= $caja->creditosgenerados ?></td>
+        <td>S/. <?= number_format($caja->credito, 2) ?></td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+  <table class="tabla-contado" style="text-align:center">
+    <thead>
+      <tr>
+        <th colspan="4" style="border: 0.5px solid #000">ABONOS EN CAJA</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>N°</td>
+        <td>CONCEPTO</td>
+        <td>DETALLE</td>
+        <td>ACUMULADO</td>
+      </tr>
+      <?php
+      $dataAbono = $this->db->where("caja", $caja->id)->where("tipo", "OPERACION")->get("ingreso")->result();
+      $totalAcumuladoAbono = 0;
+      foreach ($dataAbono as $indice => $data) {
+        $dataConcepto = $this->Controlador_model->get($data->concepto, "concepto");
+        $totalAcumuladoAbono += $data->monto;
+      ?>
+        <tr>
+          <td><?= $indice + 1 ?></td>
+          <td><?= $dataConcepto->concepto ?></td>
+          <td><?= $data->observacion ?></td>
+          <td>S/. <?= number_format($data->monto, 2) ?></td>
+        </tr>
+      <?php } ?>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">TOTAL</td>
+        <td>S/. <?= number_format($totalAcumuladoAbono, 2) ?></td>
+      </tr>
+    </tfoot>
+  </table>
+  <br>
+  <table class="tabla-contado" style="text-align:center">
+    <thead>
+      <tr>
+        <th colspan="4" style="border: 0.5px solid #000">GASTOS EN CAJA</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>N°</td>
+        <td>CONCEPTO</td>
+        <td>DETALLE</td>
+        <td>ACUMULADO</td>
+      </tr>
+      <?php
+      $dataEgreso = $this->db->where("caja", $caja->id)->get("egreso")->result();
+      $totalAcumuladoEgreso = 0;
+      foreach ($dataEgreso as $indiceEgreso => $valueEgreso) {
+        $dataConceptoEgreso = $this->Controlador_model->get($valueEgreso->concepto, "concepto");
+        $totalAcumuladoEgreso += $valueEgreso->montototal;
+      ?>
+        <tr>
+          <td><?= $indiceEgreso + 1 ?></td>
+          <td><?= $dataConceptoEgreso->concepto ?></td>
+          <td><?= $valueEgreso->observacion ?></td>
+          <td>S/. <?= number_format($valueEgreso->montototal, 2) ?></td>
+        </tr>
+      <?php } ?>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">TOTAL</td>
+        <td>S/. <?= number_format($totalAcumuladoEgreso, 2) ?></td>
+      </tr>
+    </tfoot>
+  </table>
+  <hr>
+  <br>
+  <table style="margin-bottom:5px">
+    <thead>
+      <tr>
+        <th><span style="border-bottom:1px solid #000">CUADRE DE CAJA</span></th>
+      </tr>
+    </thead>
+  </table>
 
-                <tr>
-                  <td colspan="2" style="border-top: 1px solid #000; border-top-style:dashed; padding-bottom:3px"></td>
-                </tr>
-                <tr>
-                  <td>MONTO EN CAJA: </td>
-                  <td style="text-align: right;"><?= number_format($montoefectivo, 2) ?></td>
-                </tr>
-                <tr>
-                  <td>GASTO EN CAJA: </td>
-                  <td style="text-align: right;"><?= number_format($caja->gasto, 2) ?></td>
-                </tr>
-                <tr>
-                  <td colspan="2" style="border-top: 1px solid #000; border-top-style:dashed; padding-bottom:3px"></td>
-                </tr>
-                <tr>
-                  <td>MONTO TOTAL EN CAJA: </td>
-                  <td style="text-align: right;"><?= number_format($montototalefectivo, 2) ?></td>
-                </tr>
-              </table>
-            </td>
-
-          </tr>
-
-          <tr>
-            <?php
-            if ($montototalefectivo >= $montototal) {
-              $result = $montototalefectivo  - $montototal;
-              $estadocaja = $result == 0 ? "NINGUNA" : "FALTO EN CAJA";
-            } else {
-              $result = $montototal - $montototalefectivo;
-              $estadocaja = "SOBRO EN CAJA";
-            }
-            ?>
-            <td><b style="font-size: 13px;">OBSERVACION</b>: <?= $estadocaja ?> </td>
-            <td style="text-align: right;"><?= number_format($result, 2) ?></td>
-          </tr>
-        </table>
+  <table border="1" style="text-align:center">
+    <thead>
+      <tr>
+        <th>+ SALDO INICIAL</th>
+        <td>S/. + <?= $caja->saldoinicial ?></td>
+      </tr>
+      <tr>
+        <th>+ EFECTIVO A CONTADO</th>
+        <td>S/. + <?= number_format($caja->efectivocontado, 2) ?></td>
+      </tr>
+      <tr>
+        <th>+ ABONOS EN CAJA</th>
+        <td>S/. + <?= number_format($totalAcumuladoAbono, 2) ?></td>
+      </tr>
+      <tr>
+        <th>- GASTOS EN CAJA</th>
+        <td>S/. - <?= number_format($totalAcumuladoEgreso, 2) ?></td>
+      </tr>
+      <tr>
+        <th>DINERO EN CAJA</th>
+        <?php
+        $totalCaja = ($caja->efectivocontado + $totalAcumuladoAbono + $caja->saldoinicial) - $totalAcumuladoEgreso;
+        ?>
+        <th>S/. <?= number_format($totalCaja, 2) ?></th>
+      </tr>
+    </thead>
+  </table>
+  <br>
+  <table border="1" style="text-align:center">
+    <thead>
+      <tr>
+        <th>DINERO EN CAJA</th>
+        <th>MONTO REGISTRADO AL CERRAR CAJA</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <?php
+        if ($totalCaja >= $montoCerrarCaja) {
+          $resultCuadre = $totalCaja  - $montoCerrarCaja;
+          $estadocaja = $resultCuadre == 0 ? "SIN OBSERVACION EN LA CAJA" : "FALTO ENTREGAR";
+          $emoji = $resultCuadre == 0 ? "😀" : "😢";
+        } else {
+          $resultCuadre = $montoCerrarCaja - $totalCaja;
+          $estadocaja = "NO SE ENCONTRO REGISTRO DE";
+          $emoji = "😢";
+        }
+        ?>
+        <td>S/. <?= number_format($totalCaja, 2) ?></td>
+        <td><?= $montoCerrarCaja ?></td>
+      </tr>
+      <tr>
+        <?php $diferencia =  $resultCuadre == 0 ? "" : ": S/. ".number_format($resultCuadre,2); ?>
+        <td colspan="2" style="font-size:12px"><b><?=$estadocaja.$diferencia?></b></td>
+      </tr>
+      <tr>
+        <td colspan="2" style="font-size:40px"><?=$emoji?></td>
       </tr>
     </tbody>
   </table>
 
-  <hr>
 
-  <hr>
-  <table>
+  <!-- PRODUCTOS VENDIDOS -->
+  <!--
+    <table>
     <tr>
       <td colspan="2" align="center">PRODUCTOS VENDIDOS</td>
     </tr>
@@ -284,6 +345,9 @@
       </tr>
     <?php } ?>
   </table>
+   -->
+
+
 </body>
 
 </html>

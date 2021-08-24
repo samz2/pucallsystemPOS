@@ -39,21 +39,27 @@ class Ingreso extends CI_Controller
     $query = $this->db->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'")->order_by('id', 'desc')->get($this->controlador)->result();
     $data = [];
     foreach ($query as $key => $value) {
+      $usuario = $this->Controlador_model->get($value->usuario, 'usuario');
       $venta = $this->Controlador_model->get($value->venta, 'venta');
+      $caja = $this->Controlador_model->get($value->caja, 'caja');
       $concepto = $this->Controlador_model->get($value->concepto, 'concepto');
       //add variables for action
       $boton = '';
       //add html fodr action
-      if ($this->perfil == 1 || $this->perfil == 2) {
+      if ($this->perfil == 1 || $this->perfil == 2 and $value->tipo == "OPERACION") {
         $boton .= '<a class="btn btn-sm btn-danger" title="Borrar" onclick="borrar(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
       }
       $data[] = array(
         $key + 1,
-        $venta ? $venta->serie . '-' . $venta->numero : '',
+        $caja ? $caja->descripcion : "SIN DATOS",
+        $value->metodopago,
+        $usuario ? $usuario->nombre." ".$usuario->apellido : "SIN DATOS DEL USUARIO",
+        $value->tipo,
+        $venta ? $venta->serie . '-' . $venta->numero : 'SIN DATOS',
         $concepto->concepto,
         $value->observacion,
         $value->monto,
-        $value->created,
+        $value->created." ". $value->hora,
         $boton
       );
     }
@@ -75,7 +81,7 @@ class Ingreso extends CI_Controller
     $data['status'] = TRUE;
 
     if ($this->input->post('caja') == '') {
-      $data['inputerror'][] = 'cajas';
+      $data['inputerror'][] = 'caja';
       $data['error_string'][] = 'Este campo es obligatorio.';
       $data['status'] = FALSE;
     }
@@ -109,11 +115,13 @@ class Ingreso extends CI_Controller
     $this->_validate();
     $data['empresa'] = $this->empresa;
     $data['usuario'] = $this->usuario;
+    $data['tipo'] = "OPERACION";
     $data['caja'] = $this->input->post('caja');
     $data['concepto'] = $this->input->post('concepto');
     $data['monto'] = $this->input->post('monto');
     $data['observacion'] = $this->input->post('observacion');
     $data['created'] = date('Y-m-d');
+    $data['hora'] = date('H:i:s');
     if ($this->Controlador_model->save($this->controlador, $data)) {
       echo json_encode(array("status" => TRUE));
     }
@@ -121,7 +129,15 @@ class Ingreso extends CI_Controller
 
   public function ajax_delete($id)
   {
-    $this->Controlador_model->delete_by_id($id, $this->controlador);
-    echo json_encode(array("status" => TRUE));
+    $query = $this->Controlador_model->get($id, "ingreso");
+    $statusCaja = $this->Controlador_model->get($query->caja, "caja");
+    if($statusCaja->estado == '0'){
+      $this->Controlador_model->delete_by_id($id, $this->controlador);
+      $respuesta = array("status" => TRUE);
+    }else{
+      $respuesta = array("status" => FALSE);
+    }
+    echo json_encode($respuesta);
+    
   }
 }
