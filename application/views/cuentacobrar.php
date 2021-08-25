@@ -280,7 +280,12 @@
     var table_cobro;
     var subtotal = 0;
     var cant = 0;
-    var CclienteNombre = 0;
+    var CclienteNombre = "";
+    var pago = 0;
+    var recibido = 0;
+    var tipoventa = "";
+    var vuelto = 0;
+    var descuento = "";
     var elementos = new Array();
     var cant = 0;
     $(document).ready(function() {
@@ -409,7 +414,7 @@
         "</tr>";
         if(this.change === undefined) this.change = 0.0;
         var desc = $("#zdescuento").val();
-        if(desc === undefined) desc = 0;
+        if(desc === null) desc = 0.0;
         $('#filaComprobante').html(texto);
         $("#comprobanteGT span").text(this.subtotal + " Soles");
         $("#comprobanteVuelto span").text(this.change + " Soles");
@@ -425,7 +430,14 @@
             type: "POST",
             data: {
                 "subtotal": this.subtotal,
+                "pago": $("#zpago").val(),
+                "tipoventa":  this.tipoventa,
+                "vuelto":  this.change,
+                "descuento":  $("#zdescuento").val(),
+                // "totalItems":  this.elementos.length,
                 "datos": this.elementos,
+                "empresa": $("#empresa").val(),
+
             },
             dataType: "JSON",
             success: function(data) {
@@ -554,7 +566,10 @@
         }
         
         $("#zmonto").val(this.subtotal);
-        $("#zpago").val(this.subtotal);
+        if($("#zpago").val() == "" || $("#zpago").val() === undefined) $("#zpago").val(this.subtotal);
+        this.pago = $("#zpago").val();
+        this.descuento = $("#comprobanteDescuento").val();
+        this.tipoventa = $("#ztcomprobante").val();
         $("#zinputdocumento").val(zdocumento);
         $("#customerName span").text(clientName);
         $("#MontoPagar2 span").text(this.subtotal);

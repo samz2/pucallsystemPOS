@@ -199,6 +199,7 @@ class Cuenta extends CI_Controller
       "recordsFiltered" => $creditos->num_rows(),
       "data" => $data
     );
+    // echo "la".$empresa;
     echo json_encode($result);
   }
 
@@ -596,10 +597,51 @@ class Cuenta extends CI_Controller
   }
   public function pagos()
   {
-    $prueba = $this->input->post("datos");
-    $result = array(
-      "prueba" => $prueba,
-    );
-    echo json_encode($result);
+    $datos["empresa"]         = $this->input->post("empresa");
+    $datos["usuario_creador"] = $this->usuario;
+    $datos["caja"]            = $this->session->userdata('caja');
+    $datos["cliente"]         = $this->input->post("idCliente");
+    $datos["referencia"]      = "";
+    $datos["tipoventa"]       = $this->input->post("tipoventa");
+    // nueva lógica
+    $comprobante = $this->db->where("tipo",$this->input->post("tipoventa"))->where("empresa",$this->input->post("empresa"))->get("comprobante")->row();
+    if(isset($comprobante))
+    {
+      $datos["serie"]           = $comprobante->serie;;
+      $datos["numero"]          = $this->Controlador_model->addLeadingZeros($comprobante->correlativo);
+      $datos["consecutivo"]     = $comprobante->correlativo;
+    }
+    
+    // fin lógica
+    $datos["formapago"]       = "CONTADO";
+    $datos["montototal"]      = $this->input->post("subtotal");
+    $datos["descuento"]       = $this->input->post("descuento");
+    $datos["deudatotal"]      = floatval($this->input->post("subtotal")) - floatval($this->input->post("descuento"));
+    $datos["montoactual"]     = 0;
+    $datos["pago"]            = $this->input->post("pago");
+    $datos["vuelto"]          = $this->input->post("vuelto");
+    $cant = 0;
+    foreach($this->input->post("datos") as $fila => $val)
+    {
+      $cant += $val["cantidad"];
+    }
+    $datos["totalitems"]      = $cant;
+    $datos["emision"]         = "";
+    $datos["hash"]            = "";
+    $datos["estado"]          = "0";
+    $datos["consumo"]         = "0";
+    $datos["dcuenta"]         = "0"; //1 es para cuentas divididas
+    // $datos["sound"]           = "1";
+    $datos["atender"]         = "1"; //atendido
+    $datos["modificar"]       = "0"; // 1 NC
+    $datos["hora"]            = date("H:i:s");
+    $datos["created"]         = date("Y-m-d");
+    $datos["hf_procesado"]    = "";
+    $datos["vence"]           = date("Y-m-d");
+    $datos["anularmotivo"]    = "";
+    // $result = array(
+    //   "prueba" => $prueba,
+    // );
+    echo json_encode($datos);
   }
 }
