@@ -79,7 +79,6 @@ class Kardex_model extends CI_Model
 		} else {
 			$this->db->where("created BETWEEN '" . $fechainicio . "' AND '" . $fechafinal . "'");
 		}
-		$this->db->where('empresa', $this->session->userdata('empresa'));
 		$query = $this->db->get('movimiento');
 		return $query->result();
 	}
@@ -91,5 +90,11 @@ class Kardex_model extends CI_Model
 		$this->db->where('empresa', $this->session->userdata('empresa'));
 		$query = $this->db->get('movimiento');
 		return $query->first_row();
+	}
+
+	public function getProductos($text){
+		$this->db->like("nombre", $text);
+		$this->db->where("tipo", '0');
+		return $this->db->get("producto")->result();
 	}
 }

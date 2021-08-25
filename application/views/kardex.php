@@ -30,7 +30,7 @@
             <label class="col-sm-2 control-label" for="producto1">Producto<span class="required">*</span></label>
             <div class="col-sm-10">
               <!--<input type="hidden" class="form-control" name="producto" id="producto">-->
-              <input type="text" class="form-control" name="productos" id="productos">
+              <select type="text" class="form-control" name="productos" id="producto"></select>
             </div>
           </div>
 
@@ -80,7 +80,7 @@
       operacionesvista();
     });
 
-    $("#productos").select2({
+    $("#producto").select2({
       language: {
         noResults: function() {
           return "No hay resultado";
@@ -93,7 +93,6 @@
         }
       },
       placeholder: 'Buscar producto',
-      theme: "classic",
       minimumInputLength: 2,
       ajax: {
         url: "<?= $this->url ?>/buscarProducto",

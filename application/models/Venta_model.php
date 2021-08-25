@@ -66,13 +66,24 @@ class Venta_model extends CI_Model
 		return $this->db->where('producto', $producto)->get('combo')->result();
 	}
 
-	public function validar($finicio, $factual)
+	public function validar($finicio, $factual, $empresa)
 	{
 		$this->db->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
 		$this->db->where('tipoventa <>', 'OTROS');
 		$this->db->where('emision', '');
-		$this->db->where('empresa', $this->empresa);
+		$this->db->where('empresa', $empresa);
 		return $this->db->get('venta')->result();
+	}
+
+	public function getStockAlmacen($producto, $almacen, $lote, $empresa)
+	{
+		$this->db->where('producto', $producto);
+		$this->db->where('almacen', $almacen);
+		$this->db->where('empresa', $empresa);
+		if ($lote) {
+			$this->db->where('lote', $lote);
+		}
+		return $this->db->get("stock")->row();
 	}
 
 	function generarpedidoR($finicio, $factual, $cliente, $usuario, $estado)
@@ -278,5 +289,16 @@ class Venta_model extends CI_Model
 		$this->db->where('producto', $producto);
 		$query = $this->db->get('ventadetalle');
 		return $query->row();
+	}
+
+	public function getStockProceso($producto, $almacen, $lote, $empresa)
+	{
+		$this->db->where('producto', $producto);
+		$this->db->where('empresa', $empresa);
+		$this->db->where('almacen', $almacen);
+		if ($lote) {
+			$this->db->where('lote', $lote);
+		}
+		return $this->db->get('stock')->row();
 	}
 }

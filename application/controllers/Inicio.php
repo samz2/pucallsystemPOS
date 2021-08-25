@@ -709,9 +709,17 @@ class Inicio extends CI_Controller
     $abonosCaja =  $this->Controlador_model->abonosCaja($this->caja);
     $totalAbono = 0;
     $totalAbonoGenerado = 0;
-    foreach($abonosCaja as $abono){
+    foreach ($abonosCaja as $abono) {
       $totalAbono += $abono->monto;
       $totalAbonoGenerado += 1;
+    }
+    //? esta estado 3 de una venta es una venta anulada
+    $devolucionesCaja = $this->db->where("caja", $this->caja)->where("estado", "3")->get("venta")->result();
+    $devolucionesGeneradas = 0;
+    $devoluciones = 0;
+    foreach ($devolucionesCaja as $devolucion) {
+      $devoluciones += $devolucion->deudatotal;
+      $devolucionesGeneradas += 1;
     }
 
     foreach ($queryVentas as $venta) {
@@ -729,20 +737,24 @@ class Inicio extends CI_Controller
       $totalGastos += 1;
     }
 
-    $dataEmpresa = $this->Controlador_model->get($this->empresa,"empresa");
+
+
+    $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");
     $data['usuario_cierre'] = $this->usuario;
     $data['contado'] = $ventasContado;
     $data['contadosgenerados'] = $totalVentasContados;
     $data['credito'] = $montoCreditos;
     $data['creditosgenerados'] = $totalVentasCredito;
-    $data['efectivocontado'] = $pagosEfectivo->totalpagos;
+    $data['efectivocontado'] = $pagosEfectivo->totalpagos ? $pagosEfectivo->totalpagos : 0;
     $data['efectivogenerados'] = $pagosEfectivoGenerados;
-    $data['tarjetacontado'] = $pagosTarjeta->totalpagos;
+    $data['tarjetacontado'] = $pagosTarjeta->totalpagos ? $pagosTarjeta->totalpagos : 0;
     $data['tarjetagenerados'] = $pagosTarjetaGenerados;
     $data['gasto'] = $gasto;
     $data['gastosgenerados'] = $totalGastos;
     $data['abonos'] = $totalAbono;
     $data['abonosgenerados'] = $totalAbonoGenerado;
+    $data['devoluciones'] = $devoluciones;
+    $data['devolucionesgeneradas'] = $devolucionesGeneradas;
     $data['estado'] = '1';
     $this->Controlador_model->update(array('id' => $this->caja), $data, 'caja');
     $datamonedero['empresa'] = $this->empresa;
@@ -781,7 +793,7 @@ class Inicio extends CI_Controller
     $this->Controlador_model->save('monedero', $datamonedero);
     $CI = &get_instance();
     $CI->session->set_userdata('caja', NULL);
-    echo json_encode(array("status" => TRUE, "usuarioperfil" => $this->perfil, "tipoimpresora" => $dataEmpresa->tipoimpresora, "idcaja" => $idCajaAntesDeVaciar));
+    echo json_encode(array("status" => TRUE, "usuarioperfil" => $this->perfil, "tipoimpresora" => $dataEmpresa->tipoimpresora, "idcaja" => $idCajaAntesDeVaciar, "datacaja" => $data));
     exit();
   }
 
@@ -1824,7 +1836,7 @@ class Inicio extends CI_Controller
               //Si no cuenta con sufuciente STOCK el como saldra como agotado
               $existenciaStockCombo = $this->db->where('almacen', $empresa->almacen)->where('empresa', $this->empresa)->where('producto',  $value2->item_id)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
               if ($existenciaStockCombo) {
-                $productoStock = $this->db->where('almacen', $empresa->almacen)->where('producto', $value2->item_id)->where('cantidad <', $value2->cantidad)->get('stock')->row();
+                $productoStock = $this->db->where('almacen', $empresa->almacen)->where('producto', $value2->item_id)->where('cantidad <', $value2->cantidad * $cantidadTotalVerif)->get('stock')->row();
                 if ($productoStock) {
                   $EstadoProducto = TRUE; //cuando $EstadoProducto es TRUE ara que el div/boton este desahabilitado
                   break;
@@ -2018,7 +2030,62 @@ class Inicio extends CI_Controller
           $CantidadItem += $cantidadEscogido;
           $DeudaTotal += $value->total_pagar;
           $this->Controlador_model->save('ventadetalle', $dataVentaDetalle);
-          $this->ajax_descontar_stock($producto, $cantidadDescontar, $value->lote);
+          if ($productodata->tipo == '0') {
+            $cantidad = $this->Controlador_model->getStockAlmacen($producto, $dataEmpresa->almacen, $value->lote, $this->empresa);
+            $movimiento['empresa'] = $this->empresa;
+            $movimiento['usuario'] = $this->usuario;
+            $movimiento['venta'] = $idventa;
+            $movimiento['tipooperacion'] = "VENTA";
+            $movimiento['producto'] = $producto;
+            $movimiento['almacen'] = $dataEmpresa->almacen;
+            $movimiento['lote'] =  ($value->statuslote ? $value->lote : NULL);
+            if ($value->statusvariante) {
+              $dataVariante = $this->Controlador_model->get($value->id_variante, "productovariante");
+              $totalDescontar = $dataVariante->cantidad * $value->cantidad;
+              $movimiento['medida'] =  $dataVariante->nombre;
+              $movimiento['medidacantidad'] = $dataVariante->cantidad;
+              $movimiento['cantidaditem'] = $dataVariante->cantidad * $value->cantidad;
+              $movimiento['totalitemoperacion'] = $dataVariante->cantidad * $value->cantidad;
+            } else {
+              $totalDescontar = $value->cantidad;
+              $movimiento['medida'] =  "UNIDAD";
+              $movimiento['medidacantidad'] = 1;
+              $movimiento['cantidaditem'] = $value->cantidad;
+              $movimiento['totalitemoperacion'] = $value->cantidad;
+            }
+            $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+            $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
+            $movimiento['tipo'] =  'SALIDA VENTA';
+            $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) - $totalDescontar;
+            $movimiento['created'] = date('Y-m-d');
+            $movimiento['hora'] = date("H:i:s");
+            $this->Controlador_model->save('movimiento', $movimiento);
+          } else if ($productodata->tipo == '2') {
+            $combos = $this->db->where('producto',  $producto)->get('combo')->result();
+            foreach ($combos as $combo) {
+              $stock = $this->Controlador_model->getStockProceso($combo->item_id, $dataEmpresa->almacen, NULL, $this->empresa);
+              $movimientoCombo['empresa'] = $this->empresa;
+              $movimientoCombo['usuario'] = $this->usuario;
+              $movimientoCombo['venta'] = $idventa;
+              $movimientoCombo['tipooperacion'] = "VENTA";
+              $movimientoCombo['producto'] = $combo->item_id;
+              $movimientoCombo['productocombo'] = $producto;
+              $movimientoCombo['almacen'] = $dataEmpresa->almacen;
+              $movimientoCombo['lote'] =  ($value->statuslote ? $value->lote : NULL);
+              $movimientoCombo['medida'] =  "COMBO";
+              $movimientoCombo['medidacantidad'] = $combo->cantidad;
+              $movimientoCombo['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+              $movimientoCombo['cantidaditem'] = $combo->cantidad * $value->cantidad;
+              $movimientoCombo['totalitemoperacion'] = $combo->cantidad * $value->cantidad;
+              $movimientoCombo['stockanterior'] = $stock ? $stock->cantidad : 0;
+              $movimientoCombo['tipo'] =  'SALIDA VENTA COMBO';
+              $movimientoCombo['stockactual'] = ($stock ? $stock->cantidad : 0) - ($combo->cantidad * $value->cantidad);
+              $movimientoCombo['created'] = date('Y-m-d');
+              $movimientoCombo['hora'] = date("H:i:s");
+              $this->Controlador_model->save('movimiento', $movimientoCombo);
+            }
+          }
+          $this->ajax_descontar_stock($producto, $cantidadDescontar, $value->lote, $dataEmpresa->almacen);
         }
         //? pagar venta
         $venta = $this->Controlador_model->get($idventa, 'venta');
@@ -2071,6 +2138,7 @@ class Inicio extends CI_Controller
           $dataventaUpdate['montoactual'] = $deudaTotal;
         }
         $this->Controlador_model->update(array('id' => $idventa), $dataventaUpdate, 'venta');
+
         $htmlComprobante = $this->input->post('formapago') == 'CONTADO' ? $this->printfcomprobante($idventa, $this->input->post('metodopago')) : "";
         $this->NewVenta();
 
@@ -2095,14 +2163,13 @@ class Inicio extends CI_Controller
     }
   }
 
-  public function ajax_descontar_stock($idproducto, $cantidad, $lote)
+  public function ajax_descontar_stock($idproducto, $cantidad, $lote, $almacenDescontar)
   {
-    $dataEmpresa = $this->Controlador_model->get($this->empresa, 'empresa');
     //todo: hacemos el descuento del stock
     $producto = $this->Controlador_model->get($idproducto, 'producto');
     if ($producto->tipo == 0) {
       //VALIDAR SI EL DESCUENTO ES POR LOTE
-      $stock = $this->Controlador_model->getStockProceso($producto->id, $dataEmpresa->almacen, $lote, $this->empresa);
+      $stock = $this->Controlador_model->getStockProceso($producto->id, $almacenDescontar, $lote, $this->empresa);
       $updateStock = [
         'cantidad' => ($stock->cantidad - $cantidad)
       ];
@@ -2110,7 +2177,7 @@ class Inicio extends CI_Controller
     } else if ($producto->tipo == 2) {
       $combo = $this->Controlador_model->ProductoCombo($producto->id);
       foreach ($combo as $value) {
-        $stock = $this->Controlador_model->getStockProceso($value->item_id, $dataEmpresa->almacen, $lote, $this->empresa);
+        $stock = $this->Controlador_model->getStockProceso($value->item_id, $almacenDescontar, $lote, $this->empresa);
         $updateStock = [
           'cantidad' => $stock->cantidad - ($value->cantidad * $cantidad)
         ];
@@ -2128,8 +2195,10 @@ class Inicio extends CI_Controller
   function ajax_stockactual()
   {
     $idproducto = $this->input->post("idproducto");
-    $almacenes = $this->db->where("empresa", $this->empresa)->get('almacen')->result();
-    $html = '
+    $queryProducto = $this->Controlador_model->get($idproducto, "producto");
+    if ($queryProducto->tipo == '0') {
+      $almacenes = $this->db->where("empresa", $this->empresa)->get('almacen')->result();
+      $html = '
     <div class="row">
      <div class="col-lg-12">
      <table class="table table-bordered">
@@ -2141,11 +2210,11 @@ class Inicio extends CI_Controller
           </tr>
         </thead>
      ';
-    foreach ($almacenes as $value) {
-      $dataProducto = $this->Controlador_model->get($idproducto, "producto");
-      $dataStock = $this->Controlador_model->stockAlmacen($idproducto, $value->id, $this->empresa);
-      $cantidadStock =  $dataStock->cantidad == "" ? 0 : $dataStock->cantidad;
-      $html .= '
+      foreach ($almacenes as $value) {
+        $dataProducto = $this->Controlador_model->get($idproducto, "producto");
+        $dataStock = $this->Controlador_model->stockAlmacen($idproducto, $value->id, $this->empresa);
+        $cantidadStock =  $dataStock->cantidad == "" ? 0 : $dataStock->cantidad;
+        $html .= '
           <tbody>
             <tr class="' . ($cantidadStock == 0 ? "danger" : "success") . '">
               <td>' . $dataProducto->nombre . '</td>
@@ -2153,14 +2222,18 @@ class Inicio extends CI_Controller
               <td style="text-align:right" >' . $cantidadStock . '</td>
             </tr>
           </tbody>';
-    }
-    $html .= '
+      }
+      $html .= '
       </table>
      </div>
     </div>';
-
+    } else {
+      $stockCombo = $this->totalStock($idproducto, 0, FALSE);
+      $html = "<div class='alert alert-success text-center' style='font-weight: bold;color: #8e27c1;background: #906fc5a1;border-color: #905ec5;'><h4>TOTAL DE STOCK $stockCombo </h4></div>";
+    }
     echo json_encode(['datahtml' => $html]);
   }
+
 
   function ajax_alertComprobantes()
   {
@@ -2331,7 +2404,7 @@ class Inicio extends CI_Controller
       }
       $nombreProducto = $value->nombre . ' <button class="btn  btn-default btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')"  title="Ver Imagen"><i class="fa fa-file-image-o"></i></button>';
 
-      if ($value->tipo == '0') {
+      if ($value->tipo == '0' || $value->tipo == '2') {
         $boton .= '<button class="btn  btn-info btn-sm" id="verStock-' . $value->id . '-0" onclick="verstockactual(' . $value->id . ', 0)" title="Ver Stock">STOCK <i class="fa fa-search"></i></button> ';
       }
       $boton .= " <button  class='btn btn-sm btn-success' id='boton-producto-$value->id' title='AGREGAR' $evento><i class='fa fa-shopping-cart'></i></button>";

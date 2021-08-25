@@ -192,9 +192,9 @@
     });
   };
 
-  function anular(id) {
+  function anular(id, empresa) {
     bootbox.prompt({
-      title: "Ingrese el motivo para anular este registro",
+      title: "INGRESE EL MOTIVO PARA ANULAR ESTA VENTA",
       className: 'rubberBand animated',
       inputType: "text",
       callback: function(result) {
@@ -208,7 +208,7 @@
           */
         } else {
           $.ajax({
-            url: "<?= $this->url ?>/ajax_anular/" + id,
+            url: "<?= $this->url ?>/ajax_anular/" + id + "/" + empresa,
             type: "POST",
             dataType: "JSON",
             data: {
@@ -325,7 +325,7 @@
 
   function showTicket(id, metodopago) {
     $.ajax({
-      url: "<?= $this->url ?>/printfcomprobante/" + id ,
+      url: "<?= $this->url ?>/printfcomprobante/" + id,
       type: "POST",
       dataType: "JSON",
       success: function(data) {
@@ -439,58 +439,64 @@
   };
 
   function enviomasivo_documento_electronico() {
-    var light = $('#cuerpo_comprobante').parent();
-    $(light).block({
-      message: '<p><i class="fa fa-spinner fa-spin"></i> Enviando data, espera unos minutos por favor!...</p>',
-      overlayCSS: {
-        backgroundColor: '#fff',
-        opacity: 0.8,
-        cursor: 'wait'
-      },
-    });
-    $.ajax({
-      url: '<?= $this->url ?>/enviomasivo/' + $('#finicio').val() + '/' + $('#factual').val(),
-      method: 'POST',
-      dataType: "JSON",
-    }).then(function(data) {
-      if (data.respuesta == 'ok') {
-        alertComprobantes();
-        swal({
-          title: 'Resultado',
-          text: 'Su comprobante se ha procesado correctamente!',
-          html: true,
-          type: "success",
-          confirmButtonText: "Ok",
-          confirmButtonColor: "#2196F3"
-        }, function() {
-          $("#respuesta_proceso").html('<div class="alert alert-success alert-styled-left alert-arrow-left alert-bordered">\
+
+    bootbox.confirm("Seguro desea emitir masivamente?", function(result) {
+      if (result === true) {
+        var light = $('#cuerpo_comprobante').parent();
+        $(light).block({
+          message: '<p><i class="fa fa-spinner fa-spin"></i> Enviando data, espera unos minutos por favor!...</p>',
+          overlayCSS: {
+            backgroundColor: '#fff',
+            opacity: 0.8,
+            cursor: 'wait'
+          },
+        });
+        $.ajax({
+          url: '<?= $this->url ?>/enviomasivo/' + $('#finicio').val() + '/' + $('#factual').val() + "/" + $("#empresa").val(),
+          method: 'POST',
+          dataType: "JSON",
+        }).then(function(data) {
+          if (data.respuesta == 'ok') {
+            alertComprobantes();
+            swal({
+              title: 'Resultado',
+              text: 'Su comprobante se ha procesado correctamente!',
+              html: true,
+              type: "success",
+              confirmButtonText: "Ok",
+              confirmButtonColor: "#2196F3"
+            }, function() {
+              $("#respuesta_proceso").html('<div class="alert alert-success alert-styled-left alert-arrow-left alert-bordered">\
         <button type="button" class="close" data-dismiss="alert"><span>×</span><span class="sr-only">Close</span></button>\
         Su Documento se ha procesado correctamente...<br><br>\
         # comprobantes procesados: ' + data.procesado + '<br><br>\
         # comprobantes no procesados: ' + data.noprocesado + '</div>');
-        });
-      } else {
-        swal({
-          title: 'ERROR',
-          text: 'No Existen comprobantes pendientes de envio',
-          html: true,
-          type: "error",
-          confirmButtonText: "Ok",
-          confirmButtonColor: "#2196F3"
-        }, function() {
-          $(light).unblock();
-          $("#respuesta_proceso").html('<div class="alert alert-danger alert-styled-left alert-bordered">\
+            });
+          } else {
+            swal({
+              title: 'ERROR',
+              text: 'No Existen comprobantes pendientes de envio',
+              html: true,
+              type: "error",
+              confirmButtonText: "Ok",
+              confirmButtonColor: "#2196F3"
+            }, function() {
+              $(light).unblock();
+              $("#respuesta_proceso").html('<div class="alert alert-danger alert-styled-left alert-bordered">\
         <button type="button" class="close" data-dismiss="alert"><span>×</span><span class="sr-only">Close</span></button>\
         No Existen comprobantes pendientes de envio.\
         </div>');
+            });
+          }
+          $(light).unblock();
+          reload_table();
+        }, function(reason) {
+          $(light).unblock();
+          console.log(reason);
         });
       }
-      $(light).unblock();
-      reload_table();
-    }, function(reason) {
-      $(light).unblock();
-      console.log(reason);
     });
+
   };
 
   function sentTicketWA(venta) {

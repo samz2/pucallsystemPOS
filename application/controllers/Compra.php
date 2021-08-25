@@ -34,7 +34,7 @@ class Compra extends CI_Controller
     $draw = intval($this->input->get("draw"));
     $start = intval($this->input->get("start"));
     $length = intval($this->input->get("length"));
-    $query = $this->Controlador_model->dataCompra($this->controlador, '0', $empresa ,$finicio, $factual);
+    $query = $this->Controlador_model->dataCompra($this->controlador, '0', $empresa, $finicio, $factual);
     $data = [];
     foreach ($query as $key => $value) {
       $usuario = $this->Controlador_model->get($value->usuario, 'usuario');
@@ -57,7 +57,7 @@ class Compra extends CI_Controller
       $data[] = array(
         $key + 1,
         $value->codigo,
-        $empresa->ruc." | ".$empresa->nombre." | ".$empresa->serie,
+        $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie,
         $value->movimiento,
         $value->serie . ' ' . $value->numero,
         $proveedor ? $proveedor->nombre : '',
@@ -95,7 +95,7 @@ class Compra extends CI_Controller
       $data[] = array(
         $key + 1,
         $value->codigo,
-        $empresa->ruc." | ".$empresa->nombre." | ".$empresa->serie,
+        $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie,
         $value->movimiento,
         $value->serie . ' ' . $value->numero,
         $proveedor ? $proveedor->nombre : '',
@@ -334,7 +334,7 @@ class Compra extends CI_Controller
       $data['empresa'] = $this->input->post('empresa');
       $data['igv'] = $this->input->post('igv');
     }
-    
+
     $this->Controlador_model->update(array('id' => $this->compra), $data, $this->controlador);
     echo json_encode(array("status" => TRUE));
   }
@@ -553,11 +553,11 @@ class Compra extends CI_Controller
     $dataUpdate['codigo'] = "C" . $cadena . $numeros;
     $dataUpdate['correlativo'] = $numeros;
     $dataUpdate["empresa"] = $idempresa;
-    
+
     $this->Controlador_model->update(["id" => $this->compra], $dataUpdate, "compra");
     $dataCompra = $this->Controlador_model->get($this->compra, "compra");
     $dataAlmacen = $this->db->where("empresa", $idempresa)->get("almacen")->result();
-    echo json_encode(["dataAlmacen" => $dataAlmacen, "codigoActualizado" =>  $dataCompra->codigo ]);
+    echo json_encode(["dataAlmacen" => $dataAlmacen, "codigoActualizado" =>  $dataCompra->codigo]);
   }
 
   public function ajax_updatecantidad()
@@ -628,24 +628,27 @@ class Compra extends CI_Controller
     if ($insert) {
       $detalle = $this->Controlador_model->getDetalle($this->compra, 'compradetalle');
       foreach ($detalle as $value) {
-        $dataproducto = $this->Controlador_model->get($value->producto, 'producto');
         $cantidad = $this->Controlador_model->getStockAlmacen($value->producto, $value->almacen, $value->lote, $compra->empresa);
         $movimiento['empresa'] = $compra->empresa;
-        $movimiento['usuario'] = $compra->usuario;
+        $movimiento['usuario'] = $this->usuario;
+        $movimiento['tipooperacion'] = "COMPRA";
+        $movimiento['compra'] = $this->compra;
         $movimiento['notaingreso'] = $insert;
-        $movimiento['tipo'] = 'ENTRADA';
+        $movimiento['tipo'] = 'ENTRADA COMPRA';
         $movimiento['producto'] = $value->producto;
         $movimiento['lote'] = $value->lote ? $value->lote : NULL;
-        $movimiento['cantidad'] = $value->totalitem;
         $movimiento['almacen'] = $value->almacen;
+        $movimiento['medida'] = $value->medida;
+        $movimiento['medidacantidad'] = $value->medidacantidad;
+        $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+        $movimiento['cantidaditem'] = $value->cantidaditem;
+        $movimiento['cantidaditemregalo'] = $value->cantidaditemregalo;
+        $movimiento['totalitemoperacion'] = $value->totalitem;
         $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
         $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $value->totalitem;
-        $primero = $cantidad ? $cantidad->cantidad * $cantidad->costopromedio : 0; // cuanto de plata hay en ese stock de producto
-        $costopromedio = ($primero + ($value->totalitem * $value->precioneto)) / (($cantidad ? $cantidad->cantidad : 0) + $value->totalitem);
-        //?  ($value->cantidaditem * $value->precioneto) = cuanto de plata hay en esa compra de ese producto
-        //? ($cantidad ? $cantidad->cantidad : 0) = cuanto de stock tiene ese producto
-        $movimiento['costopromedio'] = $costopromedio;
+        //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
         $movimiento['created'] = date('Y-m-d');
+        $movimiento['hora'] = date('H:i:s');
         $this->Controlador_model->save('movimiento', $movimiento);
 
         $NID['notaingreso'] = $insert;
@@ -657,12 +660,14 @@ class Compra extends CI_Controller
         $NID['medidacantidad'] = $value->medidacantidad;
         $NID['precio'] = $value->precioneto;
         $NID['cantidad'] = $value->cantidad;
-        $NID['cantidaditem'] = $value->totalitem;
+        $NID['cantidaditemregalo'] = $value->cantidaditemregalo;
+        $NID['cantidaditem'] = $value->cantidaditem;
+        $NID['totalitem'] = $value->totalitem;
         $NID['subtotal'] = $value->precioneto * $value->cantidad;
         $this->Controlador_model->save('notaingresodetalle', $NID);
         if ($cantidad) {
           $stockUpdate['cantidad'] = $cantidad->cantidad + $value->totalitem;
-          $stockUpdate['costopromedio'] = $costopromedio;
+          //$stockUpdate['costopromedio'] = $costopromedio;
           $this->Controlador_model->update(array('id' => $cantidad->id), $stockUpdate, 'stock');
         } else {
           $stockRegister['empresa'] = $compra->empresa;
@@ -670,7 +675,7 @@ class Compra extends CI_Controller
           $stockRegister['almacen'] = $value->almacen;
           $stockRegister['lote'] = $value->lote ? $value->lote : NULL;
           $stockRegister['cantidad'] = $value->totalitem;
-          $stockRegister['costopromedio'] = $costopromedio;
+          //$stockRegister['costopromedio'] = $costopromedio;
           $this->Controlador_model->save('stock', $stockRegister);
         }
       }

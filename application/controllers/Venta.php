@@ -89,7 +89,7 @@ class Venta extends CI_Controller
         if ($value->emision === 'soap-env:Client.1032') {
           //? El comprobante ya esta informado y se encuenta con estado anulado o rechazado
           if ($this->perfil == 1 || $this->perfil == 2 || $this->perfil == 6) {
-            $boton .= '<a class="btn btn-danger btn-sm" onclick="anular(' . $value->id . ')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
+            $boton .= '<a class="btn btn-danger btn-sm" onclick="anular(' . $value->id . ', ' . $value->empresa . ')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
           }
         } else {
           //? soap-env:Client.1033: EL comprobante fue registrdo previamente con otros datos
@@ -103,7 +103,7 @@ class Venta extends CI_Controller
           $boton .= '<a class="btn btn-info btn-sm" onclick="procesar_documento_electronico(' . $value->id . ')" title="Emitir"><i class="fa fa-upload"></i></a> ';
         }
         if ($this->perfil == 1 || $this->perfil == 2 || $this->perfil == 6) {
-          $boton .= '<a class="btn btn-danger btn-sm" onclick="anular(' . $value->id . ')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
+          $boton .= '<a class="btn btn-danger btn-sm" onclick="anular(' . $value->id . ', ' . $value->empresa . ')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
         }
       }
       $data[] = array(
@@ -155,46 +155,85 @@ class Venta extends CI_Controller
     echo json_encode($result);
   }
 
-  public function ajax_anular($id)
+  public function ajax_anular($idventa, $empresa)
   {
     $motivo = $this->input->post("result");
-    $dataempresa = $this->Controlador_model->get($this->empresa, 'empresa');
-    $detalle = $this->Controlador_model->getDetalle($id, 'ventadetalle');
+    $dataEmpresa = $this->Controlador_model->get($empresa, 'empresa');
+    $detalle = $this->Controlador_model->getDetalle($idventa, 'ventadetalle');
     foreach ($detalle as $value) {
+
       $productos = $this->Controlador_model->get($value->producto, 'producto');
       if ($productos->tipo == '0') {
-        $stock = $this->Controlador_model->getStock($value->producto, $dataempresa->almacen);
-        if (isset($value->variante)) {
-          //? La variable a sido declara y su valor no es nulo
-          $cantidadRestablecer = $value->cantidadvariante * $value->cantidad;
+        $cantidad = $this->Controlador_model->getStockAlmacen($value->producto, $dataEmpresa->almacen, $value->lote, $empresa);
+        $movimiento['empresa'] = $empresa;
+        $movimiento['usuario'] = $this->usuario;
+        $movimiento['venta'] = $idventa;
+        $movimiento['tipooperacion'] = "VENTA";
+        $movimiento['producto'] = $value->producto;
+        $movimiento['almacen'] = $dataEmpresa->almacen;
+        $movimiento['lote'] =  ($value->lote ? $value->lote : NULL);
+        if ($value->variante) {
+          $dataVariante = $this->Controlador_model->get($value->variante, "productovariante");
+          $totalRestablecer = $dataVariante->cantidad * $value->cantidad;
+          $movimiento['medida'] =  $dataVariante->nombre;
+          $movimiento['medidacantidad'] = $dataVariante->cantidad;
+          $movimiento['cantidaditem'] = $dataVariante->cantidad * $value->cantidad;
+          $movimiento['totalitemoperacion'] = $dataVariante->cantidad * $value->cantidad;
         } else {
-          $cantidadRestablecer =  $value->cantidad;
+          $totalRestablecer = $value->cantidad;
+          $movimiento['medida'] =  "UNIDAD";
+          $movimiento['medidacantidad'] = 1;
+          $movimiento['cantidaditem'] = $value->cantidad;
+          $movimiento['totalitemoperacion'] = $value->cantidad;
         }
-        $producto['cantidad'] = $stock->cantidad + $cantidadRestablecer;
+        $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+        $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
+        $movimiento['tipo'] =  'ENTRADA ANULACION VENTA';
+        $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $totalRestablecer;
+        $movimiento['created'] = date('Y-m-d');
+        $movimiento['hora'] = date("H:i:s");
+        $this->Controlador_model->save('movimiento', $movimiento);
+
+        $stock = $this->Controlador_model->getStock($value->producto, $dataEmpresa->almacen);
+        $producto['cantidad'] = $stock->cantidad + $totalRestablecer;
         $this->Controlador_model->update(array('id' => $stock->id), $producto, 'stock');
       } else if ($productos->tipo == '2') {
-        $combo = $this->Controlador_model->getCombo($value->producto);
-        foreach ($combo as $data) {
-          $cantidad2 = $value->cantidad * $data->cantidad;
-          $stock = $this->Controlador_model->getStock($data->producto, $dataempresa->almacen);
-          if ($stock) {
-            $producto['cantidad'] = $stock->cantidad + $cantidad2;
-            $this->Controlador_model->update(array('id' => $stock->id), $producto, 'stock');
+        $combos = $this->Controlador_model->getCombo($value->producto);
+        foreach ($combos as $combo) {
+          $stockCombo = $this->Controlador_model->getStockProceso($combo->item_id, $dataEmpresa->almacen, NULL, $empresa);
+          $movimientoCombo['empresa'] = $empresa;
+          $movimientoCombo['usuario'] = $this->usuario;
+          $movimientoCombo['venta'] = $idventa;
+          $movimientoCombo['tipooperacion'] = "VENTA";
+          $movimientoCombo['producto'] = $combo->item_id;
+          $movimientoCombo['productocombo'] = $value->producto;
+          $movimientoCombo['almacen'] = $dataEmpresa->almacen;
+          $movimientoCombo['lote'] =  ($value->lote ? $value->lote : NULL);
+          $movimientoCombo['medida'] =  "COMBO";
+          $movimientoCombo['medidacantidad'] = $combo->cantidad;
+          $movimientoCombo['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+          $movimientoCombo['cantidaditem'] = $combo->cantidad * $value->cantidad;
+          $movimientoCombo['totalitemoperacion'] = $combo->cantidad * $value->cantidad;
+          $movimientoCombo['stockanterior'] = $stockCombo ? $stockCombo->cantidad : 0;
+          $movimientoCombo['tipo'] =  'ENTRADA ANULACION VENTA';
+          $movimientoCombo['stockactual'] = ($stockCombo ? $stockCombo->cantidad : 0) + ($combo->cantidad * $value->cantidad);
+          $movimientoCombo['created'] = date('Y-m-d');
+          $movimientoCombo['hora'] = date("H:i:s");
+          $this->Controlador_model->save('movimiento', $movimientoCombo);
+          $cantidad2 = $value->cantidad * $combo->cantidad;
+          $stockC = $this->Controlador_model->getStock($combo->producto, $dataEmpresa->almacen);
+          if ($stockC) {
+            $productoCombo['cantidad'] = $stockC->cantidad + $cantidad2;
+            $this->Controlador_model->update(array('id' => $stockC->id), $productoCombo, 'stock');
           }
         }
       }
-      $ventadetalle['precio'] = 0;
-      $ventadetalle['subtotal'] = 0;
-      $this->Controlador_model->update(array('id' => $value->id), $ventadetalle, 'ventadetalle');
     }
-    $this->Controlador_model->delete_by_venta($id, 'movimiento');
-    $this->Controlador_model->delete_by_venta($id, 'ingreso');
+    $this->Controlador_model->delete_by_venta($idventa, 'ingreso');
+    $venta['usuario_anulado'] = $this->usuario;
     $venta['estado'] = '3';
-    $venta['montototal'] = 0;
-    $venta['montoactual'] = 0;
-    $venta['pago'] = 0;
     $venta['anular_motivo'] = $motivo;
-    $this->Controlador_model->update(array('id' => $id), $venta, $this->controlador);
+    $this->Controlador_model->update(array('id' => $idventa), $venta, $this->controlador);
     echo json_encode(array("status" => TRUE));
   }
 
@@ -297,8 +336,8 @@ class Venta extends CI_Controller
         $producto = $this->Controlador_model->get($data->producto, 'producto');
         $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria');
         $mostrar .= '<td>' . $producto->nombre . ' ' . ($categoria ? $categoria->nombre : '') . '</td>';
-      }else{
-        $mostrar .= '<td>'.$data->nombre.'</td>';
+      } else {
+        $mostrar .= '<td>' . $data->nombre . '</td>';
       }
       $mostrar .= '<td align="right">S/ ' . $data->preciocompra . '</td>
       <td align="right">S/ ' . $data->precioventa . '</td>
@@ -584,7 +623,7 @@ class Venta extends CI_Controller
       $venta = $this->Controlador_model->get($value->id, 'venta');
       $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
       $vendedor = $this->Controlador_model->get($venta->usuario_creador, 'usuario');
-      
+
       $i++;
       $utilidadventa = $value->precioventa - $value->preciocompra;
       $utilidadTotal = ($value->precioventa * $value->cantidad) - ($value->preciocompra * $value->cantidad);
@@ -594,10 +633,10 @@ class Venta extends CI_Controller
       $sheet->setCellValue('D' . $i, "GENERADO");
       $sheet->setCellValue('E' . $i, $venta->serie . '-' . $venta->numero);
       $sheet->setCellValue('F' . $i, $vendedor->usuario);
-      if($value->tipo == '0'){
+      if ($value->tipo == '0') {
         $producto = $this->Controlador_model->get($value->producto, 'producto');
         $sheet->setCellValue('G' . $i, $producto->nombre);
-      }else{
+      } else {
         $sheet->setCellValue('G' . $i, $value->nombre);
       }
       $sheet->setCellValue('H' . $i, $value->preciocompra);
@@ -706,15 +745,15 @@ class Venta extends CI_Controller
     exit();
   }
 
-  public function enviomasivo($finicio, $factual)
+  public function enviomasivo($finicio, $factual, $empresa)
   {
     $procesado = 0;
     $noprocesado = 0;
     $usuario = $this->perfil == 1 ? FALSE : $this->usuario;
-    $validar = $this->Controlador_model->validar($finicio, $factual);
+    $validar = $this->Controlador_model->validar($finicio, $factual, $empresa);
     if ($validar) {
       foreach ($validar as $value) {
-        if ($this->masivo($value->id)) {
+        if ($this->masivo($value->id, $empresa)) {
           $procesado++;
         } else {
           $noprocesado++;
@@ -727,9 +766,9 @@ class Venta extends CI_Controller
     echo json_encode($data);
   }
 
-  public function masivo($id)
+  public function masivo($id, $empresa)
   {
-    $empresa = $this->Controlador_model->get($this->session->userdata('empresa'), 'empresa');
+    $empresa = $this->Controlador_model->get($empresa, 'empresa');
     $venta = $this->Controlador_model->get($id, $this->controlador);
     $ventadetalle = $this->Controlador_model->getDetalle($id, 'ventadetalle');
     $ruc_emisor = $empresa->ruc;
@@ -935,7 +974,7 @@ class Venta extends CI_Controller
         <td style='text-align:right; font-weight:bold; border:none'> $venta->descuento</td>
       </tr>
       <tr>
-        <td colspan='3' style='text-align:right; font-weight:bold; border:none; color:#36a229''>Pagado(".($ingreso ? $ingreso->metodopago : 'SIN DATOS').") S/</td>
+        <td colspan='3' style='text-align:right; font-weight:bold; border:none; color:#36a229''>Pagado(" . ($ingreso ? $ingreso->metodopago : 'SIN DATOS') . ") S/</td>
         <td style='text-align:right; font-weight:bold; border:none; color:#36a229'> $venta->deudatotal</td>
       </tr>
       <tr>

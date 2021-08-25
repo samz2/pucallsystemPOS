@@ -400,8 +400,11 @@
               </div>
             </div>
           </div>
+          <div class="form-group text-right">
+          <button type="button" id="btnSaveCombo" onclick="savecombo()" class="btn btn-primary"></button>
+          </div>
         </form>
-        <button type="button" id="btnSaveCombo" onclick="savecombo()" class="btn btn-primary"></button>
+        
       </div>
       <div class="modal-footer">
         <div class="row">
@@ -1353,6 +1356,7 @@
   };
 
   function savecombo() {
+    event.preventDefault();
     $('#btnSaveCombo').text('guardando...'); //change button text
     $('#btnSaveCombo').attr('disabled', true); //set button disable
     // ajax adding data to database

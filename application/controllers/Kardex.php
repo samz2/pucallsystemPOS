@@ -38,18 +38,19 @@ class Kardex extends CI_Controller
   function buscarProducto()
   {
     $q = $this->input->get("q");
-    $clientesDni = $this->Controlador_model->getClienteDni($q);
-    $clientesRuc = $this->Controlador_model->getClienteRuc($q);;
-    // var_dump($this->db->last_query());
-    $clienteDniJson = [];
-    $clienteRucJson = [];
-    foreach ($clientesDni as $cliente) {
-      $clienteDniJson[] = ['id' => $cliente->id, 'text' => $cliente->documento . ' | ' . $cliente->nombre . ' ' . $cliente->apellido];
+    $query = $this->Controlador_model->getProductos($q);
+    $dataProductos = [];
+    foreach ($query as $value) {
+      $dataProductos[] = ['id' => $value->id, 'text' => $value->nombre];
     }
-    foreach ($clientesRuc as $cliente) {
-      $clienteRucJson[] = ['id' => $cliente->id, 'text' => $cliente->documento . ' | ' . $cliente->nombre . ' ' . $cliente->apellido];
+    
+    if(empty($dataProductos)){
+      $dataResult = array(array("text" => "SIN RESULTADOS DE BUSQUEDA"));
+    }else{
+      $dataResult = array(array("text" => "RESULTADOS DE BUSQUEDA", "children" => $dataProductos));
     }
-    echo json_encode(array(array("text" => "DNI", "children" => $clienteDniJson), array("text" => "RUC", "children" => $clienteRucJson)));
+  
+    echo json_encode($dataResult);
   }
 
   public function kardexFecha()
@@ -59,10 +60,9 @@ class Kardex extends CI_Controller
     $fechafinal = $this->input->post('fechafinal');
     $tipofiltrado = $this->input->post('tipofiltrado');
     $movimientos = $this->Controlador_model->kardexFecha($producto, $fechainicio, $fechafinal, $tipofiltrado);
-    $saldoinicial = $this->Controlador_model->saldoinicialxFecha($producto, $fechainicio, $fechafinal);
     $ticket = '';
     $ticket .= '
-    <table class="table table-bordered table-striped">
+    <table class="table table-bordered table-striped" >
     <thead>
       <tr>
         <th>#</th>
@@ -70,9 +70,9 @@ class Kardex extends CI_Controller
         <th>Producto</th>
         <th>Medida</th>
         <th>Tipo</th>
-        <th>Codigo</th>
+        <th>Codigo Operacion</th>
+        <th>Almacen</th>
         <th>Fecha / Hora</th>
-        <th>Detalle</th>
         <th>Total items de Operacion</th>
         <th>Stock Anterior</th>
         <th>Stock Actual</th>
@@ -82,47 +82,44 @@ class Kardex extends CI_Controller
     foreach ($movimientos as $indice => $data) {
       $dataproducto = $this->Controlador_model->get($data->producto, 'producto');
       $usuarioresponsable = $this->Controlador_model->get($data->usuario, 'usuario');
+      $almacen = $this->Controlador_model->get($data->almacen, 'almacen');
       if ($data->tipooperacion == "NI") {
+        $dataTipo = $data->tipo;
         $notaingreso = $this->Controlador_model->get($data->notaingreso, 'notaingreso');
-        $compra = $this->Controlador_model->get($notaingreso->compra, 'compra');
-        if (isset($compra->proveedor)) {
-          $proveedor = $this->Controlador_model->get($compra->proveedor, 'proveedor');
-        }
-        $razon = isset($compra->proveedor) ? $proveedor->nombre : '';
-        $fecha = $notaingreso->created;
-        $NID = $this->Controlador_model->getNIDetalle($data->producto, $data->notaingreso);
-        $precio = $NID->precio;
         $codigoDocumento = $notaingreso->codigo;
       } else if ($data->tipooperacion == "VENTA") {
         $venta = $this->Controlador_model->get($data->venta, 'venta');
         $codigoDocumento =  $venta->serie . '-' . $venta->numero;
-        $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
-        $razon = $cliente->nombre . ' ' . $cliente->apellido;
-        $fecha = $venta->created;
-        $VD = $this->Controlador_model->getVDetalle($data->producto, $data->venta);
-        $precio = $VD->precio;
+        if($data->productocombo){
+          $queryproductocombo = $this->Controlador_model->get($data->productocombo, "producto");
+          $dataTipo = $data->tipo.": ".$queryproductocombo->nombre;
+        }else{
+          $dataTipo = $data->tipo;
+        }
       } else if ($data->tipooperacion == "NS") {
+        $dataTipo = $data->tipo;
         $notasalida = $this->Controlador_model->get($data->notasalida, 'notasalida');
         $codigoDocumento = $notasalida->codigo;
-        $usuario = $this->Controlador_model->get($notasalida->usuario, 'usuario');
-        $razon = $usuario->nombre . ' ' . $usuario->apellido;
-        $NSD = $this->Controlador_model->getNSDetalle($data->producto, $data->notasalida);
-        $precio = $NSD->precio;
+      } else if ($data->tipooperacion == "COMPRA") {
+        $dataTipo = $data->tipo;
+        $notaingreso = $this->Controlador_model->get($data->notaingreso, 'notaingreso');
+        $compra = $this->Controlador_model->get($data->compra, 'compra');
+        $codigoDocumento = $notaingreso->codigo." / ".$compra->serie."-".$compra->numero;
       }
 
       $ticket .= '
       <tr>
-      <td>' . ($indice + 1) . '</td>
-      <td>' . $usuarioresponsable->nombre . " " . $usuarioresponsable->apellido . " " . $usuarioresponsable->documento . '</td>
-      <td>' . $dataproducto->nombre . '</td>
-      <td>' . $data->medida . '</td>
-      <td>' . $data->tipo . '</td>
-      <td>' . $codigoDocumento . '</td>
-      <td>' . $data->created . " " . $data->hora . '</td>
-      <td>' . $data->detalle . '</td>
-      <td>' . $data->totalitemoperacion . '</td>
-      <td>' . $data->stockanterior . '</td>
-      <td>' . $data->stockactual . '</td>
+        <td>' . ($indice + 1) . '</td>
+        <td>' . $usuarioresponsable->nombre . " " . $usuarioresponsable->apellido . " " . $usuarioresponsable->documento . '</td>
+        <td>' . $dataproducto->nombre . '</td>
+        <td>' . $data->medida . '</td>
+        <td>' . $dataTipo . '</td>
+        <td>' . $codigoDocumento . '</td>
+        <td>'.$almacen->nombre.'</td>
+        <td>' . $data->created . " " . $data->hora . '</td>
+        <td>' . $data->totalitemoperacion . '</td>
+        <td>' . $data->stockanterior . '</td>
+        <td>' . $data->stockactual . '</td>
       </tr>';
     }
     // barcode codding type

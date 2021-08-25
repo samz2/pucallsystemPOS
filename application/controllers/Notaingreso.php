@@ -574,7 +574,6 @@ class Notaingreso extends CI_Controller
       $movimiento['tipooperacion'] = "NI";
       $movimiento['notaingreso'] = $this->notaingreso;
       $movimiento['tipo'] = 'ENTRADA';
-      $movimiento['detalle'] = 'ENTRADA DE STOCK POR NOTA DE INGRESO';
       $movimiento['producto'] = $value->producto;
       $movimiento['lote'] = $value->lote ? $value->lote : NULL;
       $movimiento['almacen'] = $value->almacen;

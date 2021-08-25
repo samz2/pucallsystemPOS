@@ -613,7 +613,7 @@
         $('#vendiendo').html("<i class='fa fa-spinner fa-spin'></i>");
         $('#vendiendo').attr("disabled", true);
         $('#clientes').val("00000000 | CLIENTES VARIOS | ");
-        EnviarPedido(idventa); // TODO: Registra en ventadetalle
+        procesarVenta(idventa); // TODO: Registra en ventadetalle
       }
     } else {
       $("#pago").closest('div').addClass("has-error");
@@ -625,7 +625,7 @@
   };
 
 
-  function EnviarPedido(idventa) {
+  function procesarVenta(idventa) {
     var DeudaTotal = 0;
     var CantidadItem = 0;
     //TODO:-------------------------------Guardamos los produtos en ventadetalle------------------------------------------------
@@ -929,6 +929,7 @@
                   }
                   location.reload();
                 } else {
+                  console.log(data.datacaja);
                   $('#cerrarcaja').attr('disabled', false);
                   $('#cerrarcaja').text('CERRAR CAJA');
                   for (var i = 0; i < data.inputerror.length; i++) {

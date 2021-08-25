@@ -552,7 +552,7 @@ class Inicio_model extends CI_Model
 	function geVentastCaja($idcaja, $tabla){
 		$this->db->where("caja", $idcaja);
 		$this->db->where("estado", "1");
-		return $this->db->get( $tabla)->result();
+		return $this->db->get($tabla)->result();
 	}
 
 	function totalGenerados($idcaja, $metodopago){
@@ -566,6 +566,17 @@ class Inicio_model extends CI_Model
 		$this->db->where("caja", $idcaja);
 		$this->db->where("tipo", "OPERACION");
 		return $this->db->get("ingreso")->result();
+	}
+
+	public function getStockAlmacen($producto, $almacen, $lote, $empresa)
+	{
+		$this->db->where('producto', $producto);
+		$this->db->where('almacen', $almacen);
+		$this->db->where('empresa', $empresa);
+		if ($lote) {
+			$this->db->where('lote', $lote);
+		}
+		return $this->db->get("stock")->row();
 	}
 	
 }

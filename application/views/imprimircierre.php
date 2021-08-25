@@ -186,6 +186,35 @@
   <table class="tabla-contado" style="text-align:center">
     <thead>
       <tr>
+        <th colspan="4" style="border: 0.5px solid #000">VENTAS ANULADAS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>N°</td>
+        <td>RESPONSABLE</td>
+        <td>COMBROBANTE</td>
+        <td>MOTIVO</td>
+      </tr>
+      <?php
+        $ventasAnuladas = $this->db->where("caja", $caja->id)->where("estado", "3")->get("venta")->result();
+      ?>
+      <?php foreach($ventasAnuladas as $key => $anuladas){ 
+        $dataUsuario = $this->Controlador_model->get($anuladas->usuario_anulado, "usuario");
+      ?>
+      <tr>
+        <td><?= $key + 1 ?></td>
+        <td><?= $dataUsuario ? $dataUsuario->nombre." ".$dataUsuario->apellido : "SIN DATOS" ?></td>
+        <td><?= $anuladas->serie."-".$anuladas->numero ?></td>
+        <td><?= $anuladas->anular_motivo ?></td>
+      </tr>
+      <?php } ?>
+    </tbody>
+  </table>
+  <br>
+  <table class="tabla-contado" style="text-align:center">
+    <thead>
+      <tr>
         <th colspan="4" style="border: 0.5px solid #000">ABONOS EN CAJA</th>
       </tr>
     </thead>
