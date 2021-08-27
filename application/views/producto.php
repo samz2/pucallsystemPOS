@@ -21,7 +21,7 @@
                     <span class="help-block"></span>
                   </div>
                   <div class="col-lg-3">
-                    <button onclick="detallesproductos()" id="botonprocesar" class="btn btn-primary">Procesar</>
+                    <button onclick="detallesproductos()" id="botonprocesar" class="btn btn-primary">Procesar</button>
                   </div>
                 </div>
               </div>

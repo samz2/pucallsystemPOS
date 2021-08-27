@@ -114,7 +114,7 @@ class Notasalida extends CI_Controller
   public function crear()
   {
     $numero = $this->Controlador_model->codigos($this->controlador,  $this->empresa);
-    $numeros = $numero ? $numero->id + 1 : 1;
+    $numeros = $numero ? $numero->correlativo + 1 : 1;
     $cadena = "";
     for ($i = 0; $i < 4 - strlen($numeros); $i++) {
       $cadena = $cadena . '0';

@@ -1013,7 +1013,7 @@ class Venta extends CI_Controller
       </div>
     </div>
    <button data-dismiss='modal' class='btn btn-default hiddenpr'>Cerrar</button>
-   <button class='btn btn-add' onclick='imprimircomprobante($empresa->tipoimpresora , $idventa)' id='btncomprobante'>Imprimir</button>";
+   <button class='btn btn-add' onclick='imprimir($idventa, $empresa->tipoimpresora)' id='btncomprobante'>Imprimir</button>";
 
     echo json_encode(["htmlComprobante" => $htmlComprobante, "htmlFotter" => $htmlFotter]);
   }
