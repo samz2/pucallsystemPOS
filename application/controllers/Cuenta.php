@@ -199,6 +199,7 @@ class Cuenta extends CI_Controller
       "recordsFiltered" => $creditos->num_rows(),
       "data" => $data
     );
+    // echo "la".$empresa;
     echo json_encode($result);
   }
 
@@ -550,14 +551,14 @@ class Cuenta extends CI_Controller
     $draw = intval($this->input->get("draw"));
     $start = intval($this->input->get("start"));
     $length = intval($this->input->get("length"));
-    $creditos = $this->db->query("select vd.*, v.serie, v.numero,c.nombre as clientenombre,c.documento, v.created from venta v inner join ventadetalle vd on vd.venta = v.id  join cliente c on v.cliente = c.id where v.empresa = $empresa and v.formapago = 'CREDITO' and v.cliente = $cliente and v.estado = '1'");
+    $creditos = $this->db->query("select vd.*, v.serie, v.numero,c.nombre as clientenombre,v.cliente,c.documento, v.created from venta v inner join ventadetalle vd on vd.venta = v.id  join cliente c on v.cliente = c.id where v.empresa = $empresa and v.formapago = 'CREDITO' and v.cliente = $cliente and v.estado = '1'");
     $data = [];
     $no = "";
     $hoy = strtotime(date('Y-m-d'));
     foreach ($creditos->result() as $value) {
       $nombre_cliente = str_replace(" ", "_", $value->clientenombre);
       $nombre_producto = str_replace(" ","_",$value->nombre);
-      $no = "<input type='checkbox' id='chk_$value->id' class='form-control'  onclick=agregarPago('$value->id',$value->cantidad,$value->subtotal,'$nombre_cliente','$value->documento','$nombre_producto')>";
+      $no = "<input type='checkbox' id='chk_$value->id' class='form-control'  onclick=agregarPago('$value->cliente','$value->id',$value->cantidad,$value->subtotal,'$nombre_cliente','$value->documento','$nombre_producto')>";
       // $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
       //add variables for action
       $boton1 = '';
@@ -596,10 +597,74 @@ class Cuenta extends CI_Controller
   }
   public function pagos()
   {
-    $prueba = $this->input->post("datos");
-    $result = array(
-      "prueba" => $prueba,
-    );
-    echo json_encode($result);
+    $datos["empresa"]         = $this->input->post("empresa");
+    $datos["usuario_creador"] = $this->usuario;
+    $datos["caja"]            = $this->session->userdata('caja');
+    $datos["cliente"]         = $this->input->post("cliente");
+    $datos["referencia"]      = "";
+    $datos["tipoventa"]       = $this->input->post("tipoventa");
+    // nueva lógica
+    $comprobante = $this->db->where("tipo",$this->input->post("tipoventa"))->where("empresa",$this->input->post("empresa"))->get("comprobante")->row();
+    if(isset($comprobante))
+    {
+      $datos["serie"]           = $comprobante->serie;
+      $datos["numero"]          = $this->Controlador_model->addLeadingZeros($comprobante->correlativo);
+      $datos["consecutivo"]     = (int)$comprobante->correlativo +1;
+      $z["correlativo"]         = $datos["consecutivo"];
+      $this->Controlador_model->update(array('id' => $comprobante->id)), $z, 'comprobante');
+    }
+    
+    // fin lógica
+    $datos["formapago"]       = "CONTADO";
+    $datos["montototal"]      = $this->input->post("subtotal");
+    $datos["descuento"]       = $this->input->post("descuento");
+    $datos["deudatotal"]      = floatval($this->input->post("subtotal")) - floatval($this->input->post("descuento"));
+    $datos["montoactual"]     = 0;
+    $datos["pago"]            = $this->input->post("pago");
+    $datos["vuelto"]          = $this->input->post("vuelto");
+    $cant = 0;
+    foreach($this->input->post("datos") as $fila => $val)
+    {
+      $cant += $val["cantidad"];
+    }
+    $datos["totalitems"]      = $cant;
+    $datos["emision"]         = "";
+    $datos["hash"]            = "";
+    $datos["estado"]          = "1";
+    $datos["consumo"]         = "0";
+    $datos["dcuenta"]         = "0"; //1 es para cuentas divididas
+    // $datos["sound"]           = "1";
+    $datos["atender"]         = "1"; //atendido
+    $datos["modificar"]       = "0"; // 1 NC
+    $datos["hora"]            = date("H:i:s");
+    $datos["created"]         = date("Y-m-d");
+    $datos["hf_procesado"]    = "";
+    $datos["vence"]           = date("Y-m-d");
+    $datos["anular_motivo"]    = "";
+    try {
+      $idVenta = $this->Controlador_model->save("venta",$datos);
+      if($idVenta != 0)
+      {
+        foreach($this->input->post("datos") as $fila => $val)
+        {
+          $detVenta["venta"]        = $idVenta;
+          $detVenta["tipo"]         = "0";
+          $detVenta["producto"]     = $idVenta;
+          $detVenta["nombre"]       = $val["nombre"];
+          $detVenta["preciocompra"] = "0";
+          $detVenta["precio"]       = $val["SubTotal"];
+          $detVenta["cantidad"]     = $val["cantidad"];
+          $detVenta["subtotal"]     = $val["SubTotal"];
+          $detVenta["opcion"]       = "";
+          $detVenta["time"]         = $datos["hora"]  ;
+          $detVenta["estado"]       = "0";
+          $detVenta["estadopago"]   = "1";
+          $this->Controlador_model->save("ventadetalle",$detVenta);
+        }
+        echo "SUCCESS";
+      }
+    } catch (\Throwable $th) {
+      echo $th;
+    }
   }
 }

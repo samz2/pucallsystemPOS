@@ -53,5 +53,18 @@ class Cuenta_model extends CI_Model {
 	  $query = "select * from cliente c where c.tipodocumento = 'RUC' and c.nombre like '%$q%' or apellido like '%$q%' or documento like '%$q%'";
 	  return $this->db->query($query)->result();
   }
+  public function addLeadingZeros($num)
+  {
+	$correlativo = "";
+	$cantCeros = 6 - strlen($num);
+	$i = 0;
+	while($i < $cantCeros)
+	{
+		$correlativo .= "0";
+		$i++;
+	}	
+	$correlativo .= $num;
 
+	return $correlativo;
+  }
 }
