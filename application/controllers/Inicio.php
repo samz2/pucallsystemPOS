@@ -2090,24 +2090,18 @@ class Inicio extends CI_Controller
         //? pagar venta
         $venta = $this->Controlador_model->get($idventa, 'venta');
         $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
-        $serie = substr($venta->tipoventa, 0, 1) . substr($empresa->serie, 1, 3);
-        $numero = $this->Controlador_model->codigos($venta->tipoventa, $serie);
-        $numeros = $numero ? $numero->consecutivo + 1 : 1;
-        $cadena = "";
-        for ($i = 0; $i < 6 - strlen($numeros); $i++) {
-          $cadena = $cadena . '0';
-        }
+        
+        $dataventaUpdate['formapago'] = $this->input->post('formapago');
+        
         $deudaTotal = $this->input->post("deuda") - $this->input->post("descuento");
         $dataventaUpdate['caja'] = $this->caja;
-        $dataventaUpdate['serie'] = $serie;
-        $dataventaUpdate['numero'] = $cadena . $numeros;
-        $dataventaUpdate['consecutivo'] = $numeros;
+        
         $dataventaUpdate['usuario_proceso'] = $this->usuario;
         $dataventaUpdate['atender'] = "1";
         $dataventaUpdate['sound'] = "1";
         $dataventaUpdate['hf_procesado'] = date("Y-m-d H:i:s");
         $dataventaUpdate['vence'] = $this->input->post('vence');
-        $dataventaUpdate['formapago'] = $this->input->post('formapago');
+        
         $dataventaUpdate['created'] = $this->input->post('fecha');
         $dataventaUpdate['totalitems'] = $CantidadItem;
         $dataventaUpdate['estado'] = '1';
@@ -2116,6 +2110,16 @@ class Inicio extends CI_Controller
         $dataventaUpdate['descuento'] = $this->input->post("descuento");
         $dataventaUpdate['deudatotal'] = $deudaTotal;
         if ($this->input->post('formapago') == 'CONTADO') {
+          $serie = substr($venta->tipoventa, 0, 1) . substr($empresa->serie, 1, 3);
+          $numero = $this->Controlador_model->codigos($venta->tipoventa, $serie);
+          $numeros = $numero ? $numero->consecutivo + 1 : 1;
+          $cadena = "";
+          for ($i = 0; $i < 6 - strlen($numeros); $i++) {
+            $cadena = $cadena . '0';
+          }
+          $dataventaUpdate['serie'] = $serie;
+          $dataventaUpdate['numero'] = $cadena . $numeros;
+          $dataventaUpdate['consecutivo'] = $numeros;
           $dataventaUpdate['montoactual'] = 0;
           $dataventaUpdate['pago'] = $this->input->post('pago');
           $dataventaUpdate['vuelto'] = $this->input->post('pago') - $deudaTotal;
@@ -2135,6 +2139,15 @@ class Inicio extends CI_Controller
           $dataingreso['hora'] = date('H:i:s');
           $this->Controlador_model->save('ingreso', $dataingreso);
         } else {
+          $comprobante = $this->db->where("tipo","CREDITOS")->where("empresa",$this->empresa)->get("comprobante")->row();
+          if(isset($comprobante))
+          {
+            $dataventaUpdate["serie"]           = $comprobante->serie;
+            $dataventaUpdate["numero"]          = $this->Controlador_model->addLeadingZeros(($comprobante->correlativo+1));
+            $dataventaUpdate["consecutivo"]     = (int)$comprobante->correlativo +1;
+            $z["correlativo"]                   = $dataventaUpdate["consecutivo"] ;
+            $this->Controlador_model->update(array('id' => $comprobante->id), $z, 'comprobante');
+          }
           $dataventaUpdate['montoactual'] = $deudaTotal;
         }
         $this->Controlador_model->update(array('id' => $idventa), $dataventaUpdate, 'venta');
