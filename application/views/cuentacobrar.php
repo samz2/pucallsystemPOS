@@ -281,6 +281,7 @@
     var subtotal = 0;
     var cant = 0;
     var CclienteNombre = "";
+    var idCliente = "";
     var pago = 0;
     var recibido = 0;
     var tipoventa = "";
@@ -437,18 +438,24 @@
                 // "totalItems":  this.elementos.length,
                 "datos": this.elementos,
                 "empresa": $("#empresa").val(),
-
+                "cliente": this.idCliente,
             },
             dataType: "JSON",
             success: function(data) {
-                console.log(data);
+                Lobibox.notify('success', {
+                    size: 'mini',
+                    position: 'top right',
+                    msg: 'Procesado con éxito'
+                });
+                location.reload();
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 Lobibox.notify('error', {
                     size: 'mini',
                     position: 'top right',
-                    msg: 'Error al obtener datos de ajax.'
+                    msg: errorThrown
                 });
+                location.reload();
             }
         });
 
@@ -532,8 +539,9 @@
             i++;
         }
     }
-    function agregarPago(id,cantii,tott,cli,zdocumento,prd)
+    function agregarPago(idcliente,id,cantii,tott,cli,zdocumento,prd)
     {
+        this.idCliente = idcliente;
         if(zdocumento.length == 11) $("#factura").show();
         else $("#factura").hide();
         var clientName = cli;
