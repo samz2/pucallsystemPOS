@@ -611,7 +611,7 @@ class Cuenta extends CI_Controller
       $datos["numero"]          = $this->Controlador_model->addLeadingZeros($comprobante->correlativo);
       $datos["consecutivo"]     = (int)$comprobante->correlativo +1;
       $z["correlativo"]         = $datos["consecutivo"];
-      $this->Controlador_model->update(array('id' => $comprobante->id)), $z, 'comprobante');
+      $this->Controlador_model->update(array('id' => $comprobante->id), $z, 'comprobante');
     }
     
     // fin lógica

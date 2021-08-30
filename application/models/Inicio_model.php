@@ -579,4 +579,18 @@ class Inicio_model extends CI_Model
 		return $this->db->get("stock")->row();
 	}
 	
+	public function addLeadingZeros($num)
+	{
+		$correlativo = "";
+		$cantCeros = 6 - strlen($num);
+		$i = 0;
+		while($i < $cantCeros)
+		{
+			$correlativo .= "0";
+			$i++;
+		}	
+		$correlativo .= $num;
+
+		return $correlativo;
+	}
 }
