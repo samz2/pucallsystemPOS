@@ -172,6 +172,7 @@ class Empresa extends CI_Controller
     $data['almacen'] = $this->input->post('almacen');
     $data['tipoimpresora'] = $this->input->post('tipoimpresora');
     $data['nombreimpresora'] = $this->input->post('nombreimpresora');
+    $data['color_menu'] = $this->input->post('color_menu');
     if ($this->Controlador_model->save($this->controlador, $data)) {
       echo json_encode(array("status" => TRUE));
     }
@@ -227,8 +228,10 @@ class Empresa extends CI_Controller
     $data['tipoimpresora'] = $this->input->post('tipoimpresora'); //adc
     $data['tipoventa'] = $this->input->post('tipoventa');
     $data['nombreimpresora'] = $this->input->post('nombreimpresora');
+    $data['color_menu'] = $this->input->post('color_menu');
     $this->Controlador_model->update(array('id' => $this->input->post('id')), $data, $this->controlador);
-    echo json_encode(array("status" => TRUE));
+    $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");
+    echo json_encode(array("status" => TRUE, "dataEmpresa" => $dataEmpresa));
   }
 
   public function ajax_delete($id)

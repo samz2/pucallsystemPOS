@@ -89,7 +89,8 @@
           dataType: "JSON",
           success: function(data) {
             if (data.consulta.status) {
-              if (data.lote.status) {
+              if (data.lote.status == "1") {
+                console.log("ingreso por lote");
                 if (data.lote.totalotes > 1) {
                   //? MODAL
                   agregarAdicionales(data.consulta.idproducto);
@@ -102,7 +103,12 @@
                   }, "");
                 }
               } else {
-                agregaarventa(data.consulta.idproducto, data.consulta.precioproducto, {}, "");
+                console.log("ingreso sin lote");
+                agregaarventa(data.consulta.idproducto, data.consulta.precioproducto, {
+                  statusvariante: false,
+                  lote: false,
+                  statuslote: false
+                }, "");
               }
             } else {
               if (data.consulta.msg != "") {

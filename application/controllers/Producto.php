@@ -22,7 +22,7 @@ class Producto extends CI_Controller
     $data = array(
       'titulo' => $this->titulo_controlador,
       'contenido' => $this->vista,
-      'categories' => $this->db->order_by('nombre', 'asc')->get('productocategoria')->result(),
+      'categories' => $this->db->order_by('nombre', 'asc')->where("estado", "0")->get('productocategoria')->result(),
       'marcas' => $this->db->order_by("nombre", "ASC")->get('marca')->result(),
       'empresas' => $this->Controlador_model->getAll('empresa'),
       'almacenes' => $this->Controlador_model->getAll('almacen'),

@@ -4,6 +4,7 @@ include "validaciondedatos.php";
 include "procesarcomprobante.php";
 //Nota: si renombraste la carpeta a algo diferente de "ticket" cambia el nombre en esta línea
 require __DIR__ . '/ticket/autoload.php';
+
 use Mike42\Escpos\Printer;
 use Mike42\Escpos\EscposImage;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
@@ -32,9 +33,35 @@ class Guiaremision extends CI_Controller
       'contenido' => $this->vista,
       'usuarios' => $this->Controlador_model->getAll('usuario'),
       'empresas' => $this->Controlador_model->getAll('empresa'),
+      'departamentos' => $this->Controlador_model->getAll('departamento'),
       'breads' => array(array('ruta' => 'javascript:;', 'titulo' => $this->titulo_controlador))
     );
     $this->load->view(THEME . TEMPLATE, $data);
+  }
+
+  function actualizacionubigeo()
+  {
+    //? ACTUALIZACION DE CODIGO DE PROVINCIAS
+    /*  $departamentos = $this->db->order_by("codigo", "ASC")->get("departamento")->result();
+    foreach($departamentos as $departamento){
+      $queryProvincia = $this->db->where("departamento", $departamento->id)->order_by('id', 'ASC')->get("provincia");
+      foreach($queryProvincia->result() as $key => $provincia){
+        $codigo = $key + 1;
+        $updateCodigo["codigo"] = $codigo <= 9 ? "0".$codigo : $codigo;
+        $this->Controlador_model->update(["id" => $provincia->id], $updateCodigo, "provincia");
+      }
+    } */
+    //? ACTUALIZACION CODIGO DE DISTRITOS
+    /* set_time_limit(300000);
+    $provincias = $this->db->order_by("codigo", "ASC")->get("provincia")->result();
+    foreach($provincias as $provincia){
+      $queryDistrito = $this->db->where("provincia", $provincia->id)->order_by('id', 'ASC')->get("distrito")->result();
+      foreach($queryDistrito as $key => $provincia){
+        $codigo = $key + 1;
+        $updateCodigo["codigo"] = $codigo <= 9 ? "0".$codigo : $codigo;
+        $this->Controlador_model->update(["id" => $provincia->id], $updateCodigo, "distrito");
+      }
+    }  */
   }
 
   public function crear()
@@ -73,6 +100,7 @@ class Guiaremision extends CI_Controller
     $empresa = $this->input->get('empresa');
     $query = $this->db->order_by('id', 'desc')->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'")->where('empresa', $empresa)->where('estado', '1')->get($this->controlador)->result();
     $data = [];
+    $estadoRsgister = ["0" => '<span class="label label-default">PENDIENTE</span>', "1" => '<span class="label label-info">GENERADO</span>'];
     foreach ($query as $key => $value) {
       $empresa = $this->Controlador_model->get($value->empresa, 'empresa');
       $usuario = $this->Controlador_model->get($value->usuario, 'usuario');
@@ -82,31 +110,37 @@ class Guiaremision extends CI_Controller
       $boton = '';
       $estado = '<td>&nbsp;</td>';
       //add html fodr action
-      $boton .= '<a onclick="visualizar(' . $value->id . ')" class="btn btn-default btn-sm" title="Visualizar"><i class="fa fa-eye"></i></a> ';
-      $boton .= '<a onclick="imprimir(' . $value->id . ')" class="btn btn-danger btn-sm" title="Generar"><i class="fa fa-print"></i></a> ';
-      $boton .= '<a class="btn btn-info btn-sm" onclick="procesar_documento_electronico('.$value->id.')" title="Emitir"><i class="fa fa-upload"></i></a> ';
-      $archivo = $empresa->ruc.'-'.'09'.'-'.$value->serie.'-'.$value->numero;
-      if($value->emision === 'soap-env:Client.1032') {
-        $boton .= '<a class="btn btn-danger btn-sm" onclick="anular('.$value->id.')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
+      if ($value->estado == "0") {
+        $boton .= '<a class="btn btn-info btn-sm" href="' . $this->url . '/actualizar/' . $value->id . '" title="Actualizar"><i class="fa fa-pencil"></i></a> ';
+        $boton .= '<a class="btn btn-sm btn-danger" title="Borrar" onclick="borrar(' . $value->id . ')"><i class="fa fa-trash"></i></a> ';
       } else {
-          $boton .= '<a target="_blank" class="btn btn-success btn-sm" href="archivos_xml_sunat/cpe_xml/'.($empresa->tipoproceso == '1' ? 'produccion' : 'beta').'/'.$empresa->ruc.'/R-'.$archivo.'.XML" title="CDR"><i class="fa fa-briefcase"></i></a> ';
+        $boton .= '<a onclick="visualizar(' . $value->id . ')" class="btn btn-default btn-sm" title="Visualizar"><i class="fa fa-eye"></i></a> ';
+        $boton .= '<a onclick="imprimirguiaremision(' . $value->id . ')" class="btn btn-danger btn-sm" title="Generar"><i class="fa fa-print"></i></a> ';
+        $boton .= '<a class="btn btn-info btn-sm" onclick="procesar_documento_electronico(' . $value->id . ')" title="Emitir"><i class="fa fa-upload"></i></a> ';
+        $archivo = $empresa->ruc . '-' . '09' . '-' . $value->serie . '-' . $value->numero;
+        if ($value->emision === 'soap-env:Client.1032') {
+          $boton .= '<a class="btn btn-danger btn-sm" onclick="anular(' . $value->id . ')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
+        } else {
+          $boton .= '<a target="_blank" class="btn btn-success btn-sm" href="archivos_xml_sunat/cpe_xml/' . ($empresa->tipoproceso == '1' ? 'produccion' : 'beta') . '/' . $empresa->ruc . '/R-' . $archivo . '.XML" title="CDR"><i class="fa fa-briefcase"></i></a> ';
+        }
+        if ($value->emision === '0' || $value->emision === 'soap-env:Client.1033') {
+          $estado = '<td><span class="label label-info">ACEPTADO</span></td>';
+        }
+        if ($value->emision === 'soap-env:Client.1032') {
+          $estado = '<td><span class="label label-danger">RECHAZADO</span></td>';
+        }
+        if ($value->emision === '' || $value->emision === '0000' || $value->emision === 'soap-env:Client.0130') {
+          $estado = '<td>&nbsp;</td>';
+        }
       }
-      if($value->emision === '0' || $value->emision === 'soap-env:Client.1033') {
-        $estado = '<td><span class="label label-info">ACEPTADO</span></td>';
-      }
-      if($value->emision === 'soap-env:Client.1032') {
-        $estado = '<td><span class="label label-danger">RECHAZADO</span></td>';
-      }
-      if($value->emision === '' || $value->emision === '0000' || $value->emision === 'soap-env:Client.0130') {
-        $estado = '<td>&nbsp;</td>';
-      }
+
       $data[] = array(
         $key + 1,
         $empresa->ruc,
         $venta ? $cliente->nombre : '',
         $value->serie . '-' . $value->numero,
         $venta ? $venta->serie . '-' . $venta->numero : '',
-        '<span class="label label-info">GENERADO</span>',
+        $estadoRsgister[$value->estado],
         $estado,
         $value->created,
         $boton
@@ -146,6 +180,7 @@ class Guiaremision extends CI_Controller
         $value->serie . '-' . $value->numero,
         $venta ? $venta->serie . '-' . $venta->numero : '',
         '<span class="label label-default">PENDIENTE</span>',
+        "S/D",
         $value->created,
         $boton
       );
@@ -196,24 +231,20 @@ class Guiaremision extends CI_Controller
     $row = '';
     if ($data) {
       if ($data->estado == '0') {
-        $row .= '<a onclick="grabar()" class="btn btn-success" data-toggle="tooltip" title="GENERAR"><i class="fa fa-apple"></i></a> ';
+        $row .= '<a onclick="salvardatos(' . $data->id . ')" class="btn btn-warning">SALVAR DATOS <i class="fa  fa-pencil-square-o"></i></a> ';
+        $row .= '<a onclick="generarGuiaRemision(' . $data->id . ')" class="btn btn-success" data-toggle="tooltip">GENERAR <i class="fa fa-check-circle"></i></a> ';
       } else {
-        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip" title="NUEVO"><i class="fa fa-leaf"></i></a> ';
-        $row .= '<a onclick="imprimir(' . $this->guiaremision . ')" class="btn btn-danger" data-toggle="tooltip" title="IMPRIMIR"><i class="fa fa-print"></i></a> ';
+        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><span class="hidden-xs">IMPRIMIR</span> <i class="fa fa-print"></i></a> ';
+        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a> ';
       }
     }
-    $row .= '<a onclick="location.reload()" class="btn btn-openid" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a> ';
-    $row .= '<a href="' . $this->url . '/volver" class="btn btn-default" data-toggle="tooltip" title="VOLVER"><i class="fa fa-arrow-left"></i></a> ';
     echo $row;
   }
 
   public function completarproducto()
   {
-    $data = $this->Controlador_model->get($this->guiaremision, $this->controlador);
-    if (isset($_GET['term'])) {
-      $q = strtoupper($_GET['term']);
-      $this->Controlador_model->completarproducto($q, $data->venta);
-    }
+    $data = strtoupper($this->input->post("term"));
+    $this->Controlador_model->completarproducto($data, $this->input->post("empresa"));
   }
 
   public function completarventa()
@@ -221,6 +252,38 @@ class Guiaremision extends CI_Controller
     if (isset($_GET['term'])) {
       $q = strtoupper($_GET['term']);
       $this->Controlador_model->completarventa($q);
+    }
+  }
+
+  public function completar_conductores()
+  {
+    if (isset($_GET['term'])) {
+      $q = strtoupper($_GET['term']);
+      $this->Controlador_model->completar_conductores($q);
+    }
+  }
+
+  public function completar_clientesdestinos()
+  {
+    if (isset($_GET['term'])) {
+      $q = strtoupper($_GET['term']);
+      $this->Controlador_model->completar_clientesdestinos($q);
+    }
+  }
+
+  public function completar_vehiculo()
+  {
+    if (isset($_GET['term'])) {
+      $q = strtoupper($_GET['term']);
+      $this->Controlador_model->completar_vehiculo($q);
+    }
+  }
+
+  public function completar_transportistas()
+  {
+    if (isset($_GET['term'])) {
+      $q = strtoupper($_GET['term']);
+      $this->Controlador_model->completar_transportistas($q);
     }
   }
 
@@ -244,7 +307,6 @@ class Guiaremision extends CI_Controller
       $producto = $this->Controlador_model->get($value->producto, 'producto');
       $marca = $this->Controlador_model->get($producto->marca, 'marca');
       $nombremarca = $marca ? $marca->nombre : '';
-      $campohidden = '<input type="hidden" id="detalle' . ($key + 1) . '" name="detalle" value="' . $value->id . '">';
       //add variables for action
       $boton1 = '';
       $campo1 = '';
@@ -257,9 +319,12 @@ class Guiaremision extends CI_Controller
         $campo1 = $value->cantidad;
       }
       $data[] = array(
-        ($key + 1) . $campohidden,
-        $producto->codigoexterno . ' | ' . $producto->nombre . ' | ' . $nombremarca,
-        $campo1,
+        ($key + 1),
+        $producto->codigo,
+        $producto->nombre,
+        $value->medida . " [$value->medidacantidad]",
+        $value->cantidad,
+        $value->cantidaditem,
         $boton1
       );
     }
@@ -278,10 +343,18 @@ class Guiaremision extends CI_Controller
     $data['error_string'] = array();
     $data['inputerror'] = array();
     $data['status'] = TRUE;
-
+    $queryStatus = $this->Controlador_model->statusLote($this->input->post('producto'));
+    $dataGuiaremision = $this->Controlador_model->get($this->guiaremision, "guiaremision");
+    $stock = $this->Controlador_model->getStock($this->input->post('producto'), $this->input->post("almacen"), $this->input->post("lote"), $dataGuiaremision->empresa);
+    $cantidadaActual = $stock ? $stock->cantidad : 0;
+    if ($this->input->post('tipocantidad') == "UNIDAD") {
+      $cantidadSacar = $this->input->post('cantidad');
+    } else {
+      $cantidadSacar = $this->input->post('paquete') * ($this->input->post('cantidad') == '' ? 0 : $this->input->post('cantidad'));
+    }
     if ($this->input->post('producto') == '') {
       $data['inputerror'][] = 'productos';
-      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['error_string'][] = '';
       $data['status'] = FALSE;
     }
 
@@ -289,6 +362,30 @@ class Guiaremision extends CI_Controller
       $data['inputerror'][] = 'cantidad';
       $data['error_string'][] = 'Este campo es obligatorio.';
       $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('almacen') == '0') {
+      $data['inputerror'][] = 'almacen';
+      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    } else {
+      $dataAlmacen = $this->Controlador_model->get($this->input->post('almacen'), 'almacen');
+      if ($queryStatus and $this->input->post('lote') == '') {
+        $data['inputerror'][] = 'cantidad';
+        $data['error_string'][] = 'Debes seleccionar un lote';
+        $data['status'] = FALSE;
+      } else {
+        if ($cantidadSacar > $cantidadaActual) {
+          $datalote = "";
+          if ($queryStatus) {
+            $querylote = $this->Controlador_model->get($this->input->post("lote"), "lote");
+            $datalote = ', con lote "' . $querylote->lote . '"';
+          }
+          $data['inputerror'][] = 'cantidad';
+          $data['error_string'][] = 'Saldo insuficiente en el almacen "' . $dataAlmacen->nombre . '"' . $datalote;
+          $data['status'] = FALSE;
+        }
+      }
     }
 
     if ($data['status'] === FALSE) {
@@ -301,12 +398,33 @@ class Guiaremision extends CI_Controller
   {
     $this->_validatedetalle();
     $producto = $this->Controlador_model->get($this->input->post('producto'), 'producto');
-    $data['guiaremision'] = $this->guiaremision;
+    $quiaremision = $this->Controlador_model->get($this->guiaremision, $this->controlador);
+    if ($this->input->post('tipocantidad') == "PAQUETE") {
+      $totalCantidad = $this->input->post('paquete') * $this->input->post('cantidad');
+      $preciocompra = $producto->preciocompra;
+      $totalIngreso =  $preciocompra * $this->input->post('cantidad');
+      $medidacantidad =  $this->input->post('paquete');
+    } else {
+      $totalCantidad = $this->input->post('cantidad');
+      $preciocompra = $producto->preciocomprapaquete;
+      $totalIngreso =  $preciocompra * $totalCantidad;
+      $medidacantidad =  1;
+    }
     $data['producto'] = $this->input->post('producto');
+    $data['guiaremision'] = $this->guiaremision;
     $data['nombre'] = $producto->nombre;
+    $data['medida'] = $this->input->post('tipocantidad');
+    $data['medidacantidad'] =  $medidacantidad;
+    $data['cantidaditem'] = $totalCantidad;
+    $data['almacen'] = $this->input->post('almacen');
+    $data['precio'] = $preciocompra;
     $data['cantidad'] = $this->input->post('cantidad');
-    $this->Controlador_model->save('guiaremisiondetalle', $data);
-    echo json_encode(array("status" => TRUE));
+    $data['subtotal'] = $totalIngreso;
+    if ($this->Controlador_model->save('guiaremisiondetalle', $data)) {
+      $dataguiaremision['monto'] = $quiaremision->monto + $totalIngreso;
+      $this->Controlador_model->update(array('id' => $this->guiaremision), $dataguiaremision, 'guiaremision');
+      echo json_encode(array("status" => TRUE));
+    }
   }
 
   public function ajax_deletedetalle($id)
@@ -322,11 +440,16 @@ class Guiaremision extends CI_Controller
     $contador = $this->Controlador_model->contador($this->guiaremision);
     $empresa = $this->Controlador_model->get($datas->empresa, 'empresa');
     $venta = $this->Controlador_model->get($datas->venta, 'venta');
+    $transportepublico = $this->Controlador_model->get($datas->transportistapublico, 'transportepublico');
+    $vehiculo = $this->Controlador_model->get($datas->vehiculo_transporteprivado, 'transporteprivado');
+    $conductor = $this->Controlador_model->get($datas->conductor_transporteprivado, 'transporteprivado');
+    $clientedestino = $this->Controlador_model->get($datas->destino_cliente, 'cliente');
     $cliente = $venta ? $this->Controlador_model->get($venta->cliente, 'cliente') : '';
+    $usuario = $this->Controlador_model->get($datas->usuario, 'usuario');
     $data['empresa'] = $datas->empresa;
     $data['motivostraslado'] = $datas->motivostraslado;
-    // $data['modalidadtraslado'] = $datas->modalidadtraslado;
-    $data['ubigeosalida'] = $empresa->ubigeo;
+    $data['usuarios'] = $usuario ? $usuario->nombre . " | " . $usuario->apellido : "SIN DATOS";
+    $data['modalidadtraslado'] = $datas->modalidadtraslado;
     $data['direccionsalida'] = $empresa->direccion;
     $data['numeracion'] = $datas->serie . '-' . $datas->numero;
     $data['estado'] = $datas->estado;
@@ -336,6 +459,22 @@ class Guiaremision extends CI_Controller
     $data['nombrecliente'] = $venta ? $cliente->documento . ' | ' . $cliente->nombre . ' ' . $cliente->apellido : '';
     $data['venta'] = $venta ? $venta->id : '';
     $data['nombrecompleto'] = $venta ? $venta->tipoventa . ' | ' . $venta->serie . '-' . $venta->numero . ' | ' . $venta->created : '';
+    $data['transportista'] = $transportepublico ? $transportepublico->id : '';
+    $data['transportistas'] = $transportepublico ? $transportepublico->documento . ' | ' . $transportepublico->razonsocial : '';
+    $data['vehiculo'] =  $vehiculo ? $vehiculo->id  : '';
+    $data['vehiculos'] = $vehiculo ? $vehiculo->tipodocumento . ' | ' . $vehiculo->documento : '';
+    $data['conductor'] =  $conductor ? $conductor->id  : '';
+    $data['conductores'] = $conductor ? $conductor->tipodocumento . ' | ' . $conductor->documento : '';
+    $data['clientedestino'] =  $clientedestino ? $clientedestino->id  : '';
+    $data['clientesdestinos'] = $clientedestino ? $clientedestino->tipodocumento . ' | ' . $clientedestino->documento . ' | ' . $clientedestino->nombre . " " . $clientedestino->apellido : '';
+    $data['conductores'] = $conductor ? $conductor->tipodocumento . ' | ' . $conductor->documento : '';
+    $data['destino_departamento'] = $datas->destino_departamento;
+    $data['destino_distrito'] = $datas->destino_distrito;
+    $data['destino_provincia'] = $datas->destino_provincia;
+    $data['destino_direccion'] = $datas->destino_direccion;
+    $data['pesobrutobienes'] = $datas->pesobrutobienes;
+    $data['pesobrutobienes'] = $datas->pesobrutobienes;
+    $data['empresaAlmacen'] = $this->db->where("empresa", $datas->empresa)->get("almacen")->result();
     echo json_encode($data);
   }
 
@@ -345,17 +484,13 @@ class Guiaremision extends CI_Controller
     $data['error_string'] = array();
     $data['inputerror'] = array();
     $data['status'] = TRUE;
-
-    if ($this->input->post('empresa') == '') {
-      $data['inputerror'][] = 'empresas';
-      $data['error_string'][] = 'Este campo es obligatorio.';
-      $data['status'] = FALSE;
-    }
-
-    if ($this->input->post('venta') == '') {
-      $data['inputerror'][] = 'ventas';
-      $data['error_string'][] = 'Este campo es obligatorio.';
-      $data['status'] = FALSE;
+    $totalRegistros = $this->Controlador_model->contador($this->guiaremision);
+    if ($totalRegistros == 0) {
+      if ($this->input->post('empresa') == '') {
+        $data['inputerror'][] = 'empresas';
+        $data['error_string'][] = 'Este campo es obligatorio.';
+        $data['status'] = FALSE;
+      }
     }
 
     if ($data['status'] === FALSE) {
@@ -367,14 +502,20 @@ class Guiaremision extends CI_Controller
   public function ajax_update()
   {
     $this->_validate();
-    $data['empresa'] = $this->input->post('empresa');
-    $data['venta'] = $this->input->post('venta');
-    $data['motivostraslado'] = $this->input->post('motivostraslado');
-    // $data['modalidadtraslado'] = $this->input->post('modalidadtraslado');
-    // $data['direccion'] = $this->input->post('direccion');
-    if ($this->Controlador_model->update(array('id' => $this->guiaremision), $data, $this->controlador)) {
-      echo json_encode(array("status" => TRUE));
+    $totalRegistros = $this->Controlador_model->contador($this->guiaremision);
+    if ($totalRegistros == 0) {
+      $data['empresa'] = $this->input->post('empresa');
     }
+
+    $data['motivostraslado'] = $this->input->post('motivostraslado');
+    $data['modalidadtraslado'] = $this->input->post('modalidadtraslado');
+    $data['transportistapublico'] = $this->input->post('transportista') == "" ? NULL : $this->input->post('transportista');
+    $data['vehiculo_transporteprivado'] = $this->input->post('vehiculo') == "" ? NULL : $this->input->post('vehiculo');
+    $data['conductor_transporteprivado'] = $this->input->post('conductor') == "" ? NULL : $this->input->post('conductor');
+    $data['destino_cliente'] = $this->input->post('clientedestino') == "" ? NULL : $this->input->post('clientedestino');
+    // $data['direccion'] = $this->input->post('direccion');
+    $this->Controlador_model->update(array('id' => $this->guiaremision), $data, $this->controlador);
+    echo json_encode(array("status" => TRUE));
   }
 
   public function ajax_updatecantidad()
@@ -405,15 +546,79 @@ class Guiaremision extends CI_Controller
       $data['status'] = FALSE;
     }
 
-    if ($this->input->post('ubigeodestino') == '') {
-      $data['inputerror'][] = 'ubigeodestino';
+    if ($this->input->post('fechatraslado') == '') {
+      $data['inputerror'][] = 'fechatraslado';
+      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    } else {
+      if ($this->input->post('fechatraslado') < date("Y-m-d")) {
+        $data['inputerror'][] = 'fechatraslado';
+        $data['error_string'][] = 'Debesa agregar una fecha mayor o igual a la de hoy 🤨';
+        $data['status'] = FALSE;
+      }
+    }
+
+    if ($this->input->post('destino_provincia') == '0') {
+      $data['inputerror'][] = 'destino_provincia';
+      $data['error_string'][] = 'Este campor es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('destino_departamento') == '0') {
+      $data['inputerror'][] = 'destino_departamento';
+      $data['error_string'][] = 'Este campor es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('destino_distrito') == '0') {
+      $data['inputerror'][] = 'destino_distrito';
+      $data['error_string'][] = 'Este campor es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('destino_direccion') == '') {
+      $data['inputerror'][] = 'destino_direccion';
+      $data['error_string'][] = 'Este campor es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('clientedestino') == '') {
+      $data['inputerror'][] = 'clientesdestinos';
+      $data['error_string'][] = '';
+      $data['status'] = FALSE;
+    }
+
+    if ($this->input->post('modalidadtraslado') == "01") {
+      //? PUBLICO
+      if ($this->input->post('transportista') == '') {
+        $data['inputerror'][] = 'transportistas';
+        $data['error_string'][] = '';
+        $data['status'] = FALSE;
+      }
+    } else {
+      //? PRIVADO
+      if ($this->input->post('vehiculo') == "") {
+        $data['inputerror'][] = 'vehiculos';
+        $data['error_string'][] = 'Este campo es obligatorio.';
+        $data['status'] = FALSE;
+      }
+      if ($this->input->post('conductor') == "") {
+        $data['inputerror'][] = 'conductores';
+        $data['error_string'][] = 'Este campo es obligatorio.';
+        $data['status'] = FALSE;
+      }
+    }
+
+
+    if ($this->input->post('pesobrutobienes') == '' or $this->input->post('pesobrutobienes') == 0) {
+      $data['inputerror'][] = 'pesobrutobienes';
       $data['error_string'][] = 'Este campo es obligatorio.';
       $data['status'] = FALSE;
     }
 
-    if ($this->input->post('direcciondestino') == '') {
-      $data['inputerror'][] = 'direcciondestino';
-      $data['error_string'][] = 'Este campo es obligatorio.';
+    if ($this->input->post('pesobrutobienes') == 0) {
+      $data['inputerror'][] = 'pesobrutobienes';
+      $data['error_string'][] = 'El peso tiene que ser mayor que 0 🤨';
       $data['status'] = FALSE;
     }
 
@@ -426,25 +631,43 @@ class Guiaremision extends CI_Controller
   public function ajax_addprocesar()
   {
     $this->_validatprocesar();
-    $compra = $this->Controlador_model->get($this->guiaremision, $this->controlador);
-    $empresa = $this->Controlador_model->get($compra->empresa, 'empresa');
+    $guiaremision = $this->Controlador_model->get($this->guiaremision, $this->controlador);
+    $empresa = $this->Controlador_model->get($guiaremision->empresa, 'empresa');
+    $departamento = $this->Controlador_model->get($this->input->post('destino_departamento'), 'depatarmento');
+    $provincia = $this->Controlador_model->get($this->input->post('destino_provincia'), 'provincia');
+    $distrito = $this->Controlador_model->get($this->input->post('destino_distrito'), 'distrito');
     $numero = $this->Controlador_model->ultimoguiaremision();
     $numeros = $numero ? $numero->consecutivo + 1 : 1;
     $cadena = "";
     for ($i = 0; $i < 6 - strlen($numeros); $i++) {
-      $cadena = $cadena . '0';
+      $cadena .= '0';
     }
     $data['estado'] = '1';
     $data['serie'] = 'T' . substr($empresa->serie, 1, 3);
     $data['numero'] = $cadena . $numeros;
     $data['consecutivo'] = $numeros;
-    // $data['vehiculo'] = $this->input->post('vehiculo');
-    // $data['nombreconductor'] = $this->input->post('nombreconductor');
-    // $data['documentoconductor'] = $this->input->post('documentoconductor');
-    $data['ubigeodestino'] = $this->input->post('ubigeodestino');
-    $data['direcciondestino'] = $this->input->post('direcciondestino');
-    $data['pesobruto'] = $this->input->post('pesobruto');
+    $data['destino_cliente'] = $this->input->post('clientedestino');
+    $data['destino_direccion'] = $this->input->post('destino_direccion');
+    $data['destino_departamento'] = $this->input->post('destino_departamento');
+    $data['destino_provincia'] = $this->input->post('destino_provincia');
+    $data['destino_distrito'] = $this->input->post('destino_distrito');
+    $data['destino_ubigeo'] = $departamento->codigo . $provincia->codigo . $distrito->codigo;
+    $data['pesobrutobienes'] = $this->input->post('pesobrutobienes');
     $data['fechatraslado'] = $this->input->post('fechatraslado');
+    $data['modalidadtraslado'] = $this->input->post('modalidadtraslado');
+    $data['motivostraslado'] = $this->input->post('motivostraslado');
+    if ($this->input->post('modalidadtraslado') == "01") {
+      //? PUBLICO
+      $data['vehiculo_transporteprivado'] = NULL;
+      $data['conductor_transporteprivado'] = NULL;
+      $data['transportistapublico'] = $this->input->post("transportista");
+    } else {
+      //? PRIVADO
+      $data['vehiculo_transporteprivado'] = $this->input->post('vehiculo');
+      $data['conductor_transporteprivado'] = $this->input->post('conductor');
+      $data['transportistapublico'] = NULL;
+    }
+    $data['created'] = date("Y-m-d");
     if ($this->Controlador_model->update(array('id' => $this->guiaremision), $data, $this->controlador)) {
       echo json_encode(array("status" => TRUE));
     }
@@ -466,7 +689,7 @@ class Guiaremision extends CI_Controller
     echo json_encode(array("status" => TRUE));
   }
 
-  public function imprimir($id)
+  public function imprimirguiaremision($id)
   {
     $ticket = '<embed src="' . $this->url . '/guiaremisionpdf/' . $id . '" type="application/pdf" width="100%" height="400"></embed>';
     echo $ticket;
@@ -476,33 +699,19 @@ class Guiaremision extends CI_Controller
   {
     $guiaremision = $this->Controlador_model->get($id, $this->controlador);
     $venta = $this->Controlador_model->get($guiaremision->venta, 'venta');
-    if ($guiaremision->modalidadtraslado == '01') {
-      $modalidadtraslado = 'TRANSPORTE PUBLICO';
-    }
-    if ($guiaremision->modalidadtraslado == '02') {
-      $modalidadtraslado = 'TRANSPORTE PRIVADO';
-    }
-    if ($guiaremision->motivostraslado == '01') {
-      $motivostraslado = 'VENTA';
-    }
-    if ($guiaremision->motivostraslado == '02') {
-      $motivostraslado = 'COMPRA';
-    }
-    if ($guiaremision->motivostraslado == '04') {
-      $motivostraslado = 'TRASLADO ENTRE ESTABLECIMIENTOS DE LA MISMA EMPRESA';
-    }
-    if ($guiaremision->motivostraslado == '08') {
-      $motivostraslado = 'IMPORTACION';
-    }
-    if ($guiaremision->motivostraslado == '09') {
-      $motivostraslado = 'EXPORTACION';
-    }
+    $modalidadtraslado["01"] = "TRANSPORTE PUBLICO";
+    $modalidadtraslado["02"] = "TRANSPORTE PRIVADO";
+    $motivoTraslado["01"] = 'VENTA';
+    $motivoTraslado["02"] = 'COMPRA';
+    $motivoTraslado["04"] = 'TRASLADO ENTRE ESTABLECIMIENTOS DE LA MISMA EMPRESA';
+    $motivoTraslado["08"] = 'IMPORTACION';
+    $motivoTraslado["09"] = 'EXPORTACION';
+    $resultMotivoTraslado = $guiaremision->motivostraslado == "" ? "OCURRIO UN PROBLEMA A GENERAR LA GUIA" : $motivoTraslado[$guiaremision->motivostraslado];
     $data = array(
       'venta' => $venta,
       'data' => $guiaremision,
-      'motivostraslado' => $motivostraslado,
-      'modalidadtraslado' => $modalidadtraslado,
-      'cliente' => $this->Controlador_model->get($venta->cliente, 'cliente'),
+      'motivostraslado' => $resultMotivoTraslado,
+      'modalidadtraslado' => $modalidadtraslado[$guiaremision->modalidadtraslado],
       'empresa' => $this->Controlador_model->get($guiaremision->empresa, 'empresa'),
       'detalle' => $this->Controlador_model->getDetalle($id, 'guiaremisiondetalle'),
     );
@@ -666,7 +875,7 @@ class Guiaremision extends CI_Controller
       'NUMERO' => $data->numero,
       //'FECHA_DOCUMENTO' => $data->created,
       'CODIGO' => $tipo_comprobante,
-      'NOTA' => $referencia->serie.'-'.$referencia->numero,
+      'NOTA' => $referencia->serie . '-' . $referencia->numero,
       'SERIE_REFERENCIA' => $referencia->serie,
       'NUMERO_REFERENCIA' => $referencia->numero,
       'CODIGO_REFERENCIA' => $codigo_referencia,
@@ -674,13 +883,13 @@ class Guiaremision extends CI_Controller
       'MOTIVO_TRASLADO' => "", //? Descripcion del motivo del traslado
       'PESO' => $data->pesobruto, //? peso bruto total de los bienes
       'NUMERO_PAQUETES' => $guiaremisiondetalle->cantidad, //? "no es obligatorio" numero de bultos o pallets
-      'TIPO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $tipotransportista : "", 
-      'NRO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01")? $transportista->documento : "",
-      'RAZON_SOCIAL_TRANSPORTE' => ($data->modalidadtraslado == "01")? $transportista->nombre : "", //? apellidos y nombres o denominacion o razon social del transportista
+      'TIPO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $tipotransportista : "",
+      'NRO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $transportista->documento : "",
+      'RAZON_SOCIAL_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $transportista->nombre : "", //? apellidos y nombres o denominacion o razon social del transportista
       'FECHA_DOCUMENTO' => $data->fechatraslado, //? fecha de inicio del traslado
       'CODTIPO_TRANSPORTISTA' => $data->modalidadtraslado, //? Modalidad del traslado
       'PLACA' => $data->vehiculo,
-      'DNI_CONDUCTOR' => ($data->modalidadtraslado == "02")?$transportista->documento:"",
+      'DNI_CONDUCTOR' => ($data->modalidadtraslado == "02") ? $transportista->documento : "",
       'UBIGEO_DESTINO' => $data->ubigeodestino,
       'DIR_DESTINO' => $data->direcciondestino,
       'UBIGEO_PARTIDA' => $emisor['codigo_ubigeo'],
@@ -723,5 +932,36 @@ class Guiaremision extends CI_Controller
     );
 
     return $cabecera;
+  }
+
+  function ajax_empresaAlmacen($idempresa)
+  {
+    $dataUpdate["empresa"] = $idempresa;
+    $this->Controlador_model->update(["id" => $this->guiaremision], $dataUpdate, "guiaremision");
+    $dataAlmacen = $this->db->where("empresa", $idempresa)->get("almacen")->result();
+    echo json_encode(["dataAlmacen" => $dataAlmacen]);
+  }
+
+  function ajax_salvardatos()
+  {
+    $data['pesobrutobienes'] = $this->input->post('pesobrutobienes');
+    $data['destino_departamento'] = $this->input->post('destino_departamento');
+    $data['destino_provincia'] = $this->input->post('destino_provincia');
+    $data['destino_distrito'] = $this->input->post('destino_distrito');
+    $data['destino_direccion'] = $this->input->post('destino_direccion');
+    $data['destino_direccion'] = $this->input->post('destino_direccion');
+    $data['fechatraslado'] = $this->input->post('fechatraslado');
+    $this->Controlador_model->update(array('id' => $this->guiaremision), $data, $this->controlador);
+    echo json_encode(array("status" => TRUE));
+  }
+  function ajax_departamento_provincia()
+  {
+    $dataProvincias = $this->db->where("departamento", $this->input->post("destino_departamento"))->order_by("nombre", "ASC")->get("provincia")->result();
+    echo json_encode($dataProvincias);
+  }
+  function ajax_provincia_distrito()
+  {
+    $dataProvincias = $this->db->where("provincia", $this->input->post("destino_provincia"))->order_by("nombre", "ASC")->get("distrito")->result();
+    echo json_encode($dataProvincias);
   }
 }

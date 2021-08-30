@@ -87,10 +87,11 @@
             </div>
             <div class="modal-body form">
                 <form action="#" id="form" class="form-horizontal" autocomplete="off">
+                    <input type="hidden" name="id">
                     <div class="form-body">
                         <div class="form-group">
                             <label class="control-label col-md-3">Tipo <span class="required">*</span></label>
-                            <div class="col-md-9">
+                            <div class="col-md-9" id="content-tipo-proceso">
                                 <span class="help-block"></span>
                             </div>
                         </div>
@@ -197,9 +198,10 @@
         $('#form')[0].reset(); // reset form on modals
         $('.form-group').removeClass('has-error'); // clear error class
         $('.help-block').empty(); // clear error string
-        tiporegistro();
-        $("#tipoproceso").preppend(`<select class="form-control" id="tipoproceso" name="tipoproceso" onchange="tiporegistro()">
+        $("#tipoproceso").remove()
+        $("#content-tipo-proceso").prepend(`<select class="form-control" id="tipoproceso" name="tipoproceso" onchange="tiporegistro()">
         <option value="VEHICULO">VEHICULO</option><option value="CONDUCTOR">CONDUCTOR</option></select>`);
+        tiporegistro();
         $('#modal_form').modal('show'); // show bootstrap modal
         $('.modal-title').text('TRANSPORTES PRIVADOS'); // Set Title to Bootstrap modal title
     };
@@ -273,12 +275,12 @@
                 $('[name="id"]').val(data.id);
                 $('[name="tipoproceso"]').val(data.tipo);
                 $("#tipodocumento").val(data.tipodocumento);
+                $("#tipoproceso").remove()
+                $("#content-tipo-proceso").prepend(`<input name="tipoproceso" class="form-control" id="tipoproceso" value="${data.tipo}" readonly> `);
                 data.tipo == "VEHICULO" ? $('#numeroplaca').val(data.documento) : $('#documento').val(data.documento);
-                $("#tipoproceso").preppend(`<input value="${data.tipoproceso}" readonly> `);
                 tiporegistro();
                 $('#modal_form').modal('show'); // show bootstrap modal when complete loaded
                 $('.modal-title').text(`MODIFICAR ${data.tipo}`);
-                console.log(data)
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 Lobibox.notify('error', {

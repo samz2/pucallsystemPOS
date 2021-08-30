@@ -203,6 +203,13 @@
               </div>
             </div>
             <div class="form-group">
+              <label class="col-sm-2 control-label">Color del menu</label>
+              <div class="col-md-10">
+                <input class="form-control" id="color_menu" type="color" name="color_menu">
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
               <label class="col-sm-5 control-label">Proceso de venta<span class="required">*</span></label>
               <div class="col-md-7">
                 <div>
@@ -531,6 +538,7 @@
       processData: false,
       success: function(data) {
         //if success close modal and reload ajax table
+
         if (data.status) {
           $('#modal_form').modal('hide');
           reload_table();
@@ -539,6 +547,11 @@
             position: "top right",
             msg: msgsuccess
           });
+          $("#menu-izquierdo").removeAttr("style");
+          $("#menu-derecho").removeAttr("style");
+          $("#menu-izquierdo").css("background", `${data.dataEmpresa.color_menu}`);
+          $("#menu-derecho").css("background", `${data.dataEmpresa.color_menu}`);
+
         } else {
           for (var i = 0; i < data.inputerror.length; i++) {
             $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
@@ -591,6 +604,7 @@
         }
         $('[name="id"]').val(data.id);
         $('[name="tipo"]').val(data.tipo);
+        $('[name="color_menu"]').val(data.color_menu);
         $('[name="ruc"]').val(data.ruc);
         $('[name="razonsocial"]').val(data.razonsocial);
         $('[name="nombre"]').val(data.nombre);

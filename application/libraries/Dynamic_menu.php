@@ -26,10 +26,12 @@ class Dynamic_menu {
       $usuarios = $this->ci->db->where('id', $usuario)->get('usuario')->row();
       $perfil = $this->ci->session->userdata('perfil');
       $perfiles = $this->ci->db->where('id', $perfil)->get('perfil')->row();
+      $empresa = $this->ci->session->userdata('empresa');
+      $dataempresa = $this->ci->db->where('id', $empresa)->get('empresa')->row();
       $perfilmenus = $this->ci->db->where('perfil', $perfil)->order_by("posicion", "asc")->get('perfilmenu')->result();
       // now we will build the dynamic menus.
       $html_out  = '';
-      $html_out .= '<ul class="nav navbar-nav">';
+      $html_out .= '<ul id="menu-izquierdo" class="nav navbar-nav" '.($dataempresa->color_menu != "" ? "style='background: $dataempresa->color_menu'" : "").'>';
       // me despliega del query los rows de la base de datos que deseo utilizar
       foreach ($perfilmenus as $data) {
         $id = $data->id;

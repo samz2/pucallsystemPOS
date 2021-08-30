@@ -62,7 +62,7 @@ class Kardex extends CI_Controller
     $movimientos = $this->Controlador_model->kardexFecha($producto, $fechainicio, $fechafinal, $tipofiltrado);
     $ticket = '';
     $ticket .= '
-    <table class="table table-bordered table-striped" >
+    <table id="tabla_kardex" class="table table-bordered table-striped" >
     <thead>
       <tr>
         <th>#</th>

@@ -61,6 +61,17 @@ class Venta_model extends CI_Model
 		return $this->db->get()->result();
 	}
 
+	function detalleVentas($finicio, $factual, $empresa)
+	{
+		$this->db->select('v.id, vd.producto, vd.precio as precioventa, vd.preciocompra, vd.cantidad, vd.subtotal, vd.tipo, vd.nombre, v.estado');
+		$this->db->from('venta v');
+		$this->db->join('ventadetalle vd', 'v.id = vd.venta');
+		$this->db->where("v.created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
+		$this->db->where('v.estado <>', "0");
+		$this->db->where('v.empresa', $empresa);
+		return $this->db->get()->result();
+	}
+
 	public function getCombo($producto)
 	{
 		return $this->db->where('producto', $producto)->get('combo')->result();

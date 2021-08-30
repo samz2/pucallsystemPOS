@@ -1,168 +1,359 @@
 <?= $this->session->flashdata('mensaje') ?>
+<style>
+  .partecenter::-webkit-scrollbar {
+    width: 10px;
+    background: rgb(214, 219, 223);
+  }
+
+  .partecenter::-webkit-scrollbar-thumb {
+    background-color: rgb(178, 186, 187);
+    border-radius: 4px;
+  }
+
+  .partecenter::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(127, 140, 141);
+  }
+</style>
 <?php if ($this->guiaremision) { ?>
   <div class="row">
-    <div class="col-md-4">
+    <div class="col-lg-6" id="content-detalles-guiaremision">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">Datos de <?= $this->titulo_controlador ?></h3>
+          <h3 class="panel-title">AGREGAR PRODUCTOS</h3>
         </div>
         <!-- form start -->
-        <form action="" class="form-horizontal" id="form_principal" method="POST" role="form">
-          <div class="panel-body">
-            <div class="form-group">
-              <label class="col-sm-3 control-label">EMPRESA</label>
-              <div class="col-sm-9">
-                <select class="form-control" name="empresa" id="empresa" onchange="save()">
-                  <?php foreach ($empresas as $value) { ?>
-                    <option value="<?= $value->id ?>"><?= $value->ruc . ' | ' . $value->razonsocial ?></option>
-                  <?php } ?>
-                </select>
-                <input type="text" class="form-control" name="empresas" id="empresas" readonly>
-              </div>
-            </div>
-            <div class="form-group" id="numeraciones">
-              <label class="col-sm-2 control-label"><a id="vtipoventa"><span></span></a></label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control" id="numeracion" name="numeracion" readonly>
-              </div>
-            </div>
-            <!-- <div class="form-group">
-              <label class="col-sm-3 control-label" for="cliente">Cliente<span class="required">*</span></label>
-              <div class="col-sm-9">
-                <div class="input-group">
-                  <input type="hidden" class="form-control" name="cliente" id="cliente">
-                  <input type="text" class="form-control" name="clientes" id="clientes">
-                  <span class="input-group-btn">
-                    <a id="botoncliente" onclick="grabarcliente()" class="btn btn-primary"><i class="fa fa-plus"></i></a>
-                  </span>
-                </div>
-              </div>
-            </div> -->
-            <div class="form-group">
-              <label class="col-sm-3 control-label" for="cliente">Transportista<span class="required">*</span></label>
-              <div class="col-sm-9">
-                <div class="input-group">
-                  <input type="hidden" class="form-control" name="transportista" id="transportista">
-                  <input type="text" class="form-control" name="transportistas" id="transportistas">
-                  <span class="input-group-btn">
-                    <a id="botoncliente" onclick="grabartransportista()" class="btn btn-primary"><i class="fa fa-plus"></i></a>
-                  </span>
+        <div class="panel-body">
+
+          <form role="form" autocomplete="off" id="form_detalle">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Producto</label>
+                  <div class="input-group">
+                    <input type="hidden" class="form-control" name="producto" id="producto">
+                    <input type="text" class="form-control limpiar" name="productos" id="productos" placeholder="BUSCAR PRODUCTO">
+                    <span class="help-block"></span>
+                    <span class="input-group-addon"><i class="fa fa-search"></i></span>
+                  </div>
                 </div>
               </div>
             </div>
-            <!-- <div class="form-group">
-              <label class="col-sm-2 control-label">MOLADIDAD TRASLADO</label>
-              <div class="col-sm-10">
-                <select class="form-control" id="modalidadtraslado" name="modalidadtraslado" onchange="modalidad()">
-                  <option value="01">TRANSPORTE PUBLICO</option>
-                  <option value="02">TRANSPORTE PRIVADO</option>
-                </select>
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="almacen">Almacen</label>
+                  <select class="form-control" name="almacen" id="almacen">
+                  </select>
+                  <span class="help-block"></span>
+                </div>
               </div>
-            </div> -->
-            <div class="form-group">
-              <label class="col-sm-3 control-label">Motivo Traslado</label>
-              <div class="col-sm-9">
-                <select class="form-control" id="motivostraslado" name="motivostraslado" onchange="save()">
-                  <option value="01">VENTA</option>
-                  <option value="14">VENTA SUJETA A CONFIRMACIÓN DEL COMPRADOR</option>
-                  <option value="02">COMPRA</option>
-                  <option value="04">TRASLADO ENTRE ESTABLECIMIENTOS DE LA MISMA EMPRESA</option>
-                  <option value="18">TRASLADO EMISOR ITINERANTE CP</option>
-                  <option value="08">IMPORTACION</option>
-                  <option value="09">EXPORTACION</option>
-                  <option value="19">TRASLADO A ZONA PRIMARIA</option>
-                  <option value="13">OTROS</option>
-                </select>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="tipoingreso">Tipo</label>
+                  <select class="form-control" id="tipocantidad" name="tipocantidad">
+                    <option value="UNIDAD">UNIDAD</option>
+                    <option value="PAQUETE">PAQUETE</option>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="cliente">VENTA<span class="required">*</span></label>
-              <div class="col-sm-10">
-                <input type="hidden" class="form-control" name="venta" id="venta">
-                <input type="text" class="form-control" name="ventas" id="ventas">
-                <span class="help-block"></span>
+            <div class="row">
+              <div class="col-lg-12">
+
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">CLIENTE</label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control" id="nombrecliente" name="nombrecliente" readonly>
-                <span class="help-block"></span>
+            <div class="row" id="content-cantidad-paquete">
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label for="paquete">Cantidad en paquete</label>
+                  <input type="number" class="form-control" id="paquete" name="paquete" readonly>
+                </div>
+              </div>
+              <!-- 
+              <div class="col-md-4" id="content-precio">
+                <div class="form-group">
+                  <label for="precio">Precio de compra</label>
+                  <div class="input-group">
+                    <span class="input-group-addon">
+                      S/.
+                    </span>
+                    <input type="number" class="form-control" id="preciocompra" name="preciocompra" readonly>
+                    <input type="number" class="form-control" id="preciocomprapaquete" name="preciocomprapaquete" readonly style="display:none">
+                    <span class="input-group-btn">
+                      <button type="button" class="btn waves-effect waves-light btn-primary" onclick="actualizarprecio()" title="ACTULIZAR PRECIOS" id="btn-actualizar"><i class="fa fa-edit"></i></button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              -->
+            </div>
+            <div classs="row">
+              <div class="col-md-6" id="content-lote" style="display:none">
+                <div class="form-group">
+                  <label for="lote">Lote</label>
+
+                  <div class="input-group">
+
+                    <input type="hidden" class="form-control" name="lote" id="lote">
+                    <input type="text" class="form-control" name="lotes" id="lotes">
+                    <span class="help-block"></span>
+                    <span class="input-group-btn">
+                      <button onclick="crearlote()" class="btn btn-primary">
+                        <span class="fa fa-plus"></span>
+                      </button>
+                    </span>
+
+                  </div>
+
+                </div>
+              </div>
+              <div class="col-md-12" id="content-cantidadcompra">
+                <div class="form-group">
+                  <label for="cantidad">cantidad</label>
+                  <input type="number" class="form-control" id="cantidad" name="cantidad" onchange="if(event.keyCode == 13) { savedetalle() }">
+                  <span class="help-block"></span>
+                </div>
               </div>
             </div>
+
+            <div class="row">
+              <div class="col-lg-12 text-right">
+                <button type="submit" class="btn btn-success waves-effect waves-light" id="btnSaveDetalle" onclick="savedetalle()">AGREGAR <i class="fa fa-shopping-cart"></i></button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6" id="content-datos-guiaremision">
+      <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+          <h3 class="panel-title pull-left">DATOS DE GUIA DE REMISION</h3>
+          <div class="pull-right">
+            <a onclick="location.reload()" class="btn btn-openid" data-toggle="tooltip">
+              <span class="hidden-xs">Recargar</span>
+              <i class="fa fa-repeat"></i>
+            </a>
+            <a href="<?= $this->url ?>/volver" class="btn btn-default" data-toggle="tooltip">
+              <span class="hidden-xs">Volver</span>
+              <i class="fa fa-arrow-left"></i>
+            </a>
           </div>
-          <div class="panel-footer text-center" id="botones"></div>
+        </div>
+
+        <!-- form start -->
+        <form action="" method="POST" id="form_principal" role="form" autocomplete="off">
+          <div class="panel-body partecenter" style="overflow: auto;height: 45vh;">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Empresa<span class="required">*</span></label>
+                  <select class="form-control" name="empresa" id="empresa" onchange="empresaalmacen()">
+                    <?php foreach ($empresas as $empresa) { ?>
+                      <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie ?></option>
+                    <?php } ?>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Usuario<span class="required">*</span></label>
+                  <input type="hidden" class="form-control" name="usuario" id="usuario">
+                  <input type="text" class="form-control limpiar" name="usuarios" id="usuarios" readonly>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Tipo de transporte</label>
+                  <select class="form-control" id="modalidadtraslado" name="modalidadtraslado" onchange="save()">
+                    <option value="01">PUBLICO</option>
+                    <option value="02">PRIVADO</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Motivo de Traslado</label>
+                  <select class="form-control" id="motivostraslado" name="motivostraslado" onchange="save()">
+                    <option value="01">VENTA</option>
+                    <option value="14">VENTA SUJETA A CONFIRMACIÓN DEL COMPRADOR</option>
+                    <option value="02">COMPRA</option>
+                    <option value="04">TRASLADO ENTRE ESTABLECIMIENTOS DE LA MISMA EMPRESA</option>
+                    <option value="18">TRASLADO EMISOR ITINERANTE CP</option>
+                    <option value="08">IMPORTACION</option>
+                    <option value="09">EXPORTACION</option>
+                    <option value="19">TRASLADO A ZONA PRIMARIA</option>
+                    <option value="13">OTROS</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="row" id="content-transportista-publico">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label for="cliente">Transportista <span class="required">*</span></label>
+                  <div class="input-group">
+                    <input type="hidden" class="form-control" name="transportista" id="transportista">
+                    <input type="text" class="form-control" name="transportistas" id="transportistas">
+                    <span class="input-group-btn">
+                      <a id="botoncliente" onclick="grabartransportista()" class="btn btn-primary"><i class="fa fa-plus"></i></a>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="content-transportista-privado">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="vehiculo">Vehiculo <span class="required">*</span></label>
+                  <div class="input-group">
+                    <input type="hidden" class="form-control" name="vehiculo" id="vehiculo">
+                    <input type="text" class="form-control" name="vehiculos" id="vehiculos">
+                    <span class="input-group-btn">
+                      <a id="botoncliente" onclick="grabartransportista()" class="btn btn-primary"><i class="fa fa-plus"></i></a>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="chofer">Conductor <span class="required">*</span></label>
+                  <div class="input-group">
+                    <input type="hidden" class="form-control" name="conductor" id="conductor">
+                    <input type="text" class="form-control" name="conductores" id="conductores">
+                    <span class="input-group-btn">
+                      <a id="botoncliente" onclick="grabartransportista()" class="btn btn-primary"><i class="fa fa-plus"></i></a>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="cliente">Peso total de los productos <span class="required">*</span></label>
+                  <input class="form-control" type="text" id="pesobrutobienes" name="pesobrutobienes">
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="cliente">Fecha de traslado<span class="required">*</span></label>
+                  <input class="form-control" type="date" id="fechatraslado" name="fechatraslado" min="<?= date("Y-m-d") ?>">
+                  <span class="help-block"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-12">
+                <h4 class="text-center">PUNTO DE LLEGADA</h4>
+              </div>
+            </div>
+            <div class="row" id="content-transportista-privado">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="cliente">Departamento <span class="required">*</span></label>
+                  <select class="form-control" name="destino_departamento" style="padding:5px" id="destino_departamento" onchange="departamento_provincia()">
+                    <option value="0">SELECCIONE</option>
+                    <?php foreach ($departamentos as $departamento) { ?>
+                      <option value="<?= $departamento->id ?>"><?= $departamento->nombre ?></option>
+                    <?php } ?>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="cliente">Provincia <span class="required">*</span></label>
+                  <select class="form-control" name="destino_provincia" id="destino_provincia" onchange="provincia_distrito()">
+                    <option value="0">SIN DATOS</option>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="cliente">Distrito <span class="required">*</span></label>
+                  <select class="form-control" name="destino_distrito" id="destino_distrito">
+                    <option value="0">SIN DATOS</option>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="content-transportista-privado">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label for="cliente">Direccion <span class="required">*</span></label>
+                  <input class="form-control" type="text" name="destino_direccion" id="destino_direccion">
+                  <span class="help-block"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="content-transportista-privado">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label for="cliente">Cliente <span class="required">*</span></label>
+                  <div class="input-group">
+                    <input type="hidden" class="form-control" name="clientedestino" id="clientedestino">
+                    <input type="text" class="form-control" name="clientesdestinos" id="clientesdestinos">
+                    <span class="input-group-btn">
+                      <a id="botoncliente" onclick="grabartransportista()" class="btn btn-primary"><i class="fa fa-plus"></i></a>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="panel-footer text-right" id="botones"></div>
         </form>
       </div>
     </div>
 
-    <div class="col-md-8">
+  </div>
+
+  <div class="row">
+    <div class="col-lg-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">Detalle de <?= $this->titulo_controlador ?></h3>
+          <h3 class="panel-title">LISTA DE PRODUCTOS</h3>
         </div>
-        <!-- form start -->
         <div class="panel-body">
-          <form id="form_detalle" class="form-horizontal" method="post" role="form" autocomplete="off">
-            <div class="row" id="addproduct">
-              <div class="col-md-12">
-                <div class="box-body table-responsive">
-                  <table class="table table-striped">
-                    <tr>
-                      <td colspan="5">
-                        <label>Descripcion</label>
-                        <div class="col-md-12">
-                          <div class="input-group">
-                            <span class="input-group-addon"><i class="fa fa-keyboard-o"></i></span>
-                            <input type="hidden" class="form-control" name="producto" id="producto">
-                            <input type="text" class="form-control" name="productos" id="productos">
-                            <span class="help-block"></span>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <div class="input-group">
-                          <span class="input-group-addon"><i class="fa fa-cubes"></i></span>
-                          <input type="text" id="saldo" name="saldo" class="form-control" readonly>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="input-group">
-                          <span class="input-group-addon"><i class="fa fa-unsorted"></i></span>
-                          <input type="text" id="cantidad" name="cantidad" class="form-control" onkeydown="if(event.keyCode == 13) { savedetalle() }">
-                          <span class="help-block"></span>
-                        </div>
-                      </td>
-                      <td>
-                        <button type="button" id="btnSave" onclick="savedetalle()" class="btn btn-success" title="Añadir"><i class="icon-white icon-plus"></i> A</button>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </form>
-          <div class="row">
-            <div class="box-body table-responsive">
-              <table id="tabla_detalle" class="table table-striped table-bordered">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Descripción</th>
-                    <th>Cant.</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
+          <div class="panel-body table-responsive">
+            <table id="tabla_detalle" class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Codigo</th>
+                  <th>Producto</th>
+                  <th>T. Medida</th>
+                  <th>Cant</th>
+                  <th>C. Item</th>
+                  <th>Accion</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
   </div>
+
 <?php } else { ?>
   <div class="row" id="cuerpo_comprobante">
     <div class="col-md-12">
@@ -194,127 +385,50 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip" title="GENERAR"><i class="fa fa-upload"></i></a>
-            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip" title="PENDIENTE"><i class="fa fa-upload"></i></a>
-            <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-            <a onclick="location.reload()" class="btn btn-success" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
+            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip">PENDIENTES <i class="fa fa-clipboard"></i></a>
           </div>
         </form>
       </div>
     </div>
     <!-- /.col -->
-    <div class="col-md-12" id="respuesta_proceso"></div><hr>
+    <div class="col-md-12" id="respuesta_proceso"></div>
     <div class="col-xs-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title text-dark">Lista de <?= $this->titulo_controlador ?></h3>
+          <h3 class="panel-title text-dark" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>Lista de <?= $this->titulo_controlador ?></div>
+            <div>
+              <a onclick="location.reload()" class="btn btn-success" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
+              <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
+            </div>
+          </h3>
         </div>
         <!-- /.box-header -->
-        <div class="panel-body table-responsive" >
-		
+        <div class="panel-body table-responsive">
+
           <table id="tabla" class="table table-striped table-bordered">
             <thead>
-			<tr>
-			<th>#</th>
-			<th>Empresa</th>
-			<th>Cliente</th>
-			<th>Guia Remision</th>
-			<th>Nro Doc</th>
-			<th>Estado</th>
-			<th>Sunat</th>
-			<th>Fecha</th>
-			<th>Acciones</th>
-			</tr>
-			</thead>
-			<tbody>
-			</tbody>
-          </table>
-		  
-		  <table id="tablapendientes" class="table table-striped table-bordered">
-            <thead>
-			<tr>
-			<th>#</th>
-			<th>Empresa</th>
-			<th>Cliente</th>
-			<th>Guia Remision</th>
-			<th>Nro Doc</th>
-			<th>Estado</th>
-			<th>Fecha</th>
-			<th>Acciones</th>
-			</tr>
-			</thead>
-			<tbody>
-			</tbody>
+              <tr>
+                <th>#</th>
+                <th>Empresa</th>
+                <th>Cliente</th>
+                <th>Guia Remision</th>
+                <th>Nro Doc</th>
+                <th>Estado</th>
+                <th>Sunat</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
           </table>
         </div>
       </div>
     </div>
   </div>
 <?php } ?>
-
-<!-- Modal Venta-->
-<div class="modal fade" id="guiaremision_form" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <form id="form_guiaremision" class="form-horizontal" rol="form" action="" method="post" autocomplete="off">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-          <h4 class="modal-title"></h4>
-        </div>
-        <div class="modal-body">
-          <div class="box-body">
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Ubigeo Partida</label>
-              <div class="col-sm-10">
-                <input class="form-control" id="ubigeosalida" name="ubigeosalida" readonly>
-                <span class="help-block"></span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Direccion Partida</label>
-              <div class="col-sm-10">
-                <textarea class="form-control" id="direccionsalida" name="direccionsalida" readonly></textarea>
-                <span class="help-block"></span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Ubigeo Llegada</label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control entero" id="ubigeodestino" name="ubigeodestino">
-                <span class="help-block"></span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Direccion Llegada</label>
-              <div class="col-sm-10">
-                <textarea class="form-control" id="direcciondestino" name="direcciondestino"></textarea>
-                <span class="help-block"></span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Peso Bruto</label>
-              <div class="col-sm-10">
-                <input type="text" class="form-control money" id="pesobruto" name="pesobruto" value="0">
-                <span class="help-block"></span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Fecha</label>
-              <div class="col-sm-10">
-                <input type="date" class="form-control" id="fechatraslado" name="fechatraslado" value="<?= date('Y-m-d') ?>">
-                <span class="help-block"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" id="btnSaveprocesar" onclick="saveprocesar()" class="btn btn-primary">GRABAR</button>
-          <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 
 <!-- Modal ticket -->
 <div class="modal fade" id="ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -330,80 +444,6 @@
 </div>
 <!-- /.Modal -->
 
-<!-- Modal Marca -->
-<div class="modal fade" id="cliente_form" style="z-index: 99999;" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <form action="" class="form-horizontal" autocomplete="off" method="POST" id="form_cliente" role="form">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          <h4 class="modal-title"></h4>
-        </div>
-        <div class="modal-body">
-          <div class="box-body">
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="tipo">Tipo<span class="required">*</span></label>
-              <div class="col-sm-10">
-                <select id="tipo" name="tipo" class="form-control">
-                  <option value="DNI">DNI</option>
-                  <option value="RUC">RUC</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="documento">Documento<span class="required">*</span></label>
-              <div class="col-sm-9">
-                <input class="form-control" id="documento" type="text" name="documento">
-                <span class="help-block"></span>
-              </div>
-              <span class="input-group-btn">
-                <button type="button" class="btn btn-primary" data-loading-text="<i class='fa fa-spinner fa-spin'></i>" id="botoncito">
-                  <span class="glyphicon glyphicon-search"></span>
-                </button>
-              </span>
-            </div>
-
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="nombre">Nombre<span class="required">*</span></label>
-              <div class="col-sm-10">
-                <input class="form-control" id="nombre" type="text" name="nombre">
-                <span class="help-block"></span>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="apellido">Apellido</label>
-              <div class="col-sm-10">
-                <input class="form-control" id="apellido" type="text" name="apellido">
-                <span class="help-block"></span>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="direccion">Direccion</label>
-              <div class="col-sm-10">
-                <input class="form-control" id="direccion" type="text" name="direccion">
-                <span class="help-block"></span>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="col-sm-2 control-label">Celular</label>
-            <div class="col-md-10">
-              <input id="celular" name="celular" class="form-control enteros" type="text">
-              <span class="help-block"></span>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" id="btnSavecliente" onclick="savecliente()" class="btn btn-primary">GRABAR</button>
-          <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 
 <!-- Modal Marca -->
 <div class="modal fade" id="transportista_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -423,6 +463,7 @@
                   <option value="01">TRANSPORTE PUBLICO</option>
                   <option value="02" selected>TRANSPORTE PRIVADO</option>
                 </select>
+                <span class="help-block"></span>
               </div>
             </div>
 
@@ -438,7 +479,7 @@
                   <i class="fa fa-plus"></i>
                 </button>
               </span>
-            </div> 
+            </div>
             <div class="form-group">
               <label class="col-sm-4 control-label" for="vehiculo">Placa Vehiculo<span class="required">*</span></label>
               <div class="col-sm-8">
@@ -463,6 +504,46 @@
   var table_detalle;
   $(document).ready(function() {
     <?php if ($this->guiaremision) { ?>
+     /*  $("#destino_departamento").select2({
+        language: {
+          noResults: function() {
+            return "No hay resultados";
+          },
+          searching: function() {
+            return "Buscando..";
+          },
+          inputTooShort: function() {
+            return "Debes ingresar mas caracteres...";
+          }
+        }
+      });
+      $("#destino_provincia").select2({
+        language: {
+          noResults: function() {
+            return "No hay resultados";
+          },
+          searching: function() {
+            return "Buscando..";
+          },
+          inputTooShort: function() {
+            return "Debes ingresar mas caracteres...";
+          }
+        }
+      });
+      $("#destino_distrito").select2({
+        language: {
+          noResults: function() {
+            return "No hay resultados";
+          },
+          searching: function() {
+            return "Buscando..";
+          },
+          inputTooShort: function() {
+            return "Debes ingresar mas caracteres...";
+          }
+        }
+      }); */
+
       cargar_detalle();
       cambiarventa();
     <?php } else { ?>
@@ -472,16 +553,62 @@
       this.value = this.value.replace(/[^0-9]/g, '');
     });
     $('.money').number(true, 2);
+
     $('#productos').focus();
-    $("#productos").autocomplete({
-      source: "<?= $this->url . '/completarproducto' ?>",
-      minLength: 2,
-      select: function(event, ui) {
-        $("#producto").val(ui.item.producto);
-        $("#saldo").val(ui.item.saldo);
-        $("#cantidad").focus();
+
+    $("#productos").keyup(() => {
+      if ($("#productos").val() != "") {
+        $("#productos").autocomplete({
+          source: function(request, response) {
+            $.ajax({
+              url: "<?= $this->url ?>/completarproducto",
+              dataType: "JSON",
+              type: "POST",
+              data: {
+                term: request.term,
+                empresa: $("#empresa").val()
+              },
+              success: function(data) {
+                response(data);
+              }
+            });
+          },
+          minLength: 2,
+          select: function(event, ui) {
+            if (ui.item.producto) {
+              $("#producto").val(ui.item.producto);
+              $("#preciocompra").val(ui.item.preciocompra);
+              $("#preciocomprapaquete").val(ui.item.preciocomprapaquete);
+              $("#paquete").val(ui.item.cantidadpaquete);
+              if (ui.item.status_lote == '1') {
+                $("#content-lote").show();
+                //$("#content-regalo").removeClass("col-md-6");
+                //$("#content-regalo").addClass("col-md-4");
+                $("#content-cantidadcompra").removeClass("col-md-12");
+                $("#content-cantidadcompra").addClass("col-md-6");
+              } else {
+                $("#content-lote").hide();
+                //$("#content-regalo").removeClass("col-md-4");
+                //$("#content-regalo").addClass("col-md-6");
+                $("#content-cantidadcompra").removeClass("col-md-6");
+                $("#content-cantidadcompra").addClass("col-md-12");
+              }
+              $("#cantidad").focus();
+            }
+          }
+        });
+      } else {
+        $("#form_detalle")[0].reset();
+        $("#producto").val("");
+        tipocompra();
+        $("#content-lote").hide();
+        //$("#content-regalo").removeClass("col-md-4");
+        $("#content-cantidadcompra").removeClass("col-md-6");
+        //$("#content-regalo").addClass("col-md-6");
+        $("#content-cantidadcompra").addClass("col-md-12");
       }
-    });
+    })
+
     $("#ventas").autocomplete({
       source: "<?= $this->url ?>/completarventa",
       minLength: 2,
@@ -491,14 +618,45 @@
         // cambiarventa();
       }
     });
-    $("#clientes").autocomplete({
-      source: "<?= base_url() ?>pedido/completarcliente",
+
+    $("#transportistas").autocomplete({
+      source: "<?= $this->url ?>/completar_transportistas",
       minLength: 2,
       select: function(event, ui) {
-        $("#cliente").val(ui.item.cliente);
+        $("#venta").val(ui.item.venta);
+        $("#transportista").val(ui.item.tranpsortepublico)
+        save();
+        // cambiarventa();
+      }
+    });
+
+    $("#conductores").autocomplete({
+      source: "<?= $this->url ?>/completar_conductores",
+      minLength: 2,
+      select: function(event, ui) {
+        $("#conductor").val(ui.item.conductor);
         save();
       }
     });
+
+    $("#clientesdestinos").autocomplete({
+      source: "<?= $this->url ?>/completar_clientesdestinos",
+      minLength: 2,
+      select: function(event, ui) {
+        $("#clientedestino").val(ui.item.clientedestino);
+        save();
+      }
+    });
+
+    $("#vehiculos").autocomplete({
+      source: "<?= $this->url ?>/completar_vehiculo",
+      minLength: 2,
+      select: function(event, ui) {
+        $("#vehiculo").val(ui.item.vehiculo);
+        save();
+      }
+    });
+
     $("#datosT").autocomplete({
       source: "<?= $this->url ?>/completarT",
       minLength: 2,
@@ -507,32 +665,142 @@
         // save();
       }
     });
-    $("#modalidadtransporte").change(function(e){
+    $("#modalidadtransporte").change(function(e) {
       e.stopPropagation();
       if ($(this).val() == "02") {
         $("#documentoT").text("DNI CHOFER");
-      }else if ($(this).val() == "01") {
+      } else if ($(this).val() == "01") {
         $("#documentoT").text("RUC EMPRESA");
       } else {
         alert("Ha ocurrdio algo inesperado");
       }
     });
+    $("#destino_departamento").mayusculassintildes();
+    $("#destino_provincia").mayusculassintildes();
+    $("#destino_distrito").mayusculassintildes();
+    $("#destino_direccion").mayusculassintildes();
     $("#nombreconductor").mayusculassintildes();
     $("#vehiculo").mayusculassintildes();
-    $("#direcciondestino").mayusculassintildes();
+    $("input").keyup(function() {
+      $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
+      $(this).next().empty();
+    });
     $("input").change(function() {
       $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
       $(this).next().empty();
+
     });
-    $("textarea").change(function() {
+    $("textarea").keyup(function() {
+
       $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
       $(this).next().empty();
+
     });
     $("select").change(function() {
-      $(this).parent().parent().removeClass('has-error');
-      $(this).next().empty();
+      if ($(this).attr("name") == "destino_departamento" || $(this).attr("name") == "destino_provincia" || $(this).attr("name") == "destino_distrito") {
+
+      } else {
+        $(this).parent().removeClass('has-error');
+        $(this).parent().parent().removeClass('has-error');
+        $(this).next().empty();
+      }
     });
+
+    $("#tipocantidad").change(function() {
+      tipocompra();
+    });
+    tipocompra();
+
   });
+
+  function departamento_provincia() {
+    if ($("#destino_departamento").val() != "0") {
+      $.ajax({
+        url: "<?= $this->url ?>/ajax_departamento_provincia",
+        type: "POST",
+        data: {
+          "destino_departamento": $("#destino_departamento").val()
+        },
+        dataType: "JSON",
+        success: function(data) {
+          $("#destino_provincia").html("");
+          $("#destino_provincia").append(`<option value="0">SELECCIONE</option>`)
+          for (value of data) {
+            $("#destino_provincia").append(`<option value="${value.id}">${value.nombre}</option>`)
+          }
+          $("#destino_provincia").focus();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          Lobibox.notify('error', {
+            size: 'mini',
+            msg: 'No se puede eliminar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+          });
+        }
+      });
+    }
+  }
+
+  function provincia_distrito() {
+    if ($("#destino_provincia").val() != "0") {
+      $.ajax({
+        url: "<?= $this->url ?>/ajax_provincia_distrito",
+        type: "POST",
+        data: {
+          "destino_provincia": $("#destino_provincia").val()
+        },
+        dataType: "JSON",
+        success: function(data) {
+          $("#destino_distrito").html("");
+          $("#destino_distrito").append(`<option value="0">SELECCIONE</option>`)
+          for (value of data) {
+            $("#destino_distrito").append(`<option value="${value.id}">${value.nombre}</option>`)
+          }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          Lobibox.notify('error', {
+            size: 'mini',
+            msg: 'No se puede eliminar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+          });
+        }
+      });
+    }
+  }
+
+  function tipocompra() {
+    if ($("#tipocantidad").val() == "UNIDAD") {
+      $("#content-cantidad-paquete").hide("fast");
+    } else {
+      $("#content-cantidad-paquete").show("fast");
+    }
+  }
+
+  function empresaalmacen() {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_empresaAlmacen/" + $("#empresa").val(),
+      type: "POST",
+      dataType: "JSON",
+      success: function(data) {
+        $("#almacen").html("");
+        if (data.dataAlmacen.length > 0) {
+          for (value of data.dataAlmacen) {
+            $("#almacen").append(`<option value="${value.id}">${value.nombre}</option>`);
+          }
+        } else {
+          $("#almacen").append(`<option value="0"><span style="font-weight:bold; color:#e42424">NO SE ENCONTRO NINGUN ALMACEN REGISTRADO</span></option>`);
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: "El registro no se pudo actualizar. Verifique la operación"
+        });
+      }
+    });
+  }
 
   function generar() {
     table = $('#tabla').DataTable({
@@ -556,10 +824,7 @@
           "previous": "Anterior"
         }
       },
-      //Feature control the processing indicator.
-      "processing": true,
       "destroy": true,
-      // Load data for the table's content from an Ajax source
       "ajax": {
         "url": "<?= $this->url ?>/ajax_generar",
         "data": {
@@ -573,8 +838,8 @@
   };
 
   function pendiente() {
-	//$("#tablapendie").hide();
-    table = $('#tablapendientes').DataTable({
+    //$("#tablapendie").hide();
+    table = $('#tabla').DataTable({
       language: {
         "decimal": "",
         "emptyTable": "No hay información",
@@ -595,10 +860,7 @@
           "previous": "Anterior"
         }
       },
-      //Feature control the processing indicator.
-      "processing": true,
       "destroy": true,
-      // Load data for the table's content from an Ajax source
       "ajax": {
         "url": "<?= $this->url ?>/ajax_pendiente",
         "data": {
@@ -631,10 +893,7 @@
           "previous": "Anterior"
         }
       },
-      //Feature control the processing indicator.
-      "processing": true,
       "destroy": true,
-      // Load data for the table's content from an Ajax source
       "ajax": {
         url: "<?= $this->url ?>/ajax_list_detalle",
         type: 'GET'
@@ -653,44 +912,6 @@
     $('#modal_form').modal('show'); // show bootstrap modal
     $('.modal-title').text('Crear <?= $this->titulo_controlador ?>'); // Set Title to Bootstrap modal title
   };
-
-  // function save() {
-  //   $('#btnSave').text('guardando...'); //change button text
-  //   $('#btnSave').attr('disabled', true); //set button disable
-  //   // ajax adding data to database
-  //   $.ajax({
-  //     url: "<?= $this->url ?>/ajax_add",
-  //     type: "POST",
-  //     data: $('#form').serialize(),
-  //     dataType: "JSON",
-  //     success: function(data) {
-  //       //if success close modal and reload ajax table
-  //       if (data.status) {
-  //         reload_table();
-  //         $('#modal_form').modal('hide');
-  //         Lobibox.notify('success', {
-  //           size: 'mini',
-  //           msg: "El registro fue creado exitosamente."
-  //         });
-  //       } else {
-  //         for (var i = 0; i < data.inputerror.length; i++) {
-  //           $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-  //           $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
-  //         }
-  //       }
-  //       $('#btnSave').text('Guardar'); //change button text
-  //       $('#btnSave').attr('disabled', false); //set button enable
-  //     },
-  //     error: function(jqXHR, textStatus, errorThrown) {
-  //       Lobibox.notify('error', {
-  //         size: 'mini',
-  //         msg: "El registro no se pudo crear verifique las validaciones."
-  //       });
-  //       $('#btnSave').text('Guardar'); //change button text
-  //       $('#btnSave').attr('disabled', false); //set button enable
-  //     }
-  //   });
-  // };
 
   function borrar(id) {
     Lobibox.confirm({
@@ -743,7 +964,7 @@
   };
 
   function savedetalle() {
-    $('#btnSaveDetalle').text('...'); //change button text
+    $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-spin fa-spinner"></i>'); //change button text
     $('#btnSaveDetalle').attr('disabled', true); //set button disable
     // ajax adding data to database
     $.ajax({
@@ -758,10 +979,11 @@
           $('#form_detalle')[0].reset();
           Lobibox.notify('success', {
             size: 'mini',
+            position: 'top right',
             msg: 'El registro fue creado exitosamente.'
           });
           cambiarventa();
-          $('#btnSaveDetalle').text('A'); //change button text
+          $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-shopping-cart"></i>');
           $('#btnSaveDetalle').attr('disabled', false); //set button enable
           $("#productos").focus();
         } else {
@@ -769,16 +991,17 @@
             $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
             $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
           }
-          $('#btnSaveDetalle').text('A'); //change button text
+          $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-shopping-cart"></i>');
           $('#btnSaveDetalle').attr('disabled', false); //set button enable
         }
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'El registro no se pudo crear verifique las validaciones.'
         });
-        $('#btnSaveDetalle').text('A'); //change button text
+        $('#btnSaveDetalle').html('AGREGAR <i class="fa fa-shopping-cart"></i>');
         $('#btnSaveDetalle').attr('disabled', false); //set button enable
       }
     });
@@ -796,6 +1019,7 @@
             reload_table_detalle();
             Lobibox.notify('success', {
               size: 'mini',
+              position: 'top right',
               msg: 'El registro fue eliminado exitosamente.'
             });
             cambiarventa();
@@ -804,6 +1028,7 @@
           error: function(jqXHR, textStatus, errorThrown) {
             Lobibox.notify('error', {
               size: 'mini',
+              position: 'top right',
               msg: 'No se puede eliminar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
             });
           }
@@ -813,7 +1038,6 @@
   };
 
   function save() {
-    // ajax adding data to database
     $.ajax({
       url: "<?= $this->url ?>/ajax_update",
       type: "POST",
@@ -822,12 +1046,8 @@
       success: function(data) {
         //if success close modal and reload ajax table
         if (data.status) {
-          Lobibox.notify('success', {
-            size: 'mini',
-            msg: "El registro fue actualizado exitosamente."
-          });
-          reload_table_detalle();
           cambiarventa();
+          reload_table_detalle();
         } else {
           for (var i = 0; i < data.inputerror.length; i++) {
             $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
@@ -838,6 +1058,7 @@
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: "El registro no se pudo actualizar. Verifique la operación"
         });
       }
@@ -858,6 +1079,7 @@
         if (data.status) {
           Lobibox.notify('success', {
             size: 'mini',
+            position: 'top right',
             msg: "El registro fue actualizado exitosamente."
           });
           reload_table_detalle();
@@ -872,6 +1094,7 @@
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'Ocurrió un problema, favor contacte con el administrador del sistema.'
         });
       }
@@ -886,50 +1109,79 @@
       type: "GET",
       dataType: "JSON",
       success: function(data) {
-        $('#vtipoventa span').text('GUIA REMISION');
-        $('[name="numeracion"]').val(data.numeracion);
-        $('[name="empresa"]').val(data.empresa);
-        $('[name="empresas"]').val(data.razonsocial);
-        $('[name="venta"]').val(data.venta);
-        $('[name="ventas"]').val(data.nombrecompleto);
-        $('[name="ubigeosalida"]').val(data.ubigeosalida);
+        document.querySelector("#content-datos-guiaremision").className = "";
+        document.querySelector("#content-detalles-guiaremision").className = "";
+        $('[name="pesobrutobienes"]').val(data.pesobrutobienes);
+        data.destino_distrito != null ? $('[name="destino_distrito"]').val(data.destino_distrito) : "";
+        data.destino_provincia != null ? $('[name="destino_provincia"]').val(data.destino_provincia) : "";
+        data.destino_departamento != null ? $('[name="destino_departamento"]').val(data.destino_departamento) : "";
+        $('[name="destino_direccion"]').val(data.destino_direccion)
+        $('[name="clientedestino"]').val(data.clientedestino);
+        $('[name="clientesdestinos"]').val(data.clientesdestinos);
+        $('[name="conductor"]').val(data.conductor);
+        $('[name="conductores"]').val(data.conductores);
+        $('[name="vehiculo"]').val(data.vehiculo);
+        $('[name="vehiculos"]').val(data.vehiculos);
+        $('[name="transportista"]').val(data.transportista);
+        $('[name="transportistas"]').val(data.transportistas);
         $('[name="direccionsalida"]').val(data.direccionsalida);
         $('[name="nombrecliente"]').val(data.nombrecliente);
         $('[name="motivostraslado"]').val(data.motivostraslado);
+        $('#usuarios').val(data.usuarios);
         $('[name="modalidadtraslado"]').val(data.modalidadtraslado);
         if (data.contador > 0) {
-          $('#empresas').attr('disabled', true);
-          $('#empresa').hide();
-          $('#empresas').show();
+          $('#empresa').attr('disabled', true);
         } else {
-          $('#empresas').attr('disabled', false);
-          $('#empresa').show();
-          $('#empresas').hide();
+          $('#empresa').attr('disabled', false);
         }
         if (data.estado === '0') {
+          $("#content-datos-guiaremision").addClass("col-lg-6");
+          $("#content-detalles-guiaremision").addClass("col-lg-6");
+          $("#content-detalles-guiaremision").show();
           $('#usuarios').attr('disabled', false);
-          $('#clientes').attr('disabled', false);
-          $('#ventas').attr('disabled', false);
-          $('#direccion').attr('disabled', false);
-          $('#modalidadtraslado').attr('disabled', false);
-          $('#motivostraslado').attr('disabled', false);
-          $('#numeraciones').hide();
-          $('#addproduct').show();
+          $('[name="modalidadtraslado"]').attr("disabled", false);
+          $('[name="motivostraslado"]').attr("disabled", false);
+          $('[name="vehiculos"]').attr("disabled", false);
+          $('[name="conductores"]').attr("disabled", false);
+          $('[name="pesobrutobienes"]').attr("disabled", false);
+          $('#fechatraslado').attr('disabled', false);
+          $('[name="destino_departamento"]').attr("disabled", false);
+          $('[name="destino_provincia"]').attr("disabled", false);
+          $('[name="destino_distrito"]').attr("disabled", false);
+          $('[name="destino_direccion"]').attr("disabled", false);
+          $('[name="clientesdestinos"]').attr("disabled", false);
         }
         if (data.estado === '1') {
           $('#usuarios').attr('disabled', true);
-          $('#clientes').attr('disabled', true);
-          $('#ventas').attr('disabled', true);
-          $('#direccion').attr('disabled', true);
-          $('#motivostraslado').attr('disabled', true);
-          $('#modalidadtraslado').attr('disabled', true);
-          $('#numeraciones').show();
-          $('#addproduct').hide();
+          $('[name="modalidadtraslado"]').attr("disabled", true);
+          $('[name="motivostraslado"]').attr("disabled", true);
+          $('[name="vehiculos"]').attr("disabled", true);
+          $('[name="conductores"]').attr("disabled", true);
+          $('[name="pesobrutobienes"]').attr("disabled", true);
+          $('#fechatraslado').attr('disabled', true);
+          $('[name="destino_departamento"]').attr("disabled", true);
+          $('[name="destino_provincia"]').attr("disabled", true);
+          $('[name="destino_distrito"]').attr("disabled", true);
+          $('[name="destino_direccion"]').attr("disabled", true);
+          $('[name="clientesdestinos"]').attr("disabled", true);
+          $("#content-datos-guiaremision").addClass("col-lg-12");
+          $("#content-detalles-guiaremision").hide();
+        }
+
+        tipotransporte();
+        $("#almacen").html("");
+        if (data.empresaAlmacen.length > 0) {
+          for (value of data.empresaAlmacen) {
+            $("#almacen").append(`<option value="${value.id}">${value.nombre}</option>`);
+          }
+        } else {
+          $("#almacen").append(`<option value="0"><span style="font-weight:bold; color:#e42424">NO SE ENCONTRO NINGUN ALMACEN REGISTRADO</span></option>`);
         }
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'Error al obtener datos de ajax.'
         });
       }
@@ -940,54 +1192,52 @@
     table_detalle.ajax.reload(null, false); //reload datatable ajax
   };
 
-  function grabar() {
-    $('#guiaremision_form').modal('show');
-    $('.modal-title').text('GRABAR GUIA REMISION');
-  };
 
-  function saveprocesar() {
-    $('#btnSaveprocesar').text('guardando...'); //change button text
-    $('#btnSaveprocesar').attr('disabled', true); //set button disable
-    // ajax adding data to database
-    $.ajax({
-      url: '<?= $this->url ?>/ajax_addprocesar',
-      type: "POST",
-      data: $('#form_guiaremision').serialize(),
-      dataType: "JSON",
-      success: function(data) {
-        //if success close modal and reload ajax table
-        if (data.status) {
-          $('#guiaremision_form').modal('hide');
-          $('#form_guiaremision')[0].reset();
-          Lobibox.notify('success', {
-            size: 'mini',
-            msg: 'El registro fue creado exitosamente.'
-          });
-          reload_table_detalle();
-          cambiarventa();
-        } else {
-          for (var i = 0; i < data.inputerror.length; i++) {
-            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-            $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+  function generarGuiaRemision() {
+    bootbox.confirm("¿Seguro que desea generar la GUIA DE REMISION REMITENTE?", function(result) {
+      if (result === true) {
+        $.ajax({
+          url: '<?= $this->url ?>/ajax_addprocesar',
+          type: "POST",
+          data: $('#form_principal').serialize(),
+          dataType: "JSON",
+          success: function(data) {
+            if (data.status) {
+              Lobibox.notify('success', {
+                size: 'mini',
+                position: 'top right',
+                msg: 'El registro fue creado exitosamente.'
+              });
+              reload_table_detalle();
+              cambiarventa();
+            } else {
+              for (var i = 0; i < data.inputerror.length; i++) {
+                $('[name="' + data.inputerror[i] + '"]').focus();
+                $('[name="' + data.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+                $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+              }
+            }
+            $('#btnSaveprocesar').text('GRABAR'); //change button text
+            $('#btnSaveprocesar').attr('disabled', false); //set button enable
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            Lobibox.notify('error', {
+              size: 'mini',
+              position: 'top right',
+              msg: 'El registro no se pudo crear verifique las validaciones.'
+            });
+            $('#btnSaveprocesar').text('GRABAR'); //change button text
+            $('#btnSaveprocesar').attr('disabled', false); //set button enable
           }
-        }
-        $('#btnSaveprocesar').text('GRABAR'); //change button text
-        $('#btnSaveprocesar').attr('disabled', false); //set button enable
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        Lobibox.notify('error', {
-          size: 'mini',
-          msg: 'El registro no se pudo crear verifique las validaciones.'
         });
-        $('#btnSaveprocesar').text('GRABAR'); //change button text
-        $('#btnSaveprocesar').attr('disabled', false); //set button enable
       }
     });
-  };
+  }
 
-  function imprimir(id) {
+
+  function imprimirguiaremision(id) {
     $.ajax({
-      url: "<?= $this->url ?>/imprimir/" + id,
+      url: "<?= $this->url ?>/imprimirguiaremision/" + id,
       type: "POST",
       success: function(data) {
         $('#printSection').html(data);
@@ -997,16 +1247,20 @@
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'Error al obtener datos de ajax.'
         });
       }
     });
   };
 
-  function modalidad() {
-    const modalidadTraslado = $("#modalidadtraslado").val();
-    if (modalidadTraslado) {
-
+  function tipotransporte() {
+    if ($("#modalidadtraslado").val() == "01") {
+      $("#content-transportista-privado").hide("fast");
+      $("#content-transportista-publico").show("fast");
+    } else {
+      $("#content-transportista-publico").hide("fast");
+      $("#content-transportista-privado").show("fast");
     }
   }
 
@@ -1032,6 +1286,7 @@
           $('#form_cliente')[0].reset();
           Lobibox.notify('success', {
             size: 'mini',
+            position: 'top right',
             msg: 'El registro fue creado exitosamente.'
           });
           // cambiarventa();
@@ -1047,6 +1302,7 @@
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'El registro no se pudo crear verifique las validaciones.'
         });
         $('#btnSavecliente').text('GRABAR'); //change button text
@@ -1073,6 +1329,7 @@
           $("#transportistas").val(data.transportista);
           Lobibox.notify('success', {
             size: 'mini',
+            position: 'top right',
             msg: 'El registro fue creado exitosamente.'
           });
           // cambiarventa();
@@ -1088,6 +1345,7 @@
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'El registro no se pudo crear verifique las validaciones.'
         });
         $('#btnSavetransportista').text('GRABAR'); //change button text
@@ -1139,114 +1397,94 @@
         $('#botoncito').button('reset');
         Lobibox.notify('error', {
           size: 'mini',
+          position: 'top right',
           msg: 'Error al obtener datos de ajax.'
         });
       }
     });
   });
 
-  // $('#botoncitoTransportista').on('click', function() {
-  //   $(this).button('loading');
-  //   if ($('#tipo').val() == 'DNI') {
-  //     var url = "https://dni.optimizeperu.com/api/persons/" + $('#documento').val() + "?format=json";
-  //   } else {
-  //     var url = "https://dni.optimizeperu.com/api/company/" + $('#documento').val() + "?format=json";
-  //   }
-  //   $.ajax({
-  //     method: 'GET',
-  //     url: url,
-  //     beforeSend: function() {
-  //       $('[name="nombre"]').val("");
-  //       $('[name="apellido"]').val("");
-  //       $('[name="direccion"]').val("");
-  //     },
-  //     success: function(data) {
-  //       $('#botoncitoTransportista').button('reset');
-  //       if ($('#tipo').val() == 'DNI') {
-  //         nombre = data.name;
-  //         if (data.first_name === undefined) {
-  //           apellido = '';
-  //         } else {
-  //           apellido = data.first_name + " " + data.last_name;
-  //         }
-  //         direccion = "";
-  //       } else {
-  //         nombre = data.razon_social;
-  //         apellido = "";
-  //         direccion = data.domicilio_fiscal;
-  //       }
-  //       $('[name="nombre"]').val(nombre);
-  //       $('[name="apellido"]').val(apellido);
-  //       $('[name="direccion"]').val(direccion);
-  //     },
-  //     error: function(data) {
-  //       $('#botoncito').button('reset');
-  //       Lobibox.notify('error', {
-  //         size: 'mini',
-  //         msg: 'Error al obtener datos de ajax.'
-  //       });
-  //     }
-  //   });
-  // });
-
   function procesar_documento_electronico(id) {
-  var light = $('#cuerpo_comprobante').parent();
-  $("#vernotas").modal('hide');
-  $(light).block({
-    message: '<div class="loader"></div> <p><br />Enviando data, espera un momento!...</p>',
-    overlayCSS: {
-      backgroundColor: '#fff',
-      opacity: 0.8,
-      cursor: 'wait'
-    },
-    css: {
-      border: 0,
-      padding: 0,
-      backgroundColor: 'none'
-    }
-  });
-	$.ajax({
-    url : '<?= $this->url ?>/emitir/' + id,
-    method : 'POST',
-    dataType : "json",
-  }).then(function(data) {
-    if(data.respuesta == 'ok') {
-      swal({
-        title: 'Resultado',
-        text: 'Su comprobante se ha procesado correctamente!',
-        html: true,
-        type: "success",
-        confirmButtonText: "Ok",
-        confirmButtonColor: "#2196F3"
-      }, function() {
-        $("#respuesta_proceso").html('<div class="alert alert-success alert-styled-left alert-arrow-left alert-bordered">\
+    var light = $('#cuerpo_comprobante').parent();
+    $("#vernotas").modal('hide');
+    $(light).block({
+      message: '<div class="loader"></div> <p><br />Enviando data, espera un momento!...</p>',
+      overlayCSS: {
+        backgroundColor: '#fff',
+        opacity: 0.8,
+        cursor: 'wait'
+      },
+      css: {
+        border: 0,
+        padding: 0,
+        backgroundColor: 'none'
+      }
+    });
+    $.ajax({
+      url: '<?= $this->url ?>/emitir/' + id,
+      method: 'POST',
+      dataType: "json",
+    }).then(function(data) {
+      if (data.respuesta == 'ok') {
+        swal({
+          title: 'Resultado',
+          text: 'Su comprobante se ha procesado correctamente!',
+          html: true,
+          type: "success",
+          confirmButtonText: "Ok",
+          confirmButtonColor: "#2196F3"
+        }, function() {
+          $("#respuesta_proceso").html('<div class="alert alert-success alert-styled-left alert-arrow-left alert-bordered">\
         <button type="button" class="close" data-dismiss="alert"><span>×</span><span class="sr-only">Close</span></button>\
         Su Documento se ha procesado correctamente...<br><br>\
-        HASH: '+ data.hash_cpe +'</div>');
-      });
-    } else {
-      swal({
-        title: 'ERROR',
-        text: data.mensaje,
-        html: true,
-        type: "error",
-        confirmButtonText: "Ok",
-        confirmButtonColor: "#2196F3"
-      }, function() {
-        $("#respuesta_proceso").html('<div class="alert alert-danger alert-styled-left alert-bordered">\
+        HASH: ' + data.hash_cpe + '</div>');
+        });
+      } else {
+        swal({
+          title: 'ERROR',
+          text: data.mensaje,
+          html: true,
+          type: "error",
+          confirmButtonText: "Ok",
+          confirmButtonColor: "#2196F3"
+        }, function() {
+          $("#respuesta_proceso").html('<div class="alert alert-danger alert-styled-left alert-bordered">\
         <button type="button" class="close" data-dismiss="alert"><span>×</span><span class="sr-only">Close</span></button>\
         ' + data.mensaje + '.\
         </div>');
-      });
-    }
-    $(light).unblock();
-    reload_table();
-  }, function(reason) {
-    console.log(reason);
-    $(light).unblock();
-    reload_table();
-  });
-};
+        });
+      }
+      $(light).unblock();
+      reload_table();
+    }, function(reason) {
+      console.log(reason);
+      $(light).unblock();
+      reload_table();
+    });
+  };
 
+
+  function salvardatos() {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_salvardatos",
+      type: "POST",
+      data: $("#form_principal").serialize(),
+      dataType: "JSON",
+      success: function(data) {
+        Lobibox.notify('success', {
+          size: 'mini',
+          position: 'top right',
+          msg: 'Se salvaron los datos correctamente'
+        });
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: 'top right',
+          msg: 'Error al obtener datos de ajax.'
+        });
+      }
+    });
+  }
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

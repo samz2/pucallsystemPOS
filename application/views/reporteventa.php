@@ -70,6 +70,7 @@
 
 <script type="text/javascript">
   function resumen() {
+    
     $.ajax({
       url: '<?= $this->url ?>/resumen/' + $('#finicio').val() + '/' + $('#factual').val() + '/' + $('#empresa').val(),
       type: 'post',

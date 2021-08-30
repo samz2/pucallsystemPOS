@@ -227,12 +227,12 @@
   }
 
   .badgetotalesCP {
-    position:relative;
-    background:#f02849;
-    text-transform:uppercase;
+    position: relative;
+    background: #f02849;
+    text-transform: uppercase;
     font-weight: normal;
     padding: 3px 5px;
-    font-size:12px;
+    font-size: 12px;
     margin-top: 1px;
     line-height: 1;
     color: #FFF;
@@ -259,11 +259,10 @@
         <?php } ?>
       </a>
     </div>
-    
     <!-- Brand and toggle get grouped for better mobile display -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <?= $this->dynamic_menu->build_menu() ?>
-      <ul class="nav navbar-nav navbar-right">
+      <ul class="nav navbar-nav navbar-right" <?= $empresa->color_menu != "" ? "style='background: $empresa->color_menu'" : "" ?> id="menu-derecho">
         <li>
           <a href="">
             <img class="img-circle topbar-userpic hidden-xs" src="<?= $usuario->avatar ? base_url() . 'files/Avatars/' . $usuario->avatar : base_url() . RECURSOS . 'img/Avatar.jpg' ?>" width="30px" height="30px">
@@ -358,9 +357,9 @@
     });
     getAlertaStock();
     alertComprobantes();
-    
+
     $('.alertaCP').on('click', function(e) {
-     // $(".alertaCP").addClass("open");
+      // $(".alertaCP").addClass("open");
       /*
       if($(".alertaCP").hasClass("open")){
         //? manda true si tiene la clase
@@ -369,7 +368,7 @@
       }
       */
     });
-    
+
   });
 
   function getAlertaStock() {
@@ -398,7 +397,7 @@
       dataType: "json",
       success: function(data) {
         $("#listaAlertaCP").html(data.dataCP);
-        if(data.totalCP > 0){
+        if (data.totalCP > 0) {
           $(".usernotifbadgeCP").text(data.totalCP);
         }
         $("#subtotalCPBoletas").text(data.subtotalBoletas);

@@ -293,7 +293,8 @@ class Venta extends CI_Controller
 
   public function detalle($finicio, $factual, $empresa)
   {
-    $generados = $this->Controlador_model->detalle($finicio, $factual, $empresa, '1');
+    $generados = $this->Controlador_model->detalleVentas($finicio, $factual, $empresa);
+
     $anulados = $this->Controlador_model->detalle($finicio, $factual, $empresa, '3');
     $mostrar = '';
     $mostrar .= '
@@ -302,6 +303,7 @@ class Venta extends CI_Controller
     <tr>
       <th>#</th>
       <th>Venta</th>
+      <th>Estado de venta</th>
       <th>Colaborador</th>
       <th>Fecha / Hora</th>
       <th>Concepto</th>
@@ -326,10 +328,18 @@ class Venta extends CI_Controller
       $utilidad = $data->subtotal - ($data->cantidad * $data->preciocompra);
       $totalactual += $data->subtotal;
       $totalutilidad += $utilidad;
+      if($data->estado == "1"){
+        $estadoVenta = "GENERADO";
+      }else if($data->estado == "3"){
+        $estadoVenta = "ANULADO";
+      }else{
+        $estadoVenta = "SIN DATOS";
+      } 
       $mostrar .= '
       <tr>
       <td>' . $i . '</td>
       <td>' . $venta->serie . '-' . $venta->numero . '</td>
+      <td>' . $estadoVenta . '</td>
       <td>' . $usuario->nombre . '</td>
       <td>' . $venta->created . " / " . $venta->hora . '</td>';
       if ($data->tipo == '0') {
@@ -348,11 +358,16 @@ class Venta extends CI_Controller
       </tr>';
     }
 
+
+
+
+
     $mostrar .= '</tbody>
     <tfoot>
     <tr>
-    <td colspan="7">
-    </td><td align="center" colspan="2"><b>Total:</b></td>
+    <td colspan="8">
+    </td>
+    <td align="center" colspan="2"><b>Total:</b></td>
     <td align="right">' . number_format($totalutilidad, 2) . '</td>
     <td align="right">' . number_format($totalactual, 2) . '</td>
     </tr>
@@ -401,6 +416,7 @@ class Venta extends CI_Controller
     $sheet->setCellValue('I1', 'SUNAT');
     $sheet->setCellValue('J1', 'MONTO');
     $i = 1;
+    $sunat = "SIN DATOS";
     foreach ($generados as $value) {
       $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
       $vendedor = $this->Controlador_model->get($value->usuario_creador, 'usuario');
@@ -425,6 +441,7 @@ class Venta extends CI_Controller
       $sheet->setCellValue('I' . $i, $sunat);
       $sheet->setCellValue('J' . $i, $value->montototal);
     }
+    $sunat = "SIN DATOS";
     foreach ($anulados as $value) {
       $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
       $vendedor = $this->Controlador_model->get($value->usuario_creador, 'usuario');
@@ -608,7 +625,7 @@ class Venta extends CI_Controller
     $sheet->setCellValue('A1', 'NRO');
     $sheet->setCellValue('B1', 'FECHA');
     $sheet->setCellValue('C1', 'HORA');
-    $sheet->setCellValue('D1', 'ESTADO');
+    $sheet->setCellValue('D1', 'ESTADO DE VENTA');
     $sheet->setCellValue('E1', 'VENTA');
     $sheet->setCellValue('F1', 'USUARIO');
     $sheet->setCellValue('G1', 'PRODUCTO');
@@ -623,7 +640,6 @@ class Venta extends CI_Controller
       $venta = $this->Controlador_model->get($value->id, 'venta');
       $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
       $vendedor = $this->Controlador_model->get($venta->usuario_creador, 'usuario');
-
       $i++;
       $utilidadventa = $value->precioventa - $value->preciocompra;
       $utilidadTotal = ($value->precioventa * $value->cantidad) - ($value->preciocompra * $value->cantidad);
@@ -646,21 +662,25 @@ class Venta extends CI_Controller
       $sheet->setCellValue('L' . $i, $utilidadTotal);
       $sheet->setCellValue('M' . $i, $value->subtotal);
     }
-    foreach ($anulados as $value) {
+    foreach ($anulados as $indice => $value) {
       $venta = $this->Controlador_model->get($value->id, 'venta');
       $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
       $vendedor = $this->Controlador_model->get($venta->usuario_creador, 'usuario');
-      $producto = $this->Controlador_model->get($value->producto, 'producto');
       $i++;
       $utilidadventa =  $value->precioventa - $value->preciocompra;
       $utilidadTotal = ($value->precioventa * $value->cantidad) - ($value->preciocompra * $value->cantidad);
-      $sheet->setCellValue('A' . $i, $key + 1);
+      $sheet->setCellValue('A' . $i, $indice + 1);
       $sheet->setCellValue('B' . $i, $venta->created);
       $sheet->setCellValue('C' . $i, $venta->hora);
-      $sheet->setCellValue('D' . $i, "GENERADO");
+      $sheet->setCellValue('D' . $i, "ANULADO");
       $sheet->setCellValue('E' . $i, $venta->serie . '-' . $venta->numero);
       $sheet->setCellValue('F' . $i, $vendedor->usuario);
-      $sheet->setCellValue('G' . $i, $producto->nombre);
+      if ($value->tipo == '0') {
+        $producto = $this->Controlador_model->get($value->producto, 'producto');
+        $sheet->setCellValue('G' . $i, $producto ? $producto->nombre : "SIN DATOS");
+      } else {
+        $sheet->setCellValue('G' . $i, $value->nombre);
+      }
       $sheet->setCellValue('H' . $i, $value->preciocompra);
       $sheet->setCellValue('I' . $i, $value->precioventa);
       $sheet->setCellValue('J' . $i, $utilidadventa);
@@ -668,16 +688,17 @@ class Venta extends CI_Controller
       $sheet->setCellValue('L' . $i, $utilidadTotal);
       $sheet->setCellValue('M' . $i, $value->subtotal);
     }
+
     // Salida
     header("Content-Type: application/vnd.ms-excel");
-    $nombreArchivo = 'ventasdetalle_' . date('YmdHis');
+    $nombreArchivo = 'ventasdetalle_'.date('Y-m-d');
     header("Content-Disposition: attachment; filename=\"$nombreArchivo.xls\"");
     header("Cache-Control: max-age=0");
     // Genera Excel
     $writer = PHPExcel_IOFactory::createWriter($this->phpexcel, "Excel5");
     // Escribir
     $writer->save('php://output');
-    exit;
+    exit();
   }
 
   public function emitir($id)

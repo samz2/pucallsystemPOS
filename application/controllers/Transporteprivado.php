@@ -140,7 +140,13 @@ class Transporteprivado extends CI_Controller
     public function ajax_update($statusregistro)
     {
         $this->_validate($statusregistro);
-        $data['documento'] = $this->input->post('numeroplaca');
+        $dataquery = $this->Controlador_model->get($this->input->post('id'), "transporteprivado");
+        if ($dataquery->tipo == "CONDUCTOR") {
+            $data['tipodocumento'] = $this->input->post('tipodocumento');
+            $data['documento'] = $this->input->post('documento');
+        } else {
+            $data['documento'] = $this->input->post('numeroplaca');
+        }
         $this->Controlador_model->update(array('id' => $this->input->post('id')), $data, $this->controlador);
         echo json_encode(array("status" => TRUE));
     }
