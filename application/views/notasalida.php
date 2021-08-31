@@ -1,4 +1,7 @@
-<?= $this->session->flashdata('mensaje') ?>.
+<?= $this->session->flashdata('mensaje') ?>
+<?php 
+  // var_dump($almacenes);
+?>
 <?php if ($this->notasalida) { ?>
   <div class="container">
     <div class="row">
@@ -286,16 +289,24 @@
         </div>
         <div class="modal-body">
           <div class="box-body">
-
+           
             <div class="form-group">
               <label class="col-sm-2 control-label" for="tiposalida">Tipo Ope*</label>
-              <div class="col-sm-10">
+              <div class="col-sm-6">
                 <select id="tiposalida" name="tiposalida" class="form-control">
                   <option value="AJUSTE STOCK">AJUSTE STOCK</option>
                   <option value="TRASLADO DE ALMACEN">TRASLADO DE ALMACEN</option>
                 </select>
                 <span class="help-block"></span>
               </div>
+              <label class="col-sm-2 control-label" for="confirmacion">Confirmación  </label>
+              <div class="col-sm-2">
+                <div class="material-switch">
+                  <input id="confirmacion" name="confirmacion" type="checkbox" />
+                  <label for="confirmacion" class="label-success"></label>
+                </div>
+              </div>
+                
             </div>
 
             <div class="form-group" id="contenedorempresatraslado">
@@ -348,6 +359,7 @@
                 <span class="help-block"></span>
               </div>
             </div>
+           
 
           </div>
         </div>
@@ -875,10 +887,17 @@
     $('#btnSaveprocesar').text('guardando...'); //change button text
     $('#btnSaveprocesar').attr('disabled', true); //set button disable
     // ajax adding data to database
+    // if($("#confirmacion").is(':checked')) 
+    // {
+    //   $("#confirmacion").val(true);
+    // }else{
+    //   $("#confirmacion").val(false);
+    // }
     $.ajax({
       url: '<?= $this->url ?>/ajax_addprocesar',
       type: "POST",
       data: $('#form_compra').serialize(),
+
       dataType: "JSON",
       success: function(data) {
         //if success close modal and reload ajax table
@@ -988,9 +1007,38 @@
           size: 'mini',
           position: "top right",
           msg: 'Error al obtener datos de ajax.'
-        });
+        }); 
       }
     });
+  };
+
+  function aprobar(id) {
+    Swal.fire({
+      title: '¿Desea aprobar este movimiento?',
+      showDenyButton: true,
+      showCancelButton: false,
+      confirmButtonText: `Si`,
+      denyButtonText: `No`,
+    }).then((result) => {
+      /* Read more about isConfirmed, isDenied below */
+      if (result.isConfirmed) {
+        $.ajax({
+          url: "<?= $this->url ?>/aprobar/" + id,
+          type: "POST",
+          success: function(data) {
+            Swal.fire('Listo, Movimiento aceptado', '', 'success');
+            location.reload();
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            Swal.fire('error: '+errorThrown, '', 'error') 
+          }
+        });
+       
+      } else if (result.isDenied) {
+        Swal.fire('Movimiento denegado', '', 'warning')
+      }
+    })
+  
   };
 
   function crearlote() {
@@ -1123,3 +1171,4 @@
   }
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
