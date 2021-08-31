@@ -186,59 +186,155 @@
       </tbody>
     </table>
   </div>
-    <?php 
-    $dataClienteDestino = $this->Controlador_model->get($data->destino_cliente, "cliente");
-    if($dataClienteDestino){
-      $textDataCliente = $dataClienteDestino->tipodocumento == "DNI" ? $dataClienteDestino->nombre." ".$dataClienteDestino->apellido : "EL CLIENTE FUE ELIMINADO :(";
-    }
-?>
-<br>
+  <?php
+  $dataClienteDestino = $this->Controlador_model->get($data->destino_cliente, "cliente");
+  if ($dataClienteDestino) {
+    $textDataCliente = $dataClienteDestino->tipodocumento == "DNI" ? $dataClienteDestino->nombre . " " . $dataClienteDestino->apellido : "EL CLIENTE FUE ELIMINADO :(";
+  }
+  ?>
+  <br>
   <div>
-    <table style="width:50%">
+    <table style="width:100%">
       <thead>
         <tr>
-          <th>
+          <th colspan="2">
             DATOS DEL DESTINATARIO
           </th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Apellidos y nombres, denominacin o razon: </td>
-          <td style="text-align: left"><?= $textDataCliente ?></td>
+          <td style="width:30%">Apellidos y nombres, denominacion o razon: </td>
+          <td style="width:70%; text-align: left"><?= $textDataCliente ?></td>
         </tr>
         <tr>
-          <td>Documento o identidad: </td>
-          <td style="text-align: left"><?= $dataClienteDestino ? $dataClienteDestino->documento : "EL CLIENTE FUE ELIMINADO :(" ?></td>
+          <td style="width:30%">Documento o identidad: </td>
+          <td style="width:70%; text-align: left"><?= $dataClienteDestino ? $dataClienteDestino->documento : "EL CLIENTE FUE ELIMINADO :(" ?></td>
         </tr>
       </tbody>
     </table>
   </div>
   <br>
   <div>
-    <table style="width:50%">
+    <table style="width:100%">
       <thead>
         <tr>
-          <th>
+          <th colspan="2">
             DATOS DEL PUNTO DE PARTIDAD Y PUNTO DE LLEGADA
           </th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Apellidos y nombres, denominacin o razon: </td>
-          <td style="text-align: left"><?= $textDataCliente ?></td>
+          <td style="width:30%">Direccion del punto de partidad: </td>
+          <td style="width:70%; text-align: left"><?= $empresa->ubigeo . " " . $empresa->direccion ?></td>
         </tr>
         <tr>
-          <td>Documento o identidad: </td>
-          <td style="text-align: left"><?= $dataClienteDestino ? $dataClienteDestino->documento : "EL CLIENTE FUE ELIMINADO :(" ?></td>
+          <td style="width:30%">Direccion del punto de llegada: </td>
+          <td style="width:70%; text-align: left"><?= ($data->destino_ubigeo . " " . $data->destino_direccion) ?></td>
         </tr>
       </tbody>
     </table>
   </div>
+  <h4><?= ($data->modalidadtraslado == "01" ? "DATOS DEL TRANSPORTISTA" : "DATOS DEL TRANSPORTE") ?></h4>
+  <?php if ($data->modalidadtraslado == '01') {
+    $transportePublico =  $this->Controlador_model->get($data->transportistapublico, "transportepublico");
+  ?>
+    <table>
+      <tr>
+        <th>Apellidos y nombres, denominacion o razon social</th>
+        <td><?= $transportePublico ? $transportePublico->razonsocial : "SIN DATOS" ?></td>
+      </tr>
+      <tr>
+        <th>Numero de <?= $transportePublico ? $transportePublico->tipodocumento : "SIN DATOS" ?></th>
+        <td><?= $transportePublico ? $transportePublico->documento : "SIN DATOS" ?></td>
+      </tr>
+    </table>
+    <!-- PUBLICO $transportePublico -->
+
+  <?php
+  } else {
+    $dataVehiculo = $this->Controlador_model->get($data->vehiculo_transporteprivado, "transporteprivado");
+    $dataConductor = $this->Controlador_model->get($data->conductor_transporteprivado, "transporteprivado");
+  ?>
 
 
+    <table style="width:100%">
+      <tr>
+        <td style="width:45%">
+          Datos de los vehiculos
+          <table>
+            <thead>
+              <tr style="background-color:#969494; color:#fff">
+                <th>Nro. de placa</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><?= $dataVehiculo ? $dataVehiculo->documento : "SIN DATOS" ?></td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+        <td style="width:45%">
 
+          <table style="margin-left:10px">
+            <tr>
+              <td>Datos de los conductores</td>
+            </tr>
+            <tr style="background-color:#969494; color:#fff">
+              <th>Tipo doc.</th>
+              <th>Nro documento</th>
+            </tr>
+            <tr>
+              <td><?= $dataConductor ? $dataConductor->tipodocumento : "SIN DATOS" ?></td>
+              <td><?= $dataConductor ? $dataConductor->documento : "SIN DATOS" ?></td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+  <?php } ?>
+  <br>
+  <div><b>DATOS DE LOS BIENES</b></div>
+  <table style="margin-top:5px">
+    <thead>
+      <tr style="background-color:#969494; color:#fff">
+        <th>Nro</th>
+        <th>Cod. bien</th>
+        <th>Descripcion</th>
+        <th>Unidad de medida</th>
+        <th>Cantidad</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach($detalle as $key => $value){ ?>
+        <?php
+          $producto = $this->Controlador_model->get($value->producto, 'producto');
+        ?>
+        <tr>
+        <td><?= $key+ 1?></td>
+        <td><?=$producto ? $producto->codigo : "SIN DATOS"?></td>
+        <td><?=$producto ? $producto->nombre : "SIN DATOS"?></td>
+        <td><?= $value->medida ?></td>
+        <td><?=$value->cantidad?></td>
+      </tr>
+      <?php } ?>
+    </tbody>
+
+  </table>
+  <br>
+  <!-- <table>
+    <tr>
+      <th>
+        Observaciones
+      </th>
+      <td>
+     
+      </td>
+    </tr>
+  </table> -->
 
 </body>
 

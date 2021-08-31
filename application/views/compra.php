@@ -200,6 +200,14 @@
               </div>
             </div>
 
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <button type="button" class="btn btn-warning btn-block waves-effect waves-light" id="btnSaveDetalle" onclick="cosotoadicionales()">COSTOS ADICIONALES <i class="fa fa-money"></i></button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </form>
         <div class="panel-footer text-right" id="botones"></div>
@@ -269,11 +277,10 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip" title="GENERAR"><i class="fa fa-list"></i></a>
-            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip" title="PENDIENTE"><i class="fa fa-search"></i></a>
+            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
+            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip">PENDIENTES <i class="fa fa-clipboard"></i></a>
             <!--<a onclick="exportar()" class="btn btn-success" data-toggle="tooltip" title="EXPORTAR"><i class="fa fa-download"></i></a>-->
-            <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-            <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+
           </div>
         </form>
       </div>
@@ -282,7 +289,15 @@
     <div class="col-xs-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?></h3>
+          <h3 class="panel-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              Lista de <?= $this->titulo_controlador ?>
+            </div>
+            <div>
+              <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
+              <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
+            </div>
+          </h3>
         </div>
         <!-- /.box-header -->
         <div class="panel-body table-responsive">
@@ -317,7 +332,7 @@
       <form id="form_compra" class="form-horizontal" rol="form" method="post" autocomplete="off">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-          <h4 class="modal-title" id="myModalLabel">Generar Compra</h4>
+          <h4 class="modal-title text-center" id="myModalLabel">Generar Compra</h4>
         </div>
         <div class="modal-body">
           <div class="box-body">
@@ -565,11 +580,76 @@
   </div>
 </div>
 
+
+<!-- Bootstrap modal -->
+<div class="modal fade" id="costos_adicionales_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="overflow:auto">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title text-center"></h3>
+      </div>
+      <div class="modal-body form">
+        <form action="#" id="form_costos_adicionales" class="form-horizontal" autocomplete="off">
+          <input type="hidden" class="form-control" name="id_costo_adicional" id="id_costo_adicional">
+          <div class="form-body">
+            <div class="form-group">
+              <label class="control-label col-md-3">Descripcion<span class="required">*</span></label>
+              <div class="col-md-9">
+                <input type="text" class="form-control" name="descripcion_adicional" id="descripcion_adicional">
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="control-label col-md-3">Costo <span class="required">*</span></label>
+              <div class="col-md-9">
+                <input type="text" class="form-control" name="costo_adicional" id="costo_adicional">
+                <span class="help-block"></span>
+              </div>
+            </div>
+          </div>
+        </form>
+        <button type="button" id="btnSaveCostoAdicional" onclick="save_costo_adicional()" class="btn btn-primary pull-right"></button>
+        <div class="clearfix"></div>
+
+        <div class="row m-row-1">
+          <div class="col-xs-12">
+            <div class="panel panel-border panel-border-info">
+              <div class="panel-heading">
+                <h3 class="panel-title text-title-panel">Lista de costos adicionales</h3>
+                <div class="clearfix"></div>
+              </div>
+              <!-- /.box-header -->
+              <div class="panel-body table-responsive">
+                <table id="tabla_almacen" class="table table-bordered table-striped">
+                  <thead>
+                    <tr class="text-title-panel">
+                      <th>#</th>
+                      <th>Descripcion</th>
+                      <th>Monto</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <!-- /.box -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 <script type="text/javascript">
   var table;
   var table_detalle;
+  var save_method;
   $(document).ready(function() {
     <?php if ($this->compra) { ?>
+      
+      var table_costoadicional;
       cambiarventa();
       cargar_detalle();
       tipocompra();
@@ -955,7 +1035,7 @@
       "destroy": true,
       // Load data for the table's content from an Ajax source
       "ajax": {
-        url: "<?= $this->url ?>/ajax_pendiente/"  + $("#empresa").val(),
+        url: "<?= $this->url ?>/ajax_pendiente/" + $("#empresa").val(),
         type: 'GET'
       },
     });
@@ -1461,5 +1541,104 @@
       $("#preciocompraunidad").val(compraunidad.toFixed(2));
     }
   });
+
+  function cosotoadicionales() {
+    event.preventDefault();
+    save_method = 'add';
+    $('#form_costos_adicionales')[0].reset();
+    $('#btnSaveCostoAdicional').html(`AGREGAR <i class="fa fa-check-circle"></i>`);
+    $('.form-group').removeClass('has-error'); // clear error class
+    $('.help-block').empty(); // clear error string
+    $("#costos_adicionales_modal").modal("show");
+    $('.modal-title').text('AGREGAR COSTO ADICIONAL'); // Set Title to Bootstrap modal title
+    cargar_cosotoadicionales();
+  }
+
+  function cargar_cosotoadicionales() {
+    table_costoadicional = $('#tabla_almacen').DataTable({
+      language: {
+        "decimal": "",
+        "emptyTable": "No hay información",
+        "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+        "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+        "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+        "infoPostFix": "",
+        "thousands": ",",
+        "lengthMenu": "Mostrar _MENU_ Entradas",
+        "loadingRecords": "Cargando...",
+        "processing": "Procesando...",
+        "search": "Buscar:",
+        "zeroRecords": "Sin resultados encontrados",
+        "paginate": {
+          "first": "Primero",
+          "last": "Ultimo",
+          "next": "Siguiente",
+          "previous": "Anterior"
+        }
+      },
+      "destroy": true,
+      // Load data for the table's content from an Ajax source
+      "ajax": {
+        "url": "<?= $this->url ?>/ajax_cosotoadicionales",
+        "type": "GET"
+      },
+    });
+  };
+
+  function save_costo_adicional() {
+    $('#btnSaveCostoAdicional').html('AGREGAR <i class="fa fa-spin fa-spinner"></i>'); //change button text
+    $('#btnSaveCostoAdicional').attr('disabled', true); //set button disable
+    var url;
+    if (save_method == 'add') {
+      url = "<?= $this->url ?>/ajax_add_costoadicional";
+      msgsuccess = "El registro fue creado exitosamente.";
+      msgerror = "El registro no se pudo crear verifique las validaciones.";
+    } else {
+      url = "<?= $this->url ?>/ajax_updatealmacen";
+      msgsuccess = "El registro fue actualizado exitosamente.";
+      msgerror = "El registro no se pudo actualizar. Verifique la operación";
+    }
+    // ajax adding data to database
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: $('#form_costos_adicionales').serialize(),
+      dataType: "JSON",
+      success: function(data) {
+        if (data.status) {
+          save_method = 'add';
+          $(".modal-title").text("AGREGAR COSTO ADICIONAL");
+          reload_tables_cosotosadicionales();
+          $('#form_costos_adicionales')[0].reset();
+          Lobibox.notify('success', {
+            size: 'mini',
+            position: "top right",
+            msg: msgsuccess
+          });
+        } else {
+          for (var i = 0; i < data.inputerror.length; i++) {
+            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+            $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+          }
+        }
+        $('#btnSaveCostoAdicional').html('AGREGAR <i class="fa fa-check-circle"></i>'); //change button text
+        $('#btnSaveCostoAdicional').attr('disabled', false); //set button disable
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: msgerror
+        });
+        $('#btnSaveCostoAdicional').text('AGREGAR <i class="fa fa-check-circle"></i>'); //change button text
+        $('#btnSaveCostoAdicional').attr('disabled', false); //set button disable
+      }
+    });
+  };
+
+  function reload_tables_cosotosadicionales() {
+    table_costoadicional.ajax.reload(null, false); //reload datatable ajax
+  };
+
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

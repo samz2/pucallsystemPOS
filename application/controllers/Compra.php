@@ -873,4 +873,72 @@ class Compra extends CI_Controller
     $query = $this->Controlador_model->get($this->input->post('idproducto'), "producto");
     echo json_encode($query);
   }
+
+  public function ajax_cosotoadicionales()
+  {
+    $draw = intval($this->input->get("draw"));
+    $start = intval($this->input->get("start"));
+    $length = intval($this->input->get("length"));
+    $query = $this->db->order_by('id', 'desc')->where("compra", $this->compra)->get('compracostosadicionales')->result();
+    $data = [];
+    foreach ($query as $key => $value) {
+      //add variables for action
+      $boton = '';
+      //add html for action
+      $boton .= '<a class="btn btn-sm btn-primary" title="Modificar" onclick="edit_costoadicional(' . $value->id . ')"><i class="fa fa-pencil"></i></a> ';
+      $boton .= '<a class="btn btn-sm btn-danger" title="Borrar" onclick="borrar_cosotoadicional(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
+      $data[] = array(
+        $key + 1,
+        $value->descripcion,
+        $value->monto,
+        $boton
+      );
+    }
+    $result = array(
+      "draw" => $draw,
+      "recordsTotal" => $start,
+      "recordsFiltered" => $length,
+      "data" => $data
+    );
+    //output to json format
+    echo json_encode($result);
+  }
+
+  private function _validate_compraadicional()
+  {
+    $data = array();
+    $data['error_string'] = array();
+    $data['inputerror'] = array();
+    $data['status'] = TRUE;
+
+    $nombre = $this->input->post('descripcion_adicional');
+    if ($nombre == '') {
+      $data['inputerror'][] = 'descripcion_adicional';
+      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    }
+    if ($this->input->post('costo_adicional') == '') {
+      $data['inputerror'][] = 'costo_adicional';
+      $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+
+    if ($data['status'] === FALSE) {
+      echo json_encode($data);
+      exit();
+    }
+  }
+
+  public function ajax_add_costoadicional()
+  {
+    $this->_validate_compraadicional();
+    $data['compra'] = $this->compra;
+    $data['descripcion'] = $this->input->post('descripcion_adicional');
+    $data['monto'] = $this->input->post('costo_adicional');
+    $insert = $this->Controlador_model->save('compracostosadicionales', $data);
+    if ($insert) {
+      echo json_encode(array("status" => TRUE));
+    }
+  }
 }

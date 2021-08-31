@@ -116,7 +116,7 @@ class Guiaremision extends CI_Controller
       } else {
         $boton .= '<a onclick="visualizar(' . $value->id . ')" class="btn btn-default btn-sm" title="Visualizar"><i class="fa fa-eye"></i></a> ';
         $boton .= '<a onclick="imprimirguiaremision(' . $value->id . ')" class="btn btn-danger btn-sm" title="Generar"><i class="fa fa-print"></i></a> ';
-        $boton .= '<a class="btn btn-info btn-sm" onclick="procesar_documento_electronico(' . $value->id . ')" title="Emitir"><i class="fa fa-upload"></i></a> ';
+        $boton .= '<a class="btn btn-info btn-sm" onclick="procesar_documento_electronico(' . $value->id . ', '.$value->empresa.')" title="Emitir"><i class="fa fa-upload"></i></a> ';
         $archivo = $empresa->ruc . '-' . '09' . '-' . $value->serie . '-' . $value->numero;
         if ($value->emision === 'soap-env:Client.1032') {
           $boton .= '<a class="btn btn-danger btn-sm" onclick="anular(' . $value->id . ')" title="Anular"><i class="fa fa-buysellads"></i></a> ';
@@ -139,6 +139,7 @@ class Guiaremision extends CI_Controller
         $empresa->ruc,
         $venta ? $cliente->nombre : '',
         $value->serie . '-' . $value->numero,
+        $value->modalidadtraslado == "01" ? "PUBLICO" : "PRIVADO",
         $venta ? $venta->serie . '-' . $venta->numero : '',
         $estadoRsgister[$value->estado],
         $estado,
@@ -178,6 +179,7 @@ class Guiaremision extends CI_Controller
         $empresa->ruc,
         $venta ? $cliente->nombre : '',
         $value->serie . '-' . $value->numero,
+        $value->modalidadtraslado == "01" ? "PUBLICO" : "PRIVADO",
         $venta ? $venta->serie . '-' . $venta->numero : '',
         '<span class="label label-default">PENDIENTE</span>',
         "S/D",
@@ -633,7 +635,7 @@ class Guiaremision extends CI_Controller
     $this->_validatprocesar();
     $guiaremision = $this->Controlador_model->get($this->guiaremision, $this->controlador);
     $empresa = $this->Controlador_model->get($guiaremision->empresa, 'empresa');
-    $departamento = $this->Controlador_model->get($this->input->post('destino_departamento'), 'depatarmento');
+    $departamento = $this->Controlador_model->get($this->input->post('destino_departamento'), 'departamento');
     $provincia = $this->Controlador_model->get($this->input->post('destino_provincia'), 'provincia');
     $distrito = $this->Controlador_model->get($this->input->post('destino_distrito'), 'distrito');
     $numero = $this->Controlador_model->ultimoguiaremision();
@@ -723,7 +725,7 @@ class Guiaremision extends CI_Controller
     $this->dompdf->stream("guiaremision.pdf", array("Attachment" => 0));
   }
 
-  public function emitir($id)
+  public function emitir($id, $idempresa)
   {
     $guia = $this->Controlador_model->get($id, $this->controlador);
     $empresa = $this->Controlador_model->get($guia->empresa, 'empresa');
@@ -776,6 +778,7 @@ class Guiaremision extends CI_Controller
         $ruta_firma = $url_base . $content_firmas . 'beta/firmabeta.pfx';
         $pass_firma = '123456';
       }
+      //$ruta_ws = 'https://e-beta.sunat.gob.pe/ol-ti-itemision-guia-gem-beta/billService?wsdl';
       $ruta_ws = 'https://e-beta.sunat.gob.pe/ol-ti-itemision-guia-gem-beta/billService';
     }
 
@@ -853,8 +856,8 @@ class Guiaremision extends CI_Controller
   {
     // $tipo_comprobante = $data->tipoventa == 'FACTURA' ? "01" : "03";
     $tipo_comprobante = "09";
-    $referencia = $this->Controlador_model->get($data->venta, 'venta');
-    $codigo_referencia = $referencia->tipoventa == 'FACTURA' ? "01" : "03";
+    //$referencia = $this->Controlador_model->get($data->venta, 'venta');
+    //$codigo_referencia = $referencia->tipoventa == 'FACTURA' ? "01" : "03";
     $fecha = date('Y-m-d');
     $date1 = new DateTime($data->created);
     $date2 = new DateTime($fecha);
@@ -865,41 +868,63 @@ class Guiaremision extends CI_Controller
       $fechas = $data->created;
     }
 
-    $cliente = $this->Controlador_model->get($referencia->cliente, 'cliente');
-    $transportista = $this->Controlador_model->get($data->transportista, 'cliente');
+    $cliente = $this->Controlador_model->get($data->destino_cliente, 'cliente');
+    $transportistapublico = $this->Controlador_model->get($data->transportistapublico, 'transportepublico');
     $guiaremisiondetalle = $this->Controlador_model->numPaquetes($data->id, 'guiaremisiondetalle');
-    $tipo = $cliente->tipo == 'RUC' ? 6 : 1;
-    $tipotransportista = $transportista->tipo == 'RUC' ? 6 : 1;
+    $tipo = $cliente->tipodocumento == 'RUC' ? 6 : 1;
+    if($transportistapublico){
+      $tipotransportista = $transportistapublico->tipodocumento == 'RUC' ? 6 : 1;
+    }else{
+      $tipotransportista = "";
+    }
+    $transporteprivado_vehiculo = $this->Controlador_model->get($data->vehiculo_transporteprivado, 'transporteprivado');
+    $transporteprivado_conductor = $this->Controlador_model->get($data->conductor_transporteprivado, 'transporteprivado');
+    if($transporteprivado_conductor){
+      $codigo_documento_conductor = $transporteprivado_conductor->tipodocumento == 'RUC' ? 6 : 1;
+    }else{
+      $codigo_documento_conductor = "";
+    }
     $cabecera = array(
       'SERIE' => $data->serie,
       'NUMERO' => $data->numero,
       //'FECHA_DOCUMENTO' => $data->created,
       'CODIGO' => $tipo_comprobante,
-      'NOTA' => $referencia->serie . '-' . $referencia->numero,
-      'SERIE_REFERENCIA' => $referencia->serie,
-      'NUMERO_REFERENCIA' => $referencia->numero,
-      'CODIGO_REFERENCIA' => $codigo_referencia,
+      'NOTA' => "",
+      //'NOTA' => $referencia->serie . '-' . $referencia->numero,
+      'SERIE_REFERENCIA' => "",
+      //'SERIE_REFERENCIA' => $referencia->serie,
+      'NUMERO_REFERENCIA' => "",
+      //'NUMERO_REFERENCIA' => $referencia->numero,
+      'CODIGO_REFERENCIA' => "",
+      //'CODIGO_REFERENCIA' => $codigo_referencia,
       'CODMOTIVO_TRASLADO' => $data->motivostraslado,
       'MOTIVO_TRASLADO' => "", //? Descripcion del motivo del traslado
-      'PESO' => $data->pesobruto, //? peso bruto total de los bienes
+      'PESO' => $data->pesobrutobienes, //? peso bruto total de los bienes
       'NUMERO_PAQUETES' => $guiaremisiondetalle->cantidad, //? "no es obligatorio" numero de bultos o pallets
-      'TIPO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $tipotransportista : "",
-      'NRO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $transportista->documento : "",
-      'RAZON_SOCIAL_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $transportista->nombre : "", //? apellidos y nombres o denominacion o razon social del transportista
-      'FECHA_DOCUMENTO' => $data->fechatraslado, //? fecha de inicio del traslado
       'CODTIPO_TRANSPORTISTA' => $data->modalidadtraslado, //? Modalidad del traslado
-      'PLACA' => $data->vehiculo,
-      'DNI_CONDUCTOR' => ($data->modalidadtraslado == "02") ? $transportista->documento : "",
-      'UBIGEO_DESTINO' => $data->ubigeodestino,
-      'DIR_DESTINO' => $data->direcciondestino,
-      'UBIGEO_PARTIDA' => $emisor['codigo_ubigeo'],
-      'DIR_PARTIDA' => $emisor['direccion'],
+      'FECHA_DOCUMENTO' => $data->fechatraslado, //?  Corresponde a La fecha en la que se presente la GUIA en la SUNAT.
+      'FECHA_INICIO_TRASLADO' => $data->fechatraslado,//? fecha de inicio del traslado |
+      'CODIGO_DOCUMENTO_TRANSPORTISTA_PUBLICO' => "",
+      //? Transporte publico
+      'TIPO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $tipotransportista : "",
+      'NRO_DOCUMENTO_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $transportistapublico->documento : "",
+      'RAZON_SOCIAL_TRANSPORTE' => ($data->modalidadtraslado == "01") ? $transportistapublico->razonsocial : "", //? apellidos y nombres o denominacion o razon social del transportista
+      //? Transporte privado
+      'PLACA' => ($data->modalidadtraslado == "02") ? $transporteprivado_vehiculo->documento : "",
+      'DOCUMENTO_CONDUCTOR' => ($data->modalidadtraslado == "02") ? $transporteprivado_conductor->documento : "",
+      'CODIGO_DOCUMENTO_CONDUCTOR' =>  $codigo_documento_conductor,
+
+      'UBIGEO_DESTINO' => $data->destino_ubigeo, //? UBIGEO de Punto de Destino
+      'DIR_DESTINO' => $data->destino_direccion,  //? DIRECCION de Punto de Destino
+      'UBIGEO_PARTIDA' => $emisor['codigo_ubigeo'], //? UBIGEO Punto de partida
+      'DIR_PARTIDA' => $emisor['direccion'], //? DIRECCION de partida partida
       //==============================================
       'NRO_GUIA_REMISION' => "",
       'COD_GUIA_REMISION' => "",
       'NRO_OTR_COMPROBANTE' => "",
       'COD_OTR_COMPROBANTE' => "",
       //==================================================
+
       'NRO_DOCUMENTO_CLIENTE' => $cliente->documento,
       'RAZON_SOCIAL_CLIENTE' => $cliente->nombre . ' ' . $cliente->apellido,
       //RUC

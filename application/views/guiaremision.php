@@ -414,6 +414,7 @@
                 <th>Empresa</th>
                 <th>Cliente</th>
                 <th>Guia Remision</th>
+                <th>Tipo de transporte</th>
                 <th>Nro Doc</th>
                 <th>Estado</th>
                 <th>Sunat</th>
@@ -504,45 +505,45 @@
   var table_detalle;
   $(document).ready(function() {
     <?php if ($this->guiaremision) { ?>
-     /*  $("#destino_departamento").select2({
-        language: {
-          noResults: function() {
-            return "No hay resultados";
-          },
-          searching: function() {
-            return "Buscando..";
-          },
-          inputTooShort: function() {
-            return "Debes ingresar mas caracteres...";
-          }
-        }
-      });
-      $("#destino_provincia").select2({
-        language: {
-          noResults: function() {
-            return "No hay resultados";
-          },
-          searching: function() {
-            return "Buscando..";
-          },
-          inputTooShort: function() {
-            return "Debes ingresar mas caracteres...";
-          }
-        }
-      });
-      $("#destino_distrito").select2({
-        language: {
-          noResults: function() {
-            return "No hay resultados";
-          },
-          searching: function() {
-            return "Buscando..";
-          },
-          inputTooShort: function() {
-            return "Debes ingresar mas caracteres...";
-          }
-        }
-      }); */
+      /*  $("#destino_departamento").select2({
+         language: {
+           noResults: function() {
+             return "No hay resultados";
+           },
+           searching: function() {
+             return "Buscando..";
+           },
+           inputTooShort: function() {
+             return "Debes ingresar mas caracteres...";
+           }
+         }
+       });
+       $("#destino_provincia").select2({
+         language: {
+           noResults: function() {
+             return "No hay resultados";
+           },
+           searching: function() {
+             return "Buscando..";
+           },
+           inputTooShort: function() {
+             return "Debes ingresar mas caracteres...";
+           }
+         }
+       });
+       $("#destino_distrito").select2({
+         language: {
+           noResults: function() {
+             return "No hay resultados";
+           },
+           searching: function() {
+             return "Buscando..";
+           },
+           inputTooShort: function() {
+             return "Debes ingresar mas caracteres...";
+           }
+         }
+       }); */
 
       cargar_detalle();
       cambiarventa();
@@ -1404,7 +1405,7 @@
     });
   });
 
-  function procesar_documento_electronico(id) {
+  function procesar_documento_electronico(id, idempresa) {
     var light = $('#cuerpo_comprobante').parent();
     $("#vernotas").modal('hide');
     $(light).block({
@@ -1421,7 +1422,7 @@
       }
     });
     $.ajax({
-      url: '<?= $this->url ?>/emitir/' + id,
+      url: '<?= $this->url ?>/emitir/' + id + "/" + idempresa,
       method: 'POST',
       dataType: "json",
     }).then(function(data) {
@@ -1486,5 +1487,24 @@
       }
     });
   }
+
+  function visualizar(id) {
+    $.ajax({
+      url: "<?= $this->url ?>/visualizar/" + id,
+      type: "POST",
+      success: function(data) {
+        $('#printSection').html(data);
+        $('#ticket').modal('show');
+        $('.modal-title').text('NOTA DE INGRESO DETALLE');
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: 'Error al obtener datos de ajax.'
+        });
+      }
+    });
+  };
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

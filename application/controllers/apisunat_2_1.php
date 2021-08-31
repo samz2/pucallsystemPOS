@@ -491,7 +491,7 @@ class Apisunat
         //$doc->encoding = 'ISO-8859-1';
         $doc->encoding = 'utf-8';
 
-                    $xmlCPE = '<?xml version="1.0" encoding="UTF-8"?>
+        $xmlCPE = '<?xml version="1.0" encoding="UTF-8"?>
             <DebitNote xmlns="urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ccts="urn:un:unece:uncefact:documentation:2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2" xmlns:sac="urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1" xmlns:udt="urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <ext:UBLExtensions>
                     <ext:UBLExtension>
@@ -576,8 +576,8 @@ class Apisunat
             <cbc:PayableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL"] . '</cbc:PayableAmount>
                 </cac:RequestedMonetaryTotal>';
 
-                    for ($i = 0; $i < count($detalle); $i++) {
-                        $xmlCPE = $xmlCPE . '
+        for ($i = 0; $i < count($detalle); $i++) {
+            $xmlCPE = $xmlCPE . '
                 <cac:DebitNoteLine>
                     <cbc:ID>' . $detalle[$i]["txtITEM"] . '</cbc:ID>
             <cbc:DebitedQuantity unitCode="' . $detalle[$i]["txtUNIDAD_MEDIDA_DET"] . '">' . $detalle[$i]["txtCANTIDAD_DET"] . '</cbc:DebitedQuantity>
@@ -615,16 +615,16 @@ class Apisunat
             <cbc:PriceAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $detalle[$i]["txtPRECIO_DET"] . '</cbc:PriceAmount>
             </cac:Price>
                 </cac:DebitNoteLine>';
-                    }
+        }
 
-                    $xmlCPE = $xmlCPE . '</DebitNote>';
+        $xmlCPE = $xmlCPE . '</DebitNote>';
 
-                    $doc->loadXML($xmlCPE);
-                    $doc->save($ruta . '.XML');
+        $doc->loadXML($xmlCPE);
+        $doc->save($ruta . '.XML');
 
-                    $resp['respuesta'] = 'ok';
-                    $resp['url_xml'] = $ruta . '.XML';
-                    return $resp;
+        $resp['respuesta'] = 'ok';
+        $resp['url_xml'] = $ruta . '.XML';
+        return $resp;
     }
 
     public function crear_xml_resumen_documentos($cabecera, $detalle, $ruta)
@@ -900,6 +900,10 @@ class Apisunat
             $resp['mensaje'] = "Código de Error: 0000 <br /> Web Service de Prueba SUNAT - Fuera de Servicio: <a href='https://e-beta.sunat.gob.pe:443/ol-ti-itcpfegem-beta/billService' target='_blank'>https://e-beta.sunat.gob.pe:443/ol-ti-itcpfegem-beta/billService</a>, Para validar la información llamar al: *4000 (Desde Claro, Entel y Movistar) - SUNAT";
             $resp['hash_cdr'] = "";
         }
+
+        
+
+        
         return $resp;
     }
 
@@ -908,22 +912,22 @@ class Apisunat
     //require_once('decode_64.php');
     public function enviar_documento_prueba($ruc, $usuario_sol, $pass_sol, $ruta_archivo, $ruta_archivo_cdr, $archivo, $ruta_ws)
     {
-                try {
-                    //=================ZIPEAR ================
-                    $zip = new ZipArchive();
-                    $filenameXMLCPE = $ruta_archivo . '.ZIP';
+        try {
+            //=================ZIPEAR ================
+            $zip = new ZipArchive();
+            $filenameXMLCPE = $ruta_archivo . '.ZIP';
 
-                    if ($zip->open($filenameXMLCPE, ZIPARCHIVE::CREATE) === true) {
-                        $zip->addFile($ruta_archivo . '.XML', $archivo . '.XML'); //ORIGEN, DESTINO
-                        $zip->close();
-                    }
+            if ($zip->open($filenameXMLCPE, ZIPARCHIVE::CREATE) === true) {
+                $zip->addFile($ruta_archivo . '.XML', $archivo . '.XML'); //ORIGEN, DESTINO
+                $zip->close();
+            }
 
-                    //===================ENVIO FACTURACION=====================
-                    $soapUrl = $ruta_ws; //"https://e-beta.sunat.gob.pe:443/ol-ti-itcpfegem-beta/billService"; // asmx URL of WSDL
-                    $soapUser = "";  //  username
-                    $soapPassword = ""; // password
-                    // xml post structure
-                    $xml_post_string = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+            //===================ENVIO FACTURACION=====================
+            $soapUrl = $ruta_ws; //"https://e-beta.sunat.gob.pe:443/ol-ti-itcpfegem-beta/billService"; // asmx URL of WSDL
+            $soapUser = "";  //  username
+            $soapPassword = ""; // password
+            // xml post structure
+            $xml_post_string = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
             xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://service.sunat.gob.pe"
             xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
             <soapenv:Header>
@@ -942,96 +946,96 @@ class Apisunat
             </soapenv:Body>
             </soapenv:Envelope>';
 
-                    $headers = array(
-                        "Content-type: text/xml;charset=\"utf-8\"",
-                        "Accept: text/xml",
-                        "Cache-Control: no-cache",
-                        "Pragma: no-cache",
-                        "SOAPAction: ",
-                        "Content-length: " . strlen($xml_post_string),
-                    ); //SOAPAction: your op URL
+            $headers = array(
+                "Content-type: text/xml;charset=\"utf-8\"",
+                "Accept: text/xml",
+                "Cache-Control: no-cache",
+                "Pragma: no-cache",
+                "SOAPAction: ",
+                "Content-length: " . strlen($xml_post_string),
+            ); //SOAPAction: your op URL
 
-                    $url = $soapUrl;
+            $url = $soapUrl;
 
-                    //echo $xml_post_string;
+            //echo $xml_post_string;
 
-                    // PHP cURL  for https connection with auth
-                    $ch = curl_init();
-                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-                    curl_setopt($ch, CURLOPT_URL, $url);
-                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                    //curl_setopt($ch, CURLOPT_USERPWD, $soapUser.":".$soapPassword); // username and password - declared at the top of the doc
-                    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-                    curl_setopt($ch, CURLOPT_POST, true);
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $xml_post_string); // the SOAP request
-                    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            // PHP cURL  for https connection with auth
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            //curl_setopt($ch, CURLOPT_USERPWD, $soapUser.":".$soapPassword); // username and password - declared at the top of the doc
+            curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $xml_post_string); // the SOAP request
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-                    // converting
-                    $response = curl_exec($ch);
-                    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                    curl_close($ch);
+            // converting
+            $response = curl_exec($ch);
+            $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-                    //echo $httpcode;
-                    //echo $response;
-                    //if ($httpcode == 200) {//======LA PAGINA SI RESPONDE
-                    //echo $httpcode.'----'.$response;
-                    //convertimos de base 64 a archivo fisico
-                    $doc = new DOMDocument();
-                    $doc->loadXML($response);
+            //echo $httpcode;
+            //echo $response;
+            //if ($httpcode == 200) {//======LA PAGINA SI RESPONDE
+            //echo $httpcode.'----'.$response;
+            //convertimos de base 64 a archivo fisico
+            $doc = new DOMDocument();
+            $doc->loadXML($response);
 
 
 
-                    //===================VERIFICAMOS SI HA ENVIADO CORRECTAMENTE EL COMPROBANTE=====================
-                    if (isset($doc->getElementsByTagName('applicationResponse')->item(0)->nodeValue)) {
-                        $xmlCDR = $doc->getElementsByTagName('applicationResponse')->item(0)->nodeValue;
-                        file_put_contents($ruta_archivo_cdr . 'R-' . $archivo . '.ZIP', base64_decode($xmlCDR));
+            //===================VERIFICAMOS SI HA ENVIADO CORRECTAMENTE EL COMPROBANTE=====================
+            if (isset($doc->getElementsByTagName('applicationResponse')->item(0)->nodeValue)) {
+                $xmlCDR = $doc->getElementsByTagName('applicationResponse')->item(0)->nodeValue;
+                file_put_contents($ruta_archivo_cdr . 'R-' . $archivo . '.ZIP', base64_decode($xmlCDR));
 
-                        //extraemos archivo zip a xml
-                        $zip = new ZipArchive;
-                        if ($zip->open($ruta_archivo_cdr . 'R-' . $archivo . '.ZIP') === TRUE) {
-                            $zip->extractTo($ruta_archivo_cdr, 'R-' . $archivo . '.XML');
-                            $zip->close();
-                        }
-
-                        //eliminamos los archivos Zipeados
-                        unlink($ruta_archivo . '.ZIP');
-                        unlink($ruta_archivo_cdr . 'R-' . $archivo . '.ZIP');
-
-                        //=============hash CDR=================
-                        $doc_cdr = new DOMDocument();
-                        $doc_cdr->load(dirname(__FILE__) . '/' . $ruta_archivo_cdr . 'R-' . $archivo . '.XML');
-
-                        $mensaje['cod_sunat'] = $doc_cdr->getElementsByTagName('ResponseCode')->item(0)->nodeValue;
-                        $mensaje['msj_sunat'] = $doc_cdr->getElementsByTagName('Description')->item(0)->nodeValue;
-                        $mensaje['hash_cdr'] = $doc_cdr->getElementsByTagName('DigestValue')->item(0)->nodeValue;
-                    } else {
-                        //$mensaje['cod_sunat'] = $doc->getElementsByTagName('faultcode')->item(0)->nodeValue;
-                        //$mensaje['msj_sunat'] = $doc->getElementsByTagName('faultstring')->item(0)->nodeValue;
-                        //$mensaje['hash_cdr'] = "";
-
-                        $mensaje['cod_sunat'] = $doc->getElementsByTagName('faultstring')->item(0)->nodeValue;
-                        $mensaje['msj_sunat'] = $doc->getElementsByTagName('message')->item(0)->nodeValue;
-                        $mensaje['hash_cdr'] = "";
-                    }
-                } catch (Exception $e) {
-                    $mensaje['cod_sunat'] = "0000";
-                    $mensaje['msj_sunat'] = "SUNAT ESTA FUERA SERVICIO: " . $e->getMessage();
-                    $mensaje['hash_cdr'] = "";
+                //extraemos archivo zip a xml
+                $zip = new ZipArchive;
+                if ($zip->open($ruta_archivo_cdr . 'R-' . $archivo . '.ZIP') === TRUE) {
+                    $zip->extractTo($ruta_archivo_cdr, 'R-' . $archivo . '.XML');
+                    $zip->close();
                 }
-                //print_r($mensaje);
-                return $mensaje;
-                //$xmlCDR = $doc->getElementsByTagName('applicationResponse')->item(0)->nodeValue;
+
+                //eliminamos los archivos Zipeados
+                unlink($ruta_archivo . '.ZIP');
+                unlink($ruta_archivo_cdr . 'R-' . $archivo . '.ZIP');
+
+                //=============hash CDR=================
+                $doc_cdr = new DOMDocument();
+                $doc_cdr->load(dirname(__FILE__) . '/' . $ruta_archivo_cdr . 'R-' . $archivo . '.XML');
+
+                $mensaje['cod_sunat'] = $doc_cdr->getElementsByTagName('ResponseCode')->item(0)->nodeValue;
+                $mensaje['msj_sunat'] = $doc_cdr->getElementsByTagName('Description')->item(0)->nodeValue;
+                $mensaje['hash_cdr'] = $doc_cdr->getElementsByTagName('DigestValue')->item(0)->nodeValue;
+            } else {
+                //$mensaje['cod_sunat'] = $doc->getElementsByTagName('faultcode')->item(0)->nodeValue;
+                //$mensaje['msj_sunat'] = $doc->getElementsByTagName('faultstring')->item(0)->nodeValue;
+                //$mensaje['hash_cdr'] = "";
+
+                $mensaje['cod_sunat'] = $doc->getElementsByTagName('faultstring')->item(0)->nodeValue;
+                $mensaje['msj_sunat'] = $doc->getElementsByTagName('message')->item(0)->nodeValue;
+                $mensaje['hash_cdr'] = "";
+            }
+        } catch (Exception $e) {
+            $mensaje['cod_sunat'] = "0000";
+            $mensaje['msj_sunat'] = "SUNAT ESTA FUERA SERVICIO: " . $e->getMessage();
+            $mensaje['hash_cdr'] = "";
+        }
+        //print_r($mensaje);
+        return $mensaje;
+        //$xmlCDR = $doc->getElementsByTagName('applicationResponse')->item(0)->nodeValue;
     }
 
     public function crear_xml_guia_remision($cabecera, $detalle, $ruta)
     {
-                $validacion = new validaciondedatos();
-                $doc = new DOMDocument();
-                $doc->formatOutput = FALSE;
-                $doc->preserveWhiteSpace = TRUE;
-                $doc->encoding = 'ISO-8859-1';
-                $xmlCPE = '<?xml version="1.0" encoding="iso-8859-1"?>
+        $validacion = new validaciondedatos();
+        $doc = new DOMDocument();
+        $doc->formatOutput = FALSE;
+        $doc->preserveWhiteSpace = TRUE;
+        $doc->encoding = 'ISO-8859-1';
+        $xmlCPE = '<?xml version="1.0" encoding="iso-8859-1"?>
             <DespatchAdvice xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2" xmlns:ccts="urn:un:unece:uncefact:documentation:2" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:udt="urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:sac="urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1" xmlns="urn:oasis:names:specification:ubl:schema:xsd:DespatchAdvice-2">
                 <ext:UBLExtensions>
                     <ext:UBLExtension>
@@ -1041,7 +1045,7 @@ class Apisunat
                 </ext:UBLExtensions>
                 <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
                 <cbc:CustomizationID>1.0</cbc:CustomizationID>
-            <cbc:ID>' . $cabecera["SERIE"] . '-' . $cabecera["SECUENCIA"] . '</cbc:ID>
+            <cbc:ID>' . $cabecera["SERIE"] . '-' . $cabecera["NUMERO"] . '</cbc:ID>
             <cbc:IssueDate>' . $cabecera["FECHA_DOCUMENTO"] . '</cbc:IssueDate>
             <cbc:DespatchAdviceTypeCode>' . $cabecera["CODIGO"] . '</cbc:DespatchAdviceTypeCode>
             <cbc:Note>' . $cabecera["NOTA"] . '</cbc:Note>
@@ -1070,22 +1074,30 @@ class Apisunat
                     <cbc:Information>' . $cabecera["MOTIVO_TRASLADO"] . '</cbc:Information>
                     
                     <cbc:GrossWeightMeasure unitCode="KGM">' . $cabecera["PESO"] . '</cbc:GrossWeightMeasure>
-            <cbc:TotalTransportHandlingUnitQuantity>' . $cabecera["NUMERO_PAQUETES"] . '</cbc:TotalTransportHandlingUnitQuantity>
+                    <cbc:TotalTransportHandlingUnitQuantity>' . $cabecera["NUMERO_PAQUETES"] . '</cbc:TotalTransportHandlingUnitQuantity>
 
                     <cac:ShipmentStage>
+                    
                         <cbc:TransportModeCode>' . $cabecera["CODTIPO_TRANSPORTISTA"] . '</cbc:TransportModeCode>
+                        
                         <cac:TransitPeriod>
-                            <cbc:StartDate>' . $cabecera["FECHA_DOCUMENTO"] . '</cbc:StartDate>
+                            <cbc:StartDate>' . $cabecera["FECHA_INICIO_TRASLADO"] . '</cbc:StartDate>
                         </cac:TransitPeriod>
+
 
                         <cac:CarrierParty>
                             <cac:PartyIdentification>
-            <cbc:ID schemeID="' . $cabecera["TIPO_DOCUMENTO_TRANSPORTE"] . '">' . $cabecera["NRO_DOCUMENTO_TRANSPORTE"] . '</cbc:ID>
+                                    <cbc:ID schemeID="' . $cabecera["TIPO_DOCUMENTO_TRANSPORTE"] . '">' . $cabecera["NRO_DOCUMENTO_TRANSPORTE"] . '</cbc:ID>
                             </cac:PartyIdentification>
                             <cac:PartyName>
                                 <cbc:Name><![CDATA[' . $cabecera["RAZON_SOCIAL_TRANSPORTE"] . ']]></cbc:Name>
                             </cac:PartyName>
                         </cac:CarrierParty>
+
+
+                        
+
+
                     </cac:ShipmentStage>
 
             <cac:Delivery>
@@ -1099,49 +1111,59 @@ class Apisunat
                         <cbc:ID>' . $cabecera["UBIGEO_PARTIDA"] . '</cbc:ID>
                         <cbc:StreetName>' . $cabecera["DIR_PARTIDA"] . '</cbc:StreetName>
             </cac:OriginAddress>
-                </cac:Shipment>
+            
+                </cac:Shipment>';
 
-                ';
-
-                for ($i = 0; $i < count($detalle); $i++) {
-                    $xmlCPE = $xmlCPE . '<cac:DespatchLine>
-                    <cbc:ID>' . $detalle[$i]["ITEM"] . '</cbc:ID>
-                    <cbc:DeliveredQuantity unitCode="NIU">' . $detalle[$i]["PESO"] . '</cbc:DeliveredQuantity>
+        foreach ($detalle as $key => $value) {
+            $dataProducto = $this->get($value->producto, "producto");
+            $xmlCPE = $xmlCPE . '
+                    <cac:DespatchLine>
+                    <cbc:ID>' . ($key + 1) . '</cbc:ID>
+                    <cbc:DeliveredQuantity unitCode="NIU">' . $value->cantidad . '</cbc:DeliveredQuantity>
                     <cac:OrderLineReference>
-                    <cbc:LineID>' . $detalle[$i]["NUMERO_ORDEN"] . '</cbc:LineID>
+                    <cbc:LineID>' . ($key + 1) . '</cbc:LineID>
                     </cac:OrderLineReference>
 
                     <cac:Item>
-                                <cbc:Name><![CDATA[' . $validacion->replace_invalid_caracters($detalle[$i]["DESCRIPCION"]) . ']]></cbc:Name>
+                                <cbc:Name><![CDATA[' . $validacion->replace_invalid_caracters($value->nombre) . ']]></cbc:Name>
                                 <cac:SellersItemIdentification>
-                                    <cbc:ID>' . $detalle[$i]["CODIGO_PRODUCTO"] . '</cbc:ID>
+                                    <cbc:ID>' . ($dataProducto ? $dataProducto->codigo : "") . '</cbc:ID>
                                 </cac:SellersItemIdentification>
-                            </cac:Item>
-                        </cac:DespatchLine>';
-                }
-                $xmlCPE = $xmlCPE . '</DespatchAdvice>';
+                    </cac:Item>
+                    </cac:DespatchLine>';
+        }
+        $xmlCPE = $xmlCPE . '</DespatchAdvice>';
 
-                /*
-            echo $xmlCPE;
-            exit();
-            */
+        
+         /*    echo $xmlCPE;
+            exit(); */
+            /* <cac:DriverPerson>
+            <cbc:ID schemeID="'.$cabecera["CODIGO_DOCUMENTO_CONDUCTOR"].'">'.$cabecera["DOCUMENTO_CONDUCTOR"].'</cbc:ID> 
+        </cac:DriverPerson>
 
-                $doc->loadXML($xmlCPE);
-                $doc->save($ruta . '.XML');
-                $resp['respuesta'] = 'ok';
-                $resp['url_xml'] = $ruta . '.XML';
-                return $resp;
+
+        <cac:TransportMeans>
+            <cac:RoadTransport>
+                <cbc:LicensePlateID>'.$cabecera["PLACA"].'</cbc:LicensePlateID>
+            </cac:RoadTransport> 
+        </cac:TransportMeans>*/
+
+        $doc->loadXML($xmlCPE);
+        $doc->save($ruta . '.XML');
+        $resp['respuesta'] = 'ok';
+        $resp['url_xml'] = $ruta . '.XML';
+        return $resp;
     }
 
 
     public function crear_xml_baja_sunat($cabecera, $detalle, $ruta)
     {
-                $validacion = new validaciondedatos();
-                $doc = new DOMDocument();
-                $doc->formatOutput = FALSE;
-                $doc->preserveWhiteSpace = TRUE;
-                $doc->encoding = 'ISO-8859-1';
-                $xmlCPE = '<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?><VoidedDocuments xmlns="urn:sunat:names:specification:ubl:peru:schema:xsd:VoidedDocuments-1" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:sac="urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        $validacion = new validaciondedatos();
+        $doc = new DOMDocument();
+        $doc->formatOutput = FALSE;
+        $doc->preserveWhiteSpace = TRUE;
+        $doc->encoding = 'ISO-8859-1';
+        $xmlCPE = '<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?><VoidedDocuments xmlns="urn:sunat:names:specification:ubl:peru:schema:xsd:VoidedDocuments-1" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:sac="urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             <ext:UBLExtensions>
             <ext:UBLExtension>
             <ext:ExtensionContent>
@@ -1179,22 +1201,22 @@ class Apisunat
             </cac:Party>
             </cac:AccountingSupplierParty>';
 
-                for ($i = 0; $i < count($detalle); $i++) {
-                    $xmlCPE = $xmlCPE . '<sac:VoidedDocumentsLine>
+        for ($i = 0; $i < count($detalle); $i++) {
+            $xmlCPE = $xmlCPE . '<sac:VoidedDocumentsLine>
             <cbc:LineID>' . $detalle[$i]["ITEM"] . '</cbc:LineID>
             <cbc:DocumentTypeCode>' . $detalle[$i]["TIPO_COMPROBANTE"] . '</cbc:DocumentTypeCode>
             <sac:DocumentSerialID>' . $detalle[$i]["SERIE"] . '</sac:DocumentSerialID>
             <sac:DocumentNumberID>' . $detalle[$i]["NUMERO"] . '</sac:DocumentNumberID>
             <sac:VoidReasonDescription><![CDATA[' . $validacion->replace_invalid_caracters($detalle[$i]["MOTIVO"]) . ']]></sac:VoidReasonDescription>
             </sac:VoidedDocumentsLine>';
-                }
-                $xmlCPE = $xmlCPE . '</VoidedDocuments>';
+        }
+        $xmlCPE = $xmlCPE . '</VoidedDocuments>';
 
-                $doc->loadXML($xmlCPE);
-                $doc->save($ruta . '.XML');
-                $resp['respuesta'] = 'ok';
-                $resp['url_xml'] = $ruta . '.XML';
-                return $resp;
+        $doc->loadXML($xmlCPE);
+        $doc->save($ruta . '.XML');
+        $resp['respuesta'] = 'ok';
+        $resp['url_xml'] = $ruta . '.XML';
+        return $resp;
     }
 
     public function enviar_documento_para_baja($ruc, $usuario_sol, $pass_sol, $ruta_archivo, $ruta_archivo_cdr, $archivo, $ruta_ws)
