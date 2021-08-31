@@ -2,7 +2,7 @@
 
 class Notasalida extends CI_Controller
 {
-
+  
   public function __construct()
   {
     parent::__construct();
@@ -44,7 +44,7 @@ class Notasalida extends CI_Controller
         $estado = '<span class="label label-success">APROBADO</span>';
       }
       if ($value->estado == '2') {
-        $estado = '<span class="label label-info">GENERADO</span>';
+        $estado = '<span class="label label-warning">POR APROBAR</span>';
       }
       if ($value->estado == '3') {
         $estado = '<span class="label label-danger">ANULADO</span>';
@@ -52,6 +52,9 @@ class Notasalida extends CI_Controller
       //add variables for action
       $boton = '';
       //add html fodr action
+      if ($value->estado == '2') {
+          $boton .= '<a onclick="aprobar(' . $value->id . ')" class="btn btn-warning btn-sm" title="Aprobar"><i class="fa fa-check"></i></a> ';
+      }
       $boton .= '<a onclick="visualizar(' . $value->id . ')" class="btn btn-default btn-sm" title="Visualizar"><i class="fa fa-eye"></i></a> ';
       $boton .= '<a onclick="imprimir(' . $value->id . ')" class="btn btn-danger btn-sm" title="Imprimir"><i class="fa fa-print"></i></a> ';
       $data[] = array(
@@ -165,7 +168,90 @@ class Notasalida extends CI_Controller
     $this->Controlador_model->delete_by_id($id, $this->controlador);
     echo json_encode(array("status" => TRUE));
   }
+  public function aprobar($id)
+  {
+    $notasalida = $this->Controlador_model->get($this->notasalida, 'notasalida');
+    $productos = $this->Controlador_model->getDetalle($this->notasalida, 'notasalidadetalle');
+    foreach ($productos as $value) {
 
+      $cantidad = $this->Controlador_model->getStockAlmacen($value->producto, $value->almacen, $value->lote, $notasalida->empresa);
+      $movimiento['empresa'] = $notasalida->empresa;
+      $movimiento['usuario'] = $this->usuario;
+      $movimiento['notasalida'] = $this->notasalida;
+      $movimiento['tipooperacion'] = "NS";
+      $movimiento['producto'] = $value->producto;
+      $movimiento['almacen'] = $value->almacen;
+      $movimiento['lote'] = $value->lote ? $value->lote : NULL;
+      $movimiento['medida'] = $value->medida;
+      $movimiento['medidacantidad'] = $value->medidacantidad;
+      $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+      $movimiento['cantidaditem'] = $value->cantidaditem;
+      $movimiento['totalitemoperacion'] = $value->cantidaditem;
+      $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
+      // $movimiento['tipo'] = $this->input->post('tiposalida') == 'TRASLADO DE ALMACEN' ? 'SALIDA TRASLADO' : 'SALIDA';
+      $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) - $value->cantidaditem;
+      //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
+      $movimiento['created'] = date('Y-m-d');
+      $movimiento['hora'] = date("H:i:s");
+      
+      $this->Controlador_model->save('movimiento', $movimiento);
+
+      if (true) {
+        $cantidadIngreso = $this->Controlador_model->getStockAlmacen($value->producto,$this->input->post('destinotraslado'), $value->lote, $notasalida->empresa);
+        
+        $movimientoIngreso['empresa'] = $notasalida->empresa;
+        $movimientoIngreso['usuario'] = $this->usuario;
+        $movimientoIngreso['notasalida'] = $this->notasalida;
+        $movimientoIngreso['tipooperacion'] = "NS";
+        $movimientoIngreso['producto'] = $value->producto;
+        $movimientoIngreso['almacen'] = $this->input->post('destinotraslado');
+        $movimientoIngreso['lote'] = $value->lote ? $value->lote : NULL;
+        $movimientoIngreso['medida'] = $value->medida;
+        $movimientoIngreso['medidacantidad'] = $value->medidacantidad;
+        $movimientoIngreso['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+        $movimientoIngreso['cantidaditem'] = $value->cantidaditem;
+        $movimientoIngreso['totalitemoperacion'] = $value->cantidaditem;
+        $movimientoIngreso['stockanterior'] = $cantidadIngreso ? $cantidadIngreso->cantidad : 0;
+        $movimientoIngreso['tipo'] =  'INGRESO TRASLADO';
+        $movimientoIngreso['stockactual'] = ($cantidadIngreso ? $cantidadIngreso->cantidad : 0) + $value->cantidaditem;
+        //$movimientoIngreso['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
+        $movimientoIngreso['created'] = date('Y-m-d');
+        $movimientoIngreso['hora'] = date("H:i:s");
+        if(true)
+        {
+          $this->Controlador_model->save('movimiento', $movimientoIngreso);
+        }
+      }
+
+
+      //Descontamos el stock del almacen
+      $stockDescontar['cantidad'] = $cantidad->cantidad - $value->cantidaditem;
+      if(true)
+      {
+        $this->db->where('id', $cantidad->id)->update('stock', $stockDescontar);
+      }
+      
+
+      if (true) {
+        $dataStock['cantidad'] =  $value->cantidaditem;
+        $dataStock['producto'] =  $value->producto;
+        $dataStock['lote'] =  $value->lote ? $value->lote : NULL;
+        $this->Controlador_model->save('stock', $dataStock);
+      }
+    }
+    $data['created'] = date('Y-m-d');
+    if(true)
+    {
+      $data['estado'] = '2';
+    }else
+    {
+      $data['estado'] = '1';
+    }
+    
+    if ($this->db->where('id', $this->notasalida)->update($this->controlador, $data)) {
+      echo true;
+    }
+  }
   public function visualizar($id = FALSE)
   {
     $data = $this->Controlador_model->get($id, $this->controlador);
@@ -604,10 +690,13 @@ class Notasalida extends CI_Controller
       //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
       $movimiento['created'] = date('Y-m-d');
       $movimiento['hora'] = date("H:i:s");
-      $this->Controlador_model->save('movimiento', $movimiento);
-
+      if(!$this->input->post('confirmacion'))
+      {
+        $this->Controlador_model->save('movimiento', $movimiento);
+      }
       if ($this->input->post('tiposalida') == 'TRASLADO DE ALMACEN') {
         $cantidadIngreso = $this->Controlador_model->getStockAlmacen($value->producto,$this->input->post('destinotraslado'), $value->lote, $notasalida->empresa);
+        
         $movimientoIngreso['empresa'] = $notasalida->empresa;
         $movimientoIngreso['usuario'] = $this->usuario;
         $movimientoIngreso['notasalida'] = $this->notasalida;
@@ -626,13 +715,20 @@ class Notasalida extends CI_Controller
         //$movimientoIngreso['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
         $movimientoIngreso['created'] = date('Y-m-d');
         $movimientoIngreso['hora'] = date("H:i:s");
-        $this->Controlador_model->save('movimiento', $movimientoIngreso);
+        if(!$this->input->post('confirmacion'))
+        {
+          $this->Controlador_model->save('movimiento', $movimientoIngreso);
+        }
       }
 
 
       //Descontamos el stock del almacen
       $stockDescontar['cantidad'] = $cantidad->cantidad - $value->cantidaditem;
-      $this->db->where('id', $cantidad->id)->update('stock', $stockDescontar);
+      if(!$this->input->post('confirmacion'))
+      {
+        $this->db->where('id', $cantidad->id)->update('stock', $stockDescontar);
+      }
+      
 
       if ($this->input->post('tiposalida') == 'TRASLADO DE ALMACEN') {
         //? consultamos si donde se va trasladar el stock ya tiene registro
@@ -655,7 +751,14 @@ class Notasalida extends CI_Controller
     $data['almacendestino'] = $this->input->post('destinotraslado') <> 0 ? $this->input->post('destinotraslado') : NULL;
     $data['empleado'] = $this->input->post('empleado') ? $this->input->post('empleado') : NULL;
     $data['comentario'] = $this->input->post('comentario') ? $this->input->post('comentario') : NULL;
-    $data['estado'] = '1';
+    if($this->input->post('confirmacion'))
+    {
+      $data['estado'] = '2';
+    }else
+    {
+      $data['estado'] = '1';
+    }
+    
     if ($this->db->where('id', $this->notasalida)->update($this->controlador, $data)) {
       echo json_encode(array("status" => TRUE));
     }
@@ -805,6 +908,12 @@ class Notasalida extends CI_Controller
   {
     $dataAlmacen = $this->db->where("empresa", $idempresa)->get("almacen")->result();
     echo json_encode($dataAlmacen);
+  }
+
+  public function listaalmacenes()
+  {
+    $almacenes = $this->db->where("id !=",$this->input->post("idAlmacen"))->get("almacen")->result();
+    echo json_encode($almacenes);
   }
 }
 
