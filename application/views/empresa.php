@@ -5,8 +5,8 @@
         <h3 class="panel-title text-title-panel">
           Lista de <?= $this->titulo_controlador ?>
           <div class="pull-right">
-            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Nuevo"><i class="fa fa-plus"></i></a>
+            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
           </div>
         </h3>
         <div class="clearfix"></div>
@@ -190,8 +190,14 @@
                   <?php foreach ($almacenes as $value) { ?>
                     <option value="<?= $value->id ?>"><?= $value->nombre ?></option>
                   <?php } ?>
-
                 </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tiempo de alerta por dias</label>
+              <div class="col-md-10">
+                <input class="form-control" id="fecha_aviso" type="text" name="fecha_aviso">
                 <span class="help-block"></span>
               </div>
             </div>
@@ -209,14 +215,22 @@
                 <span class="help-block"></span>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-sm-5 control-label">Proceso de venta<span class="required">*</span></label>
-              <div class="col-md-7">
-                <div>
-                  <label class="control-label" for="pasos">Tres pasos</label>
+            <div class="row">
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="pasos">¿Venta en 3 pasos?</label>
                   <div class="material-switch">
                     <input id="pasos" name="pasos" type="checkbox" />
                     <label for="pasos" class="label-success"></label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="estado_motivodescuento" class="text-center">¿Motivo de descuento obligatorio?</label>
+                  <div class="material-switch">
+                    <input id="estado_motivodescuento" name="estado_motivodescuento" type="checkbox" />
+                    <label for="estado_motivodescuento" class="label-success"></label>
                   </div>
                 </div>
               </div>
@@ -527,6 +541,7 @@
     if ($("input#pasos").is(":checked")) {
       $("input#pasos").val("1");
     }
+    $("input#estado_motivodescuento").is(":checked") ? $("input#estado_motivodescuento").val("1") : "";
     // ajax adding data to database
     $.ajax({
       url: url,
@@ -537,8 +552,8 @@
       cache: false,
       processData: false,
       success: function(data) {
-        //if success close modal and reload ajax table
-
+        $('#btnSave').text('Guardar'); //change button text
+        $('#btnSave').attr('disabled', false); //set button enable
         if (data.status) {
           $('#modal_form').modal('hide');
           reload_table();
@@ -558,8 +573,7 @@
             $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
           }
         }
-        $('#btnSave').text('Guardar'); //change button text
-        $('#btnSave').attr('disabled', false); //set button enable
+
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
@@ -589,10 +603,10 @@
       dataType: "JSON",
       success: function(data) {
         $("#almacen").empty();
-        for(value of data.dataAlamcenes ){
+        for (value of data.dataAlamcenes) {
           $("#almacen").append(`<option value="${value.id}">${value.nombre}</option>`)
         }
-
+        data.estado_motivodescuento === '1' ? $('[name="estado_motivodescuento"]').prop('checked', true) : $('[name="estado_motivodescuento"]').prop('checked', false);
         if (data.pasos == 1) {
           $('[name="pasos"]').prop('checked', true);
           $("#content-venta-1").hide();
@@ -623,6 +637,7 @@
         $('[name="tipoimpresora"]').val(data.tipoimpresora);
         $('[name="tipoventa"]').val(data.tipoventa);
         $('[name="nombreimpresora"]').val(data.nombreimpresora);
+        $('[name="fecha_aviso"]').val(data.fecha_aviso);
         $('#modal_form').modal('show'); // show bootstrap modal when complete loaded
         $('.modal-title').text('Modificar <?= $this->titulo_controlador ?>'); // Set title to Bootstrap modal title
       },

@@ -20,15 +20,22 @@
 
   .alertaStock {
     position: fixed;
-    z-index: 9999;
+    z-index: 999999;
     bottom: 10px;
     left: 6px;
   }
 
   .alertaCP {
     position: fixed;
-    z-index: 9999;
+    z-index: 99999;
     bottom: 70px;
+    left: 6px;
+  }
+
+  .alertaVence {
+    position: fixed;
+    z-index: 9999;
+    bottom: 130px;
     left: 6px;
   }
 
@@ -95,6 +102,12 @@
   }
 
   .usernotifbadgeCP {
+    position: absolute;
+    top: -5px;
+    background: var(--notification-badge);
+  }
+
+  .usernotifbadgeVence {
     position: absolute;
     top: -5px;
     background: var(--notification-badge);
@@ -241,6 +254,14 @@
     vertical-align: middle;
     border-radius: 10px;
   }
+
+  .tiendaAlert {
+    border-bottom-right-radius: 0px;
+    display: block;
+    padding: 8px;
+    border-radius: none;
+    border-bottom-left-radius: 0px;
+  }
 </style>
 <nav class="navbar navbar-default navbar-fixed-top smart-scroll" id="menuNavSide" role="navigation">
   <div class="container-fluid">
@@ -314,7 +335,7 @@
     </a>
   </div>
   <div class="copyright">
-    <span>v2.1 Hecho con ❤ por PUCALLSYSTEM</span>
+    <span>v2.3 Hecho con ❤ por PUCALLSYSTEM</span>
   </div>
 </div>
 
@@ -335,13 +356,25 @@
     <i class="fa fa-bullhorn" style="color:#3666ec; transform: rotate(333deg);" aria-hidden="true"></i>
     <span class="badge usernotifbadgeCP"></span>
   </a>
-  <ul class="dropdown-menu list-group CategriaSeleccionar" id="listaAlertaCP" style="max-height:80vh; overflow-y:auto; width:300px">
+  <ul class="dropdown-menu mega-dropdown-menu list-group CategriaSeleccionar" id="listaAlertaCP" style="max-height:80vh; overflow-y:auto; width:300px">
   </ul>
 </div>
 
 <div class="btn-group alertaStock dropup">
-  <a class="alertabtn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-bell" style="color:var(--primary-icon)" aria-hidden="true"></i><span class="badge usernotifbadge"></span></a>
-  <ul class="dropdown-menu list-group CategriaSeleccionar" id="listaAlertaStock" style="max-height:80vh; overflow-y:auto; width:300px">
+  <a class="alertabtn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-bell" style="color:var(--primary-icon)" aria-hidden="true"></i>
+    <span class="badge usernotifbadge"></span>
+  </a>
+  <ul class="dropdown-menu mega-dropdown-menu list-group CategriaSeleccionar" id="listaAlertaStock" style="padding-top:0px;max-height:80vh; overflow-y:auto; width:300px">
+
+  </ul>
+</div>
+
+<div class="btn-group alertaVence dropup">
+  <a class="alertabtn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-calendar" style="color:var(--primary-icon);" aria-hidden="true"></i>
+    <span class="badge usernotifbadgeVence"></span></a>
+  <ul class="dropdown-menu mega-dropdown-menu list-group CategriaSeleccionar" id="listaAlertaVence" style="max-height:70vh; overflow-y:auto; width:300px">
   </ul>
 </div>
 
@@ -357,6 +390,7 @@
     });
     getAlertaStock();
     alertComprobantes();
+    getAlertaVence();
 
     $('.alertaCP').on('click', function(e) {
       // $(".alertaCP").addClass("open");
@@ -377,13 +411,34 @@
       type: "GET",
       dataType: "json",
       success: function(data) {
-        console.warn(data["numeroStock"]);
+        console.log(data);
         $("#listaAlertaStock").html(data["data"]);
         $(".usernotifbadge").text(data["numeroStock"]);
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: "top right",
+          msg: 'Error al obtener datos de ajax.'
+        });
+      }
+    });
+  }
+
+  function getAlertaVence() {
+    $.ajax({
+      url: "<?= base_url() ?>inicio/alertaVence",
+      type: "GET",
+      dataType: "json",
+      success: function(data) {
+        console.warn(data["numeroStock"]);
+        $("#listaAlertaVence").html(data["data"]);
+        $(".usernotifbadgeVence").text(data["numeroStock"]);
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
           msg: 'Error al obtener datos de ajax.'
         });
       }
@@ -407,9 +462,16 @@
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
           size: 'mini',
+          position: "top right",
           msg: 'Error al obtener datos de ajax.'
         });
       }
     });
   }
+
+  $('ul.dropdown-menu.mega-dropdown-menu').on('click', function(event) {
+    // El evento no se propagará hasta el documento NODE y
+    // por lo tanto, los eventos delegados no se dispararán
+    event.stopPropagation();
+  });
 </script>

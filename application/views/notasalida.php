@@ -1,6 +1,6 @@
 <?= $this->session->flashdata('mensaje') ?>
-<?php 
-  // var_dump($almacenes);
+<?php
+$dataPefil = $this->Controlador_model->get($this->perfil, "perfil");
 ?>
 <?php if ($this->notasalida) { ?>
   <div class="container">
@@ -25,17 +25,25 @@
                   </div>
                 </div>
               </div>
+             
               <div class="row">
                 <div class="col-lg-12">
                   <div class="form-group">
                     <label for="almacen">Almacen</label>
-                    <select class="form-control" name="almacen" id="almacen">
-                      <option value="0">SELECCIONE</option>
-                      <?php foreach ($almacenes as $almacen) { ?>
-                        <option value="<?= $almacen->id ?>"><?= $almacen->nombre ?></option>
-                      <?php } ?>
-                    </select>
-                    <span class="help-block"></span>
+                    <div class="input-group">
+
+                      <select class="form-control" name="almacen" id="almacen">
+                        <option value="0">SELECCIONE</option>
+                        <?php foreach ($almacenes as $almacen) { ?>
+                          <option value="<?= $almacen->id ?>"><?= $almacen->nombre ?></option>
+                        <?php } ?>
+                      </select>
+                      <span class="help-block"></span>
+                     
+                      <span class="input-group-btn" style="vertical-align: top">
+                        <button type="button" id="verStock" onclick="verstockactual();" class="btn waves-effect waves-light btn-primary"><i class="fa fa-search"></i></button>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -117,12 +125,12 @@
             <h3 class="panel-title pull-left">DATOS DE <?= $this->titulo_controlador ?></h3>
             <div class="pull-right">
               <a onclick="location.reload()" class="btn btn-openid" data-toggle="tooltip">
-                <span class="hidden-xs">Recargar</span>
                 <i class="fa fa-repeat"></i>
+                <span class="hidden-xs">Recargar</span>
               </a>
               <a href="<?= $this->url ?>/volver" class="btn btn-default" data-toggle="tooltip">
-                <span class="hidden-xs">Volver</span>
                 <i class="fa fa-arrow-left"></i>
+                <span class="hidden-xs">Volver</span>
               </a>
             </div>
           </div>
@@ -144,7 +152,7 @@
                   <div class="form-group">
                     <label>Usuario<span class="required">*</span></label>
                     <input type="hidden" class="form-control" name="usuario" id="usuario">
-                    <input type="text" class="form-control limpiar" name="usuarios" id="usuarios">
+                    <input type="text" class="form-control" name="usuarios" id="usuarios" readonly>
                     <span class="help-block"></span>
                   </div>
                 </div>
@@ -183,17 +191,18 @@
               <table id="tabla_detalle" class="table table-bordered table-striped">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Empresa</th>
-                    <th>Codigo</th>
-                    <th>Producto</th>
-                    <th>Lote</th>
-                    <th>P/U</th>
-                    <th>Cantidad</th>
-                    <th>C.Item</th>
-                    <th>Subtotal</th>
-                    <th>Almacen</th>
-                    <th>Acciones</th>
+                    <th><b>#</b></th>
+                    <th><b>Empresa</b></th>
+                    <th><b>Tipo Medida</b></th>
+                    <th><b>Código</b></th>
+                    <th><b>Producto</b></th>
+                    <th><b>Lote</b></th>
+                    <th><b>P/U</b></th>
+                    <th><b>Cantidad</b></th>
+                    <th><b>C.Item</b></th>
+                    <th><b>Subtotal</b></th>
+                    <th><b>Salida</b></th>
+                    <th><b>Acciones</b></th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -237,11 +246,10 @@
               </div>
             </div>
             <div class="panel-footer text-center">
-              <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip" title="GENERAR"><i class="fa fa-list"></i></a>
-              <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip" title="PENDIENTE"><i class="fa fa-search"></i></a>
+              <a onclick="generar()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+              <a onclick="pendiente()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-clipboard"></i> PENDIENTES</a>
               <!--<a onclick="exportar()" class="btn btn-success" data-toggle="tooltip" title="EXPORTAR"><i class="fa fa-download"></i></a>-->
-              <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-              <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+
             </div>
           </form>
         </div>
@@ -249,8 +257,14 @@
       <!-- /.col -->
       <div class="col-xs-12">
         <div class="panel panel-default">
-          <div class="panel-heading">
-            <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?></h3>
+          <div class="panel-heading clearfix">
+            <div class="pull-left">
+              <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?></h3>
+            </div>
+            <div class="pull-right">
+              <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+              <a href="<?= $this->url ?>/crear" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
+            </div>
           </div>
           <!-- /.box-header -->
           <div class="panel-body table-responsive">
@@ -289,24 +303,26 @@
         </div>
         <div class="modal-body">
           <div class="box-body">
-           
+
             <div class="form-group">
               <label class="col-sm-2 control-label" for="tiposalida">Tipo Ope*</label>
               <div class="col-sm-6">
                 <select id="tiposalida" name="tiposalida" class="form-control">
-                  <option value="AJUSTE STOCK">AJUSTE STOCK</option>
+                  <?php if ($dataPefil->estado_ajustestock == "1") { 
+                    echo $ajuste = '<option value="AJUSTE STOCK">AJUSTE STOCK</option>';
+                   } ?>
                   <option value="TRASLADO DE ALMACEN">TRASLADO DE ALMACEN</option>
                 </select>
                 <span class="help-block"></span>
               </div>
-              <label class="col-sm-2 control-label" for="confirmacion">Confirmación  </label>
+              <!-- <label class="col-sm-2 control-label" for="confirmacion">Confirmación  </label>
               <div class="col-sm-2">
                 <div class="material-switch">
                   <input id="confirmacion" name="confirmacion" type="checkbox" />
                   <label for="confirmacion" class="label-success"></label>
                 </div>
-              </div>
-                
+              </div> -->
+
             </div>
 
             <div class="form-group" id="contenedorempresatraslado">
@@ -359,7 +375,7 @@
                 <span class="help-block"></span>
               </div>
             </div>
-           
+
 
           </div>
         </div>
@@ -374,7 +390,7 @@
 
 <!-- Modal ticket -->
 <div class="modal fade" id="ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog modal-lg" role="document" style="width:50%;">
+  <div class="modal-dialog modal-lg" role="document" style="width:70%;">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -426,6 +442,22 @@
   </div>
 </div>
 
+<!-- Modal stock -->
+<div class="modal fade" id="stockactual" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Ver Stock de Productos</h4>
+      </div>
+      <div class="modal-body" id="datastockactual">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">CERRAR</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script type="text/javascript">
   var table;
@@ -512,14 +544,14 @@
         save();
       }
     });
-    $("#usuarios").autocomplete({
+    /* $("#usuarios").autocomplete({
       source: "<?= $this->url ?>/completarusuario",
       minLength: 2,
       select: function(event, ui) {
         $("#usuario").val(ui.item.usuario);
         save();
       }
-    });
+    }); */
 
     $("input").keyup(function() {
       $(this).parent().parent().removeClass('has-error');
@@ -834,7 +866,6 @@
         $('[name="usuarios"]').val(data.nombreusuario);
         $('[name="nombrepro"]').val(data.nombreproveedor);
         $('[name="codigo"]').val(data.codigo);
-        $('[name="tiposalida"]').val(data.tiposalida);
         $('[name="montototal"]').val(data.montototal);
         $('[name="totales"]').val(data.montototal);
         if (data.contador == 0) {
@@ -897,7 +928,6 @@
       url: '<?= $this->url ?>/ajax_addprocesar',
       type: "POST",
       data: $('#form_compra').serialize(),
-
       dataType: "JSON",
       success: function(data) {
         //if success close modal and reload ajax table
@@ -999,6 +1029,30 @@
       type: "POST",
       success: function(data) {
         $('#printSection').html(data);
+
+        $('#tabla-salida').dataTable({
+          language: {
+            "decimal": "",
+            "emptyTable": "No hay información",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+            "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+            "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ Entradas",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "Sin resultados encontrados",
+            "paginate": {
+              "first": "Primero",
+              "last": "Ultimo",
+              "next": "Siguiente",
+              "previous": "Anterior"
+            }
+          },
+        });
+
         $('#ticket').modal('show');
         $('.modal-title').text('NOTA DE SALIDA DETALLE');
       },
@@ -1007,7 +1061,7 @@
           size: 'mini',
           position: "top right",
           msg: 'Error al obtener datos de ajax.'
-        }); 
+        });
       }
     });
   };
@@ -1030,15 +1084,15 @@
             location.reload();
           },
           error: function(jqXHR, textStatus, errorThrown) {
-            Swal.fire('error: '+errorThrown, '', 'error') 
+            Swal.fire('error: ' + errorThrown, '', 'error')
           }
         });
-       
+
       } else if (result.isDenied) {
         Swal.fire('Movimiento denegado', '', 'warning')
       }
     })
-  
+
   };
 
   function crearlote() {
@@ -1168,6 +1222,48 @@
         });
       }
     });
+  }
+
+  function el(el) {
+    return document.getElementById(el);
+  }
+
+  el('cantidad').addEventListener('input', function() {
+    var val = this.value;
+    this.value = val.replace(/\D|\-/, '');
+  });
+
+  function verstockactual() {
+    if ($("#producto").val() == "") {
+      Lobibox.alert('info', {
+        title: "INFORMACION",
+        msg: "No hay ningun producto seleccionado :("
+      })
+    } else {
+      $(`#verStock`).attr("disabled", true);
+      $(`#verStock`).html("<i class='fa fa-spin fa-spinner'</i>");
+      $.ajax({
+        url: "<?= $this->url ?>/ajax_stockactual",
+        type: "POST",
+        data: {
+          idproducto: $("#producto").val(),
+        },
+        dataType: "JSON",
+        success: function(data) {
+          $("#datastockactual").html(data.datahtml);
+          $('#stockactual').modal('show');
+          $(`#verStock`).attr("disabled", false);
+          $(`#verStock`).html("<i class='fa fa-search'</i>");
+          // $('.modal-title').text('STOCK ACTUAL');
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          alert("error de ajax ajax_stockactual");
+          $(`#verStock`).attr("disabled", false);
+          // $(`#verStock-${id}-${boton}`).html("STOCK <i class='fa fa-search'</i>");
+        }
+      });
+    }
+
   }
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

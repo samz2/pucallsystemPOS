@@ -1,4 +1,4 @@
-<?php
+<?php ob_start();
 
 include "validaciondedatos.php";
 include "procesarcomprobante.php";
@@ -66,6 +66,8 @@ class Venta extends CI_Controller
     $no = 0;
     $estado_sunat[''] = '';
     $estado_sunat['0000'] = '';
+    $estado_sunat['soap-env:Client.3246'] = '';
+    $estado_sunat['soap-env:Client.0130'] = '';
     $estado_sunat['soap-env:Client.0130'] = '';
     $estado_sunat['soap-env:Client.0111'] = '';
     $estado_sunat['soap-env:Client.0151'] = '';
@@ -161,70 +163,73 @@ class Venta extends CI_Controller
     $dataEmpresa = $this->Controlador_model->get($empresa, 'empresa');
     $detalle = $this->Controlador_model->getDetalle($idventa, 'ventadetalle');
     foreach ($detalle as $value) {
+      if ($value->tipo == "0") {
+        $productos = $this->Controlador_model->get($value->producto, 'producto');
+        if ($productos->tipo == '0') {
+          $cantidad = $this->Controlador_model->getStockAlmacen($value->producto, $dataEmpresa->almacen, $value->lote, $empresa);
+          $movimiento['empresa'] = $empresa;
+          $movimiento['modalidad'] = "ENTRADA";
+          $movimiento['usuario'] = $this->usuario;
+          $movimiento['venta'] = $idventa;
+          $movimiento['tipooperacion'] = "VENTA";
+          $movimiento['producto'] = $value->producto;
+          $movimiento['almacen'] = $dataEmpresa->almacen;
+          $movimiento['lote'] =  ($value->lote ? $value->lote : NULL);
+          if ($value->variante) {
+            $dataVariante = $this->Controlador_model->get($value->variante, "productovariante");
+            $totalRestablecer = $dataVariante->cantidad * $value->cantidad;
+            $movimiento['medida'] =  $dataVariante->nombre;
+            $movimiento['medidacantidad'] = $dataVariante->cantidad;
+            $movimiento['cantidaditem'] = $dataVariante->cantidad * $value->cantidad;
+            $movimiento['totalitemoperacion'] = $dataVariante->cantidad * $value->cantidad;
+          } else {
+            $totalRestablecer = $value->cantidad;
+            $movimiento['medida'] =  "UNIDAD";
+            $movimiento['medidacantidad'] = 1;
+            $movimiento['cantidaditem'] = $value->cantidad;
+            $movimiento['totalitemoperacion'] = $value->cantidad;
+          }
+          $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+          $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
+          $movimiento['tipo'] =  'ENTRADA ANULACION VENTA';
+          $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $totalRestablecer;
+          $movimiento['created'] = date('Y-m-d');
+          $movimiento['hora'] = date("H:i:s");
+          $this->Controlador_model->save('movimiento', $movimiento);
 
-      $productos = $this->Controlador_model->get($value->producto, 'producto');
-      if ($productos->tipo == '0') {
-        $cantidad = $this->Controlador_model->getStockAlmacen($value->producto, $dataEmpresa->almacen, $value->lote, $empresa);
-        $movimiento['empresa'] = $empresa;
-        $movimiento['usuario'] = $this->usuario;
-        $movimiento['venta'] = $idventa;
-        $movimiento['tipooperacion'] = "VENTA";
-        $movimiento['producto'] = $value->producto;
-        $movimiento['almacen'] = $dataEmpresa->almacen;
-        $movimiento['lote'] =  ($value->lote ? $value->lote : NULL);
-        if ($value->variante) {
-          $dataVariante = $this->Controlador_model->get($value->variante, "productovariante");
-          $totalRestablecer = $dataVariante->cantidad * $value->cantidad;
-          $movimiento['medida'] =  $dataVariante->nombre;
-          $movimiento['medidacantidad'] = $dataVariante->cantidad;
-          $movimiento['cantidaditem'] = $dataVariante->cantidad * $value->cantidad;
-          $movimiento['totalitemoperacion'] = $dataVariante->cantidad * $value->cantidad;
-        } else {
-          $totalRestablecer = $value->cantidad;
-          $movimiento['medida'] =  "UNIDAD";
-          $movimiento['medidacantidad'] = 1;
-          $movimiento['cantidaditem'] = $value->cantidad;
-          $movimiento['totalitemoperacion'] = $value->cantidad;
-        }
-        $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
-        $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
-        $movimiento['tipo'] =  'ENTRADA ANULACION VENTA';
-        $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $totalRestablecer;
-        $movimiento['created'] = date('Y-m-d');
-        $movimiento['hora'] = date("H:i:s");
-        $this->Controlador_model->save('movimiento', $movimiento);
-
-        $stock = $this->Controlador_model->getStock($value->producto, $dataEmpresa->almacen);
-        $producto['cantidad'] = $stock->cantidad + $totalRestablecer;
-        $this->Controlador_model->update(array('id' => $stock->id), $producto, 'stock');
-      } else if ($productos->tipo == '2') {
-        $combos = $this->Controlador_model->getCombo($value->producto);
-        foreach ($combos as $combo) {
-          $stockCombo = $this->Controlador_model->getStockProceso($combo->item_id, $dataEmpresa->almacen, NULL, $empresa);
-          $movimientoCombo['empresa'] = $empresa;
-          $movimientoCombo['usuario'] = $this->usuario;
-          $movimientoCombo['venta'] = $idventa;
-          $movimientoCombo['tipooperacion'] = "VENTA";
-          $movimientoCombo['producto'] = $combo->item_id;
-          $movimientoCombo['productocombo'] = $value->producto;
-          $movimientoCombo['almacen'] = $dataEmpresa->almacen;
-          $movimientoCombo['lote'] =  ($value->lote ? $value->lote : NULL);
-          $movimientoCombo['medida'] =  "COMBO";
-          $movimientoCombo['medidacantidad'] = $combo->cantidad;
-          $movimientoCombo['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
-          $movimientoCombo['cantidaditem'] = $combo->cantidad * $value->cantidad;
-          $movimientoCombo['totalitemoperacion'] = $combo->cantidad * $value->cantidad;
-          $movimientoCombo['stockanterior'] = $stockCombo ? $stockCombo->cantidad : 0;
-          $movimientoCombo['tipo'] =  'ENTRADA ANULACION VENTA';
-          $movimientoCombo['stockactual'] = ($stockCombo ? $stockCombo->cantidad : 0) + ($combo->cantidad * $value->cantidad);
-          $movimientoCombo['created'] = date('Y-m-d');
-          $movimientoCombo['hora'] = date("H:i:s");
-          $this->Controlador_model->save('movimiento', $movimientoCombo);
-          $cantidad2 = $value->cantidad * $combo->cantidad;
-          $stockC = $this->Controlador_model->getStock($combo->producto, $dataEmpresa->almacen);
-          if ($stockC) {
-            $productoCombo['cantidad'] = $stockC->cantidad + $cantidad2;
-            $this->Controlador_model->update(array('id' => $stockC->id), $productoCombo, 'stock');
+          $stock = $this->Controlador_model->getStock($value->producto, $dataEmpresa->almacen);
+          $producto['cantidad'] = $stock->cantidad + $totalRestablecer;
+          $this->Controlador_model->update(array('id' => $stock->id), $producto, 'stock');
+        } else if ($productos->tipo == '2') {
+          $combos = $this->Controlador_model->getCombo($value->producto);
+          foreach ($combos as $combo) {
+            $stockCombo = $this->Controlador_model->getStockProceso($combo->item_id, $dataEmpresa->almacen, NULL, $empresa);
+            $movimientoCombo['empresa'] = $empresa;
+            $movimientoCombo['modalidad'] = "ENTRADA";
+            $movimientoCombo['usuario'] = $this->usuario;
+            $movimientoCombo['venta'] = $idventa;
+            $movimientoCombo['tipooperacion'] = "VENTA";
+            $movimientoCombo['producto'] = $combo->item_id;
+            $movimientoCombo['productocombo'] = $value->producto;
+            $movimientoCombo['almacen'] = $dataEmpresa->almacen;
+            $movimientoCombo['lote'] =  ($value->lote ? $value->lote : NULL);
+            $movimientoCombo['medida'] =  "COMBO";
+            $movimientoCombo['medidacantidad'] = $combo->cantidad;
+            $movimientoCombo['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+            $movimientoCombo['cantidaditem'] = $combo->cantidad * $value->cantidad;
+            $movimientoCombo['totalitemoperacion'] = $combo->cantidad * $value->cantidad;
+            $movimientoCombo['stockanterior'] = $stockCombo ? $stockCombo->cantidad : 0;
+            $movimientoCombo['tipo'] =  'ENTRADA ANULACION VENTA';
+            $movimientoCombo['stockactual'] = ($stockCombo ? $stockCombo->cantidad : 0) + ($combo->cantidad * $value->cantidad);
+            $movimientoCombo['created'] = date('Y-m-d');
+            $movimientoCombo['hora'] = date("H:i:s");
+            $this->Controlador_model->save('movimiento', $movimientoCombo);
+            $cantidad2 = $value->cantidad * $combo->cantidad;
+            $stockC = $this->Controlador_model->getStock($combo->producto, $dataEmpresa->almacen);
+            if ($stockC) {
+              $productoCombo['cantidad'] = $stockC->cantidad + $cantidad2;
+              $this->Controlador_model->update(array('id' => $stockC->id), $productoCombo, 'stock');
+            }
           }
         }
       }
@@ -253,9 +258,22 @@ class Venta extends CI_Controller
     $generados = $this->Controlador_model->resumen($finicio, $factual, $empresa, '1');
     $anulados = $this->Controlador_model->resumen($finicio, $factual, $empresa, '3');
     $mostrar = '';
-    $mostrar .= '<table id="example1" class="table table-bordered table-striped"><thead><tr><th>#</th><th>Venta</th>
-    <th>Cliente</th><th>Colaborador</th><th>Estado</th><th>Condicion</th><th>Sunat</th><th>Fecha</th>
-    <th>Monto</th></tr></thead><tbody>';
+    $mostrar .= '
+    <table id="example1" class="table table-bordered table-striped">
+    <thead>
+    <tr>
+    <th>#</th>
+    <th>Venta</th>
+    <th>Cliente</th>
+    <th>Colaborador</th>
+    <th>Estado</th>
+    <th>Condicion</th>
+    <th>Sunat</th>
+    <th>Fecha</th>
+    <th>Monto</th>
+    </tr>
+    </thead>
+    <tbody>';
     $totalactual = 0;
     $i = 0;
     foreach ($generados as $data) {
@@ -264,7 +282,7 @@ class Venta extends CI_Controller
       $usuario = $this->Controlador_model->get($data->usuario_creador, 'usuario');
       $cliente = $this->Controlador_model->get($data->cliente, 'cliente');
       $sunat = "";
-      if ($data->emision === '0') {
+      if ($data->emision === '0' || $data->emision == 'soap-env:Client.1033') {
         $sunat = "ACEPTADO";
       }
       if ($data->emision === 'soap-env:Client.1032') {
@@ -306,7 +324,8 @@ class Venta extends CI_Controller
       <th>Estado de venta</th>
       <th>Colaborador</th>
       <th>Fecha / Hora</th>
-      <th>Concepto</th>
+      <th>Nombre del producto</th>
+      <th>Categoria</th>
       <th>P. Compra</th>
       <th>P. Venta</th>
       <th>Utilidad por venta</th>
@@ -328,13 +347,14 @@ class Venta extends CI_Controller
       $utilidad = $data->subtotal - ($data->cantidad * $data->preciocompra);
       $totalactual += $data->subtotal;
       $totalutilidad += $utilidad;
-      if($data->estado == "1"){
+      if ($data->estado == "1") {
         $estadoVenta = "GENERADO";
-      }else if($data->estado == "3"){
+      } else if ($data->estado == "3") {
         $estadoVenta = "ANULADO";
-      }else{
+      } else {
         $estadoVenta = "SIN DATOS";
-      } 
+      }
+
       $mostrar .= '
       <tr>
       <td>' . $i . '</td>
@@ -345,11 +365,18 @@ class Venta extends CI_Controller
       if ($data->tipo == '0') {
         $producto = $this->Controlador_model->get($data->producto, 'producto');
         $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria');
-        $mostrar .= '<td>' . $producto->nombre . ' ' . ($categoria ? $categoria->nombre : '') . '</td>';
+        $mostrar .= '
+        <td>' . $data->nombre  . '</td>
+        <td>' . ($categoria ? $categoria->nombre : 'SIN DATOS') . '</td>
+        ';
       } else {
         $mostrar .= '<td>' . $data->nombre . '</td>';
+        $mostrar .= '<td>EL PRODUCTO ES LIBRE</td>';
       }
-      $mostrar .= '<td align="right">S/ ' . $data->preciocompra . '</td>
+
+      $mostrar .= '
+      
+      <td align="right">S/ ' . $data->preciocompra . '</td>
       <td align="right">S/ ' . $data->precioventa . '</td>
       <td align="right"> S/ ' . number_format($utilidadporventa, 2) . '</td>
       <td align="right">' . $data->cantidad . '</td>
@@ -365,7 +392,7 @@ class Venta extends CI_Controller
     $mostrar .= '</tbody>
     <tfoot>
     <tr>
-    <td colspan="8">
+    <td colspan="9">
     </td>
     <td align="center" colspan="2"><b>Total:</b></td>
     <td align="right">' . number_format($totalutilidad, 2) . '</td>
@@ -381,12 +408,12 @@ class Venta extends CI_Controller
     $generados = $this->Controlador_model->resumen($finicio, $factual, $empresa, '1');
     $anulados = $this->Controlador_model->resumen($finicio, $factual, $empresa, '3');
     // Propiedades del archivo excel
-    $this->phpexcel->getProperties()->setTitle("Lista de Utilidad")->setDescription("Lista de Venta");
+    $this->phpexcel->getProperties()->setTitle("ListadeUtilidad")->setDescription("ListadeVenta");
     // Setiar la solapa que queda actia al abrir el excel
     $this->phpexcel->setActiveSheetIndex(0);
     // Solapa excel para trabajar con PHP
     $sheet = $this->phpexcel->getActiveSheet();
-    $sheet->setTitle("Lista de Venta");
+    $sheet->setTitle("ListadeVenta");
     $sheet->getColumnDimension('A')->setAutoSize(true);
     $sheet->getColumnDimension('B')->setAutoSize(true);
     $sheet->getColumnDimension('C')->setAutoSize(true);
@@ -420,26 +447,26 @@ class Venta extends CI_Controller
     foreach ($generados as $value) {
       $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
       $vendedor = $this->Controlador_model->get($value->usuario_creador, 'usuario');
-      if ($value->emision === '0') {
+      if ($value->emision == '0' || $value->emision == 'soap-env:Client.1033') {
         $sunat = "ACEPTADO";
       }
-      if ($value->emision === 'soap-env:Client.1032') {
+      if ($value->emision == 'soap-env:Client.1032') {
         $sunat = "COMUNICACION DE BAJA";
       }
-      if ($value->emision === '0000' || $value->emision == NULL) {
+      if ($value->emision == '0000' || $value->emision == NULL) {
         $sunat = "SIN EMITIR";
       }
       $i++;
       $sheet->setCellValue('A' . $i, $i - 1);
       $sheet->setCellValue('B' . $i, $value->tipoventa);
       $sheet->setCellValue('C' . $i, $value->serie . '-' . $value->numero);
-      $sheet->setCellValue('D' . $i, $cliente->documento);
-      $sheet->setCellValue('E' . $i, $cliente->nombre . ' ' . $cliente->apellido);
-      $sheet->setCellValue('F' . $i, $vendedor->nombre);
+      $sheet->setCellValue('D' . $i, ($cliente ? $cliente->documento : "SIN DATOS"));
+      $sheet->setCellValue('E' . $i, ($cliente ? $cliente->nombre . ' ' . $cliente->apellido : "SIN DATOS"));
+      $sheet->setCellValue('F' . $i, ($vendedor ? $vendedor->nombre : "SIN DATOS"));
       $sheet->setCellValue('G' . $i, $value->created);
       $sheet->setCellValue('H' . $i, 'GENERADO');
       $sheet->setCellValue('I' . $i, $sunat);
-      $sheet->setCellValue('J' . $i, $value->montototal);
+      $sheet->setCellValue('J' . $i, $value->deudatotal);
     }
     $sunat = "SIN DATOS";
     foreach ($anulados as $value) {
@@ -458,22 +485,27 @@ class Venta extends CI_Controller
       $sheet->setCellValue('A' . $i, $i - 1);
       $sheet->setCellValue('B' . $i, $value->tipoventa);
       $sheet->setCellValue('C' . $i, $value->serie . '-' . $value->numero);
-      $sheet->setCellValue('D' . $i, $cliente->documento);
-      $sheet->setCellValue('E' . $i, $cliente->nombre . ' ' . $cliente->apellido);
-      $sheet->setCellValue('F' . $i, $vendedor->nombre);
+      $sheet->setCellValue('D' . $i, ($cliente ? $cliente->documento : "SIN DATOS"));
+      $sheet->setCellValue('E' . $i, ($cliente ? $cliente->nombre . ' ' . $cliente->apellido : "SIN DATOS"));
+      $sheet->setCellValue('F' . $i, ($vendedor ? $vendedor->nombre : "SIN DATOS"));
       $sheet->setCellValue('G' . $i, $value->created);
       $sheet->setCellValue('H' . $i, 'ANULADO');
       $sheet->setCellValue('I' . $i, $sunat);
-      $sheet->setCellValue('J' . $i, $value->montototal);
+      $sheet->setCellValue('J' . $i, $value->deudatotal);
     }
     // Salida
+    $nombreArchivo = 'ventas' . date('YmdHis');
+    //header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header("Content-Type: application/vnd.ms-excel");
-    $nombreArchivo = 'ventas_' . date('YmdHis');
-    header("Content-Disposition: attachment; filename=\"$nombreArchivo.xls\"");
+    header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.xls"');
     header("Cache-Control: max-age=0");
+
     // Genera Excel
-    $writer = PHPExcel_IOFactory::createWriter($this->phpexcel, "Excel5");
+    //$writer = PHPExcel_IOFactory::createWriter($this->phpexcel, "Excel5");
+    $writer = PHPExcel_IOFactory::createWriter($this->phpexcel, "Excel2007");
     // Escribir
+    /* Limpiamos el búfer */
+    ob_end_clean();
     $writer->save('php://output');
     exit;
   }
@@ -526,7 +558,7 @@ class Venta extends CI_Controller
       if ($value->tipoventa <> 'OTROS') {
         $cliente = $this->Controlador_model->get($value->cliente, 'cliente');
         $vendedor = $this->Controlador_model->get($value->usuario_creador, 'usuario');
-        if ($value->emision === '0') {
+        if ($value->emision === '0' || $value->emision == 'soap-env:Client.1033') {
           $sunat = "ACEPTADO";
         }
         if ($value->emision === 'soap-env:Client.1032') {
@@ -582,6 +614,7 @@ class Venta extends CI_Controller
     // Genera Excel
     $writer = PHPExcel_IOFactory::createWriter($this->phpexcel, "Excel5");
     // Escribir
+    ob_end_clean();
     $writer->save('php://output');
     exit;
   }
@@ -610,18 +643,20 @@ class Venta extends CI_Controller
     $sheet->getColumnDimension('K')->setAutoSize(true);
     $sheet->getColumnDimension('L')->setAutoSize(true);
     $sheet->getColumnDimension('M')->setAutoSize(true);
+    $sheet->getColumnDimension('N')->setAutoSize(true);
     $sheet->getStyle('I')->getNumberFormat()->setFormatCode('#,##0.00');
     $sheet->getStyle('J')->getNumberFormat()->setFormatCode('#,##0.00');
     $sheet->getStyle('K')->getNumberFormat()->setFormatCode('#,##0.00');
     $sheet->getStyle('L')->getNumberFormat()->setFormatCode('#,##0.00');
     $sheet->getStyle('M')->getNumberFormat()->setFormatCode('#,##0.00');
+    $sheet->getStyle('n')->getNumberFormat()->setFormatCode('#,##0.00');
     $style_header = array(
       'borders' => array('allborders' => array('style' => PHPExcel_Style_Border::BORDER_THIN)),
       'fill' => array('type' => PHPExcel_Style_Fill::FILL_SOLID, 'color' => array('rgb' => 'E1E0F7'))
     );
     $style = array('alignment' => array('horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER));
-    $sheet->getStyle('A1:M1')->applyFromArray($style_header);
-    $sheet->getStyle("A1:M1")->applyFromArray($style);
+    $sheet->getStyle('A1:N1')->applyFromArray($style_header);
+    $sheet->getStyle("A1:N1")->applyFromArray($style);
     $sheet->setCellValue('A1', 'NRO');
     $sheet->setCellValue('B1', 'FECHA');
     $sheet->setCellValue('C1', 'HORA');
@@ -629,12 +664,13 @@ class Venta extends CI_Controller
     $sheet->setCellValue('E1', 'VENTA');
     $sheet->setCellValue('F1', 'USUARIO');
     $sheet->setCellValue('G1', 'PRODUCTO');
-    $sheet->setCellValue('H1', 'COMPRA');
-    $sheet->setCellValue('I1', 'VENTA');
-    $sheet->setCellValue('J1', 'UTILIDAD POR VENTA');
-    $sheet->setCellValue('K1', 'CANTIDAD VENDIDO');
-    $sheet->setCellValue('L1', 'UTILIDAD TOTAL');
-    $sheet->setCellValue('M1', 'MONTO DE VENTA');
+    $sheet->setCellValue('H1', 'CATEGORIA');
+    $sheet->setCellValue('I1', 'COMPRA');
+    $sheet->setCellValue('J1', 'VENTA');
+    $sheet->setCellValue('K1', 'UTILIDAD POR VENTA');
+    $sheet->setCellValue('L1', 'CANTIDAD VENDIDO');
+    $sheet->setCellValue('M1', 'UTILIDAD TOTAL');
+    $sheet->setCellValue('N1', 'MONTO DE VENTA');
     $i = 1;
     foreach ($generados as $key =>  $value) {
       $venta = $this->Controlador_model->get($value->id, 'venta');
@@ -651,16 +687,19 @@ class Venta extends CI_Controller
       $sheet->setCellValue('F' . $i, $vendedor->usuario);
       if ($value->tipo == '0') {
         $producto = $this->Controlador_model->get($value->producto, 'producto');
+        $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria');
         $sheet->setCellValue('G' . $i, $producto->nombre);
+        $sheet->setCellValue('H' . $i, ($categoria ? $categoria->nombre : "SIN DATOS"));
       } else {
         $sheet->setCellValue('G' . $i, $value->nombre);
+        $sheet->setCellValue('H' . $i, "ES UN PRODUCTO LIBRE");
       }
-      $sheet->setCellValue('H' . $i, $value->preciocompra);
-      $sheet->setCellValue('I' . $i, $value->precioventa);
-      $sheet->setCellValue('J' . $i, $utilidadventa);
-      $sheet->setCellValue('K' . $i, $value->cantidad);
-      $sheet->setCellValue('L' . $i, $utilidadTotal);
-      $sheet->setCellValue('M' . $i, $value->subtotal);
+      $sheet->setCellValue('I' . $i, $value->preciocompra);
+      $sheet->setCellValue('J' . $i, $value->precioventa);
+      $sheet->setCellValue('K' . $i, $utilidadventa);
+      $sheet->setCellValue('L' . $i, $value->cantidad);
+      $sheet->setCellValue('M' . $i, $utilidadTotal);
+      $sheet->setCellValue('N' . $i, $value->subtotal);
     }
     foreach ($anulados as $indice => $value) {
       $venta = $this->Controlador_model->get($value->id, 'venta');
@@ -677,26 +716,30 @@ class Venta extends CI_Controller
       $sheet->setCellValue('F' . $i, $vendedor->usuario);
       if ($value->tipo == '0') {
         $producto = $this->Controlador_model->get($value->producto, 'producto');
-        $sheet->setCellValue('G' . $i, $producto ? $producto->nombre : "SIN DATOS");
+        $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria');
+        $sheet->setCellValue('G' . $i, $producto->nombre);
+        $sheet->setCellValue('H' . $i, ($categoria ? $categoria->nombre : "SIN DATOS"));
       } else {
         $sheet->setCellValue('G' . $i, $value->nombre);
+        $sheet->setCellValue('H' . $i, "ES UN PRODUCTO LIBRE");
       }
-      $sheet->setCellValue('H' . $i, $value->preciocompra);
-      $sheet->setCellValue('I' . $i, $value->precioventa);
-      $sheet->setCellValue('J' . $i, $utilidadventa);
-      $sheet->setCellValue('K' . $i, $value->cantidad);
-      $sheet->setCellValue('L' . $i, $utilidadTotal);
-      $sheet->setCellValue('M' . $i, $value->subtotal);
+      $sheet->setCellValue('I' . $i, $value->preciocompra);
+      $sheet->setCellValue('J' . $i, $value->precioventa);
+      $sheet->setCellValue('K' . $i, $utilidadventa);
+      $sheet->setCellValue('L' . $i, $value->cantidad);
+      $sheet->setCellValue('M' . $i, $utilidadTotal);
+      $sheet->setCellValue('N' . $i, $value->subtotal);
     }
 
     // Salida
     header("Content-Type: application/vnd.ms-excel");
-    $nombreArchivo = 'ventasdetalle_'.date('Y-m-d');
+    $nombreArchivo = 'ventasdetalle_' . date('Y-m-d');
     header("Content-Disposition: attachment; filename=\"$nombreArchivo.xls\"");
     header("Cache-Control: max-age=0");
     // Genera Excel
     $writer = PHPExcel_IOFactory::createWriter($this->phpexcel, "Excel5");
     // Escribir
+    ob_end_clean();
     $writer->save('php://output');
     exit();
   }
@@ -850,7 +893,7 @@ class Venta extends CI_Controller
   function crear_cabecera($emisor, $data)
   {
     $tipo_comprobante = $data->tipoventa == 'FACTURA' ? "01" : "03";
-    $fecha = date('Y-m-d');
+    /* $fecha = date('Y-m-d');
     $date1 = new DateTime($data->created);
     $date2 = new DateTime($fecha);
     $diff = $date1->diff($date2);
@@ -858,10 +901,13 @@ class Venta extends CI_Controller
       $fechas = date('Y-m-d', strtotime($data->created . '+ ' . ($diff->days - 5) . ' days'));
     } else {
       $fechas = $data->created;
-    }
+    } */
+    $fechas = $data->created;
     $cliente = $this->Controlador_model->get($data->cliente, 'cliente');
     $tipo = $data->tipoventa == 'FACTURA' ? 6 : 1;
+
     $cabecera = array(
+      'FORMA_PAGO' => $data->formapago,
       //pag. 28
       'TIPO_OPERACION' => '0101',
       'TOTAL_GRAVADAS' => "0",
@@ -1032,9 +1078,7 @@ class Venta extends CI_Controller
         </span> 
         </div>
       </div>
-    </div>
-   <button data-dismiss='modal' class='btn btn-default hiddenpr'>Cerrar</button>
-   <button class='btn btn-add' onclick='imprimir($idventa,$empresa->tipoimpresora)' id='btncomprobante'>Imprimir</button>";
+    </div>";
 
     echo json_encode(["htmlComprobante" => $htmlComprobante, "htmlFotter" => $htmlFotter]);
   }

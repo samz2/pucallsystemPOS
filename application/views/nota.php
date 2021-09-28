@@ -164,10 +164,8 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip" title="GENERADOS"><i class="fa fa-upload"></i></a>
-            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip" title="PENDIENTES"><i class="fa fa-upload"></i></a>
-            <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-            <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+            <a onclick="generar()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+            <a onclick="pendiente()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-clipboard"></i> PENDIENTES</a>
           </div>
         </form>
       </div>
@@ -178,22 +176,28 @@
     <div class="col-xs-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">Lista de venta</h3>
+          <h3 class="panel-title clearfix">
+            <div class="pull-left">Lista de notas</div>
+            <div class="pull-right">
+              <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+              <a href="<?= $this->url ?>/crear" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
+            </div>
+          </h3>
         </div>
         <!-- /.box-header -->
         <div class="panel-body table-responsive">
           <table id="tabla" class="table table-striped table-bordered">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Tipo Nota</th>
-                <th>Tipo Venta</th>
-                <th>Numero</th>
-                <th>Estado</th>
-                <th>Sunat</th>
-                <th>Monto</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
+                <th><b>#</b></th>
+                <th><b>Tipo Nota</b></th>
+                <th><b>Tipo Venta</b></th>
+                <th><b>Nímero</b></th>
+                <th><b>Estado</b></th>
+                <th><b>Sunat</b></th>
+                <th><b>Monto</b></th>
+                <th><b>Monto</b></th>
+                <th><b>Acciones</b></th>
               </tr>
             </thead>
             <tbody></tbody>

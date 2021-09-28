@@ -18,7 +18,7 @@
                                     <span class="help-block"></span>
                                 </div>
                                 <div class="col-lg-3">
-                                    <button onclick="generados()" id="botonprocesar" class="btn btn-warning">BUSCAR <i class="fa fa-search"></i></button>
+                                    <button onclick="generados()" id="botonprocesar" class="btn btn-warning btn-sm"><i class="fa fa-search"></i> BUSCAR</button>
                                 </div>
                             </div>
                         </div>
@@ -38,8 +38,8 @@
                         Lista de transportes privados
                     </div>
                     <div>
-                        <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
-                        <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
+                        <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+                        <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
                     </div>
 
                 </h3>
@@ -48,10 +48,10 @@
                 <table id="tabla-vehiculo" class="table table-bordered table-striped">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Tipo</th>
-                            <th>Numero de placa</th>
-                            <th>Codigo</th>
+                            <th><b>#</b></th>
+                            <th><b>Tipo</b></th>
+                            <th><b>Número de placa</b></th>
+                            <th><b>Código</b></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -62,11 +62,11 @@
                 <table id="tabla-conductor" class="table table-striped table-bordered">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Tipo</th>
-                            <th>Tipo de documento</th>
-                            <th>Documento</th>
-                            <th>Codigo</th>
+                            <th><b>#</b></th>
+                            <th><b>Tipo</b></th>
+                            <th><b>Tipo de documento</b></th>
+                            <th><b>Documento</b></th>
+                            <th><b>Código</b></th>
                             <th></th>
                         </tr>
                     </thead>

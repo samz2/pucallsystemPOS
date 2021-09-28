@@ -378,15 +378,15 @@
               <div class="col-sm-10">
                 <select id="empresa" name="empresa" class="form-control" required>
                   <?php foreach ($empresas as $value) { ?>
-                    <option value="<?= $value->id ?>"><?= $value->razonsocial ?></option>
+                    <option value="<?= $value->id ?>"><?= $value->razonsocial." | ".$value->nombre ?></option>
                   <?php } ?>
                 </select>
               </div>
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
-            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip">PENDIENTES <i class="fa fa-clipboard"></i></a>
+            <a onclick="generar()" class="btn btn-warning btn-sm" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
+            <a onclick="pendiente()" class="btn btn-danger btn-sm" data-toggle="tooltip">PENDIENTES <i class="fa fa-clipboard"></i></a>
           </div>
         </form>
       </div>
@@ -399,8 +399,8 @@
           <h3 class="panel-title text-dark" style="display:flex; justify-content:space-between; align-items:center;">
             <div>Lista de <?= $this->titulo_controlador ?></div>
             <div>
-              <a onclick="location.reload()" class="btn btn-success" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
-              <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
+              <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
+              <a href="<?= $this->url ?>/crear" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
             </div>
           </h3>
         </div>
@@ -410,16 +410,16 @@
           <table id="tabla" class="table table-striped table-bordered">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Empresa</th>
-                <th>Cliente</th>
-                <th>Guia Remision</th>
-                <th>Tipo de transporte</th>
-                <th>Nro Doc</th>
-                <th>Estado</th>
-                <th>Sunat</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
+                <th><b>#</b></th>
+                <th><b>Empresa</b></th>
+                <th><b>Cliente</b></th>
+                <th><b>Guia Remisión</b></th>
+                <th><b>Tipo de transporte</b></th>
+                <th><b>Nro Doc</b></th>
+                <th><b>Estado</b></th>
+                <th><b>Sunat</b></th>
+                <th><b>Fecha</b></th>
+                <th><b>Acciones</b></th>
               </tr>
             </thead>
             <tbody>

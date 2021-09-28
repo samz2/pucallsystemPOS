@@ -43,13 +43,13 @@ class Kardex extends CI_Controller
     foreach ($query as $value) {
       $dataProductos[] = ['id' => $value->id, 'text' => $value->nombre];
     }
-    
-    if(empty($dataProductos)){
+
+    if (empty($dataProductos)) {
       $dataResult = array(array("text" => "SIN RESULTADOS DE BUSQUEDA"));
-    }else{
+    } else {
       $dataResult = array(array("text" => "RESULTADOS DE BUSQUEDA", "children" => $dataProductos));
     }
-  
+
     echo json_encode($dataResult);
   }
 
@@ -66,16 +66,17 @@ class Kardex extends CI_Controller
     <thead>
       <tr>
         <th>#</th>
-        <th>Usuario responsable</th>
-        <th>Producto</th>
-        <th>Medida</th>
-        <th>Tipo</th>
-        <th>Codigo Operacion</th>
-        <th>Almacen</th>
-        <th>Fecha / Hora</th>
-        <th>Total items de Operacion</th>
-        <th>Stock Anterior</th>
-        <th>Stock Actual</th>
+        <th><b>Indicador</b></th>
+        <th> <b>Usuario responsable</b> </th>
+        <th><b>Producto</b></th>
+        <th><b>Medida</b></th>
+        <th><b>Tipo</b></th>
+        <th><b>Codigo Operacion</b></th>
+        <th><b>Almacen</b></th>
+        <th><b>Fecha / Hora</b></th>
+        <th><b>Total items de Operacion</b></th>
+        <th><b>Stock Anterior</b></th>
+        <th><b>Stock Actual</b></th>
       </tr>
     </thead>
     <tbody>';
@@ -87,13 +88,13 @@ class Kardex extends CI_Controller
         $dataTipo = $data->tipo;
         $notaingreso = $this->Controlador_model->get($data->notaingreso, 'notaingreso');
         $codigoDocumento = $notaingreso->codigo;
-      } else if ($data->tipooperacion == "VENTA") {
+      } else if ($data->tipooperacion == "VENTA" || $data->tipooperacion == "VENTA DE CREDITO") {
         $venta = $this->Controlador_model->get($data->venta, 'venta');
         $codigoDocumento =  $venta->serie . '-' . $venta->numero;
-        if($data->productocombo){
+        if ($data->productocombo) {
           $queryproductocombo = $this->Controlador_model->get($data->productocombo, "producto");
-          $dataTipo = $data->tipo.": ".$queryproductocombo->nombre;
-        }else{
+          $dataTipo = $data->tipo . ": " . $queryproductocombo->nombre;
+        } else {
           $dataTipo = $data->tipo;
         }
       } else if ($data->tipooperacion == "NS") {
@@ -104,18 +105,34 @@ class Kardex extends CI_Controller
         $dataTipo = $data->tipo;
         $notaingreso = $this->Controlador_model->get($data->notaingreso, 'notaingreso');
         $compra = $this->Controlador_model->get($data->compra, 'compra');
-        $codigoDocumento = $notaingreso->codigo." / ".$compra->serie."-".$compra->numero;
+        $codigoDocumento = $notaingreso->codigo . " / " . $compra->serie . "-" . $compra->numero;
+      } else if ($data->tipooperacion == "VENTA DE CREDITO AL CLIENTE") {
+        $dataTipo = $data->tipo;
+        $credito = $this->Controlador_model->get($data->credito, 'credito');
+        $codigoDocumento = $credito->codigo;
+      }
+      if (is_null($data->modalidad)) {
+        $indicador = "<div class='alert alert-danger' style='margin:0px; padding:3px'>SIN DATOS</div>";
+      } else {
+        if ($data->modalidad == "ENTRADA") {
+          $indicador = "<i class='fa fa-arrow-circle-right' style='color:#15790e; font-size:25px'></i>";
+        }else{
+          $indicador = "<i class='fa fa-arrow-circle-left' style='color:#c31717; font-size:25px'></i>";
+        }
       }
 
+
+      
       $ticket .= '
       <tr>
-        <td>' . ($indice + 1) . '</td>
+      <td>' . ($indice + 1) . '</td>
+        <td class="text-center">' . $indicador . '</td>
         <td>' . $usuarioresponsable->nombre . " " . $usuarioresponsable->apellido . " " . $usuarioresponsable->documento . '</td>
         <td>' . $dataproducto->nombre . '</td>
         <td>' . $data->medida . '</td>
         <td>' . $dataTipo . '</td>
         <td>' . $codigoDocumento . '</td>
-        <td>'.$almacen->nombre.'</td>
+        <td>' . $almacen->nombre . '</td>
         <td>' . $data->created . " " . $data->hora . '</td>
         <td>' . $data->totalitemoperacion . '</td>
         <td>' . $data->stockanterior . '</td>

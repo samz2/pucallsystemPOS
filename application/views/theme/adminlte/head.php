@@ -68,7 +68,7 @@
 
 <script src="<?= base_url().RECURSOS ?>js/modernizr.min.js"></script>
 <!-- favicon -->
-<link rel="shortcut icon" href="<?= base_url() ?>favicon/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="<?= base_url() ?>favicon/faviconnew.ico" type="image/x-icon">
 <link rel="apple-touch-icon" sizes="57x57" href="<?= base_url() ?>favicon/apple-icon-57x57.png">
 <link rel="apple-touch-icon" sizes="60x60" href="<?= base_url() ?>favicon/apple-icon-60x60.png">
 <link rel="apple-touch-icon" sizes="72x72" href="<?= base_url() ?>favicon/apple-icon-72x72.png">

@@ -118,6 +118,14 @@
       <td class="desart"><span style="font-size:9pt;">Item</span></td>
       <td class="desart"><span style="font-size:9pt;">Código</span></td>
       <td class="desart"><span style="font-size:9pt;">Descripción</span></td>
+      <td class="desart"><span style="font-size:9pt;">Salida</span></td>
+      <?php if($data->tiposalida == "TRASLADO DE ALMACEN"): ?>
+        <?php $datalmacen = $this->Controlador_model->get($data->almacendestino,"almacen"); ?>
+      <td class="desart"><span style="font-size:9pt;">Destino</span></td>
+      <?php 
+        else:
+      ?>
+      <?php endif; ?>
       <td class="desart"><span style="font-size:9pt;">Tipo</span></td>
       <td class="desart"><span style="font-size:9pt;">Cant.</span></td>
     </tr>
@@ -126,10 +134,19 @@
       $i++; ?>
       <?php $producto = $this->Controlador_model->get($value->producto, 'producto'); ?>
       <?php $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria'); ?>
+      <?php $almacen = $this->Controlador_model->get($value->almacen, 'almacen'); ?>
+      <?php $destino = $this->Controlador_model->get($data->almacendestino, 'almacen'); ?>
+      
       <tr>
         <td align="center"><span style="font-size:8pt;"><?= $i ?></span></td>
         <td><span style="font-size:8pt;"><?= $producto->codigo ?></span></td>
         <td><span style="font-size:8pt;"><?= $producto->nombre . ' ' . ($categoria ? $categoria->nombre : '') ?></span></td>
+        <td align="center"><span style="font-size:8pt;"><?= $almacen->nombre; ?></span></td>
+        <?php if($data->tiposalida == "TRASLADO DE ALMACEN"): ?>
+        <td align="center"><span style="font-size:8pt;"><?= $destino->nombre; ?></span></td>
+        <?php else:
+        ?>
+        <?php endif; ?>
         <td align="center"><span style="font-size:8pt;"><?= $value->medida ?></span></td>
         <td align="center"><span style="font-size:8pt;"><?= $value->cantidad ?></span></td>
       </tr>

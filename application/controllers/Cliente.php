@@ -76,7 +76,6 @@ class Cliente extends CI_Controller
       "recordsFiltered" => $length,
       "data" => $data
     );
-    //output to json format
     echo json_encode($result);
   }
 

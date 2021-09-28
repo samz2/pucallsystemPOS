@@ -55,13 +55,16 @@
   .cubo {
     border-style: solid;
   }
+  
   </style>
   <meta charset="utf-8" />
   <title>NOTA INGRESO</title>
 	<link rel="shortcut icon" href="<?= base_url().RECURSOS ?>images/favicon_1.ico">
 </head>
 
-<body>
+<body >
+  
+  
   <table class="cab">
 		<?php $sucursal = $this->Controlador_model->get($data->empresa, 'empresa'); ?>
 		<tr>
@@ -114,15 +117,18 @@
 		<tr>
 			<td class="desart"><span style="font-size:9pt;">Item</span></td>
 			<td class="desart"><span style="font-size:9pt;">Código</span></td>
+      <td class="desart"><span style="font-size:9pt;">Destino</span></td>
 			<td class="desart"><span style="font-size:9pt;">Descripción</span></td>
 			<td class="desart"><span style="font-size:9pt;">Tipo</span></td>
 			<td class="desart"><span style="font-size:9pt;">Cant.</span></td>
 		</tr>
 			<?php $i = 0; foreach ($datas as $value) { $i++; ?>
 			<?php $producto = $this->Controlador_model->get($value->producto, 'producto'); ?>
+      <?php $destino = $this->Controlador_model->get($value->almacen, 'almacen'); ?>
 			<tr>
 			<td align="center"><span style="font-size:8pt;"><?= $i ?></span></td>
 			<td><span style="font-size:8pt;"><?= $producto->codigo == '' ? $producto->codigoexterno : $producto->codigo ?></span></td>
+      <td align="center"><span style="font-size:8pt;"><?= $destino->nombre ?></span></td>
 			<td><span style="font-size:8pt;"><?= $producto->nombre ?></span></td>
 			<td align="center"><span style="font-size:8pt;"><?= $value->medida ?></span></td>
 			<td align="center"><span style="font-size:8pt;"><?= $value->cantidad ?></span></td>

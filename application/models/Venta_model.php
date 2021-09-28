@@ -68,6 +68,7 @@ class Venta_model extends CI_Model
 		$this->db->join('ventadetalle vd', 'v.id = vd.venta');
 		$this->db->where("v.created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
 		$this->db->where('v.estado <>', "0");
+		$this->db->where('v.estado <>', "4");
 		$this->db->where('v.empresa', $empresa);
 		return $this->db->get()->result();
 	}
@@ -82,6 +83,7 @@ class Venta_model extends CI_Model
 		$this->db->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
 		$this->db->where('tipoventa <>', 'OTROS');
 		$this->db->where('emision', '');
+		$this->db->where('estado', '1');
 		$this->db->where('empresa', $empresa);
 		return $this->db->get('venta')->result();
 	}
@@ -280,9 +282,7 @@ class Venta_model extends CI_Model
 
 	public function comanda($venta)
 	{
-		$this->db->select('DISTINCT(producto), nombre, opcion, precio, variante, tipo, subtotal');
 		$this->db->where('venta', $venta);
-		$this->db->group_by('producto');
 		$query = $this->db->get('ventadetalle');
 		return $query->result();
 	}

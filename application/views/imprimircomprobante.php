@@ -122,13 +122,14 @@
             $suma = $this->Controlador_model->sumacomanda($venta->id, $value->producto);
             ?>
             <tr>
-              <?php $datavariante = $this->Controlador_model->get($value->variante, "productovariante");
-              $totalItems = $value->variante ? $suma->cantidad *  $datavariante->cantidad : $suma->cantidad;
+              <?php 
+              $datavariante = $this->Controlador_model->get($value->variante, "productovariante");
+              $totalItems = $value->variante ? $datavariante->cantidad * $value->cantidad : $value->cantidad;
               ?>
               <td><?= $value->nombre . " " . $producto->codigo ?>[<?= $totalItems ?>]</td>
               <td style="text-align:center"><?= $value->precio ?></td>
-              <td style="text-align:center">[ <?= $suma->cantidad ?> ]</td>
-              <td align="right"><?= number_format($suma->cantidad * $value->precio, 2) ?></td>
+              <td style="text-align:center">[ <?= $value->cantidad ?> ]</td>
+              <td align="right"><?= number_format($value->subtotal, 2) ?></td>
             </tr>
           <?php } else { ?>
             <tr>

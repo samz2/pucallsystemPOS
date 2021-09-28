@@ -2,10 +2,14 @@
   <div class="col-xs-12">
     <div class="panel panel-border panel-primary">
       <div class="panel-heading">
-        <h3 class="panel-title text-dark">
-          Lista de <?= $this->titulo_controlador ?>
-          <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-          <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Nuevo"><i class="fa fa-plus"></i></a>
+        <h3 class="panel-title text-dark clearfix">
+          <div class="pull-left">
+          Lista de marcas
+          </div>
+          <div class="pull-right">
+          <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" ><i class="fa fa-repeat"></i> RECARGAR</a>
+          <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" ><i class="fa fa-plus"></i> NUEVO</a>
+          </div>
         </h3>
       </div>
       <!-- /.box-header -->
@@ -13,9 +17,9 @@
         <table id="tabla" class="table table-bordered table-striped">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Descripcion</th>
-              <th>Codigo</th>
+              <th><b>#</b></th>
+              <th><b>Descripción</b></th>
+              <th><b>Código</b></th>
               <th></th>
             </tr>
           </thead>

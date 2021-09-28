@@ -1,4 +1,10 @@
+<style>
+  .sinstockinicio {
+    text-decoration: line-through;
+  }
+</style>
 <!-- Page Content -->
+
 <div class="container">
   <div class="row">
     <div class="col-lg-12">
@@ -15,13 +21,13 @@
                   <div class="col-lg-9">
                     <select class="form-control" name="empresaproducto" id="empresaproducto" style="margin-left:6px">
                       <?php foreach ($empresas as $value) { ?>
-                        <option value="<?= $value->id ?>"><?= $value->ruc." | SERIE: ".$value->serie." | ".$value->nombre ?></option>
+                        <option value="<?= $value->id ?>"><?= $value->ruc . " | SERIE: " . $value->serie . " | " . $value->nombre ?></option>
                       <?php } ?>
                     </select>
                     <span class="help-block"></span>
                   </div>
                   <div class="col-lg-3">
-                    <button onclick="detallesproductos()" id="botonprocesar" class="btn btn-primary">Procesar</button>
+                    <button onclick="detallesproductos()" id="botonprocesar" class="btn btn-warning btn-sm"><i class="fa fa-search"></i> BUSCAR</button>
                   </div>
                 </div>
               </div>
@@ -37,8 +43,8 @@
         <div class="panel-heading">
           <h3 class="panel-title text-title-panel">Lista de <?= $this->controlador ?>
             <div class="pull-right">
-              <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-              <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" onclick="add()" title="NUEVO"><i class="fa fa-plus"></i></a>
+              <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+              <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" onclick="add()"><i class="fa fa-plus"></i> NUEVO</a>
               <a type="button" class="btn btn-info btn-sm" data-toggle="tooltip" onclick="cargardatos()" title="CARGAR EXCEL"><i class="fa fa-file-excel-o"></i></a>
             </div>
             <div class="clearfix"></div>
@@ -55,6 +61,7 @@
               <tr class="text-title-panel">
                 <th>#</th>
                 <th>Codigo</th>
+                <th>Tipo</th>
                 <th>Nombre</th>
                 <th>C. Barra</th>
                 <th>Lotes</th>
@@ -84,65 +91,98 @@
       <form action="#" enctype="multipart/form-data" id="form" autocomplete="off">
         <div class="modal-body">
           <input type="hidden" name="id" class="form-control" id="id">
-          <div class="form-group">
-            <label>Tipo</label>
-            <select class="form-control" name="tipo" id="tipo">
-              <option value="0">Estándar</option>
-              <option value="1">Servicio</option>
-              <option value="2">combinación</option>
-            </select>
-          </div>
 
-          <div class="form-group">
-            <label>Categoria</label>
-            <div class="input-group">
-              <select class="form-control" name="categoria" id="categoria">
-                <option value="">SELECCIONE</option>
-                <?php foreach ($categories as $category) { ?>
-                  <?php if ($category->id == 14) {
-                    continue;
-                  } ?>
-                  <option value="<?= $category->id ?>"><?= $category->nombre ?></option>
-                <?php } ?>
-              </select>
-              <span class="help-block"></span>
-              <span class="input-group-btn"><a type="button" class="btn waves-effect waves-light btn-primary" onclick="crearcategoria()"><i class="fa fa-plus"></i></a></span>
+          <div class="row">
+            <div class="col-lg-6" id="content-tipo">
+              <div class="form-group">
+                <label>Tipo</label>
+                <select class="form-control" name="tipo" id="tipo">
+                  <option value="0">Estándar</option>
+                  <option value="1">Servicio</option>
+                  <option value="2">combinación</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-6" id="content-stockinicial">
+              <div class="form-group">
+                <label id="label-stockinicial">Stock Inicial</label>
+                <div class="input-group">
+                  <input type="hidden" name="tiendastockingreso" id="tiendastockingreso" class="form-control">
+                  <input type="hidden" name="almacenstockingreso" id="almacenstockingreso" class="form-control">
+                  <input type="text" readonly="readonly" name="cantidadstockingreso" id="cantidadstockingreso" class="form-control" value="0">
+                  <span class="help-block"></span>
+                  <span class="input-group-btn" style="vertical-align: top">
+                    <button type="button" onclick="ingreso()" id="btn-ingresostockinicial" class="btn waves-effect waves-light btn-success"><i class="fa fa-shopping-cart"></i></button>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div class="form-group">
-            <label>Marca</label>
-            <div class="input-group">
-              <select class="form-control" name="marca" id="marca">
-                <option value="0">SELECCIONE</option>
-                <?php foreach ($marcas as $marca) { ?>
-                  <option value="<?= $marca->id ?>"><?= $marca->nombre ?></option>
-                <?php } ?>
-              </select>
-              <span class="help-block"></span>
-              <span class="input-group-btn"><a class="btn waves-effect waves-light btn-primary" onclick="crearmarca()"><i class="fa fa-plus"></i></a></span>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Categoria</label>
+                <div class="input-group">
+                  <select class="form-control" name="categoria" id="categoria">
+                    <option value="0">SELECCIONE</option>
+                    <?php foreach ($categories as $category) { ?>
+                      <option value="<?= $category->id ?>"><?= $category->nombre ?></option>
+                    <?php } ?>
+                  </select>
+                  <span class="help-block"></span>
+                  <span class="input-group-btn" style="vertical-align: top"><a type="button" class="btn waves-effect waves-light btn-primary" onclick="crearcategoria()"><i class="fa fa-plus"></i></a></span>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Marca</label>
+                <div class="input-group">
+                  <select class="form-control" name="marca" id="marca">
+                    <option value="0">SELECCIONE</option>
+                    <?php foreach ($marcas as $marca) { ?>
+                      <option value="<?= $marca->id ?>"><?= $marca->nombre ?></option>
+                    <?php } ?>
+                  </select>
+                  <span class="help-block"></span>
+                  <span class="input-group-btn"><a class="btn waves-effect waves-light btn-primary" onclick="crearmarca()"><i class="fa fa-plus"></i></a></span>
+                </div>
+              </div>
             </div>
           </div>
-
-
-          <div class="form-group controls">
-            <div class="row">
-              <div class="col-lg-6 col-md-6">
+          <div class="row">
+            <div class="col-lg-4">
+              <div class="form-group">
                 <label>Codigo</label>
                 <input type="hidden" name="numero" class="form-control" id="numero">
                 <input type="text" readonly name="codigo" class="form-control" id="codigo">
               </div>
-              <div class="col-lg-6 col-md-6">
-                <label>Codigo Barra</label>
+            </div>
+            <div class="col-lg-4">
+              <div class="form-group"><label>Codigo Barra</label>
                 <input type="text" name="codigoBarra" class="form-control" id="codigoBarra">
                 <span class="help-block"></span>
               </div>
             </div>
+            <div class="col-lg-4">
+              <div class="form-group"><label>Codigo Interno</label>
+                <input type="text" name="codigoInterno" class="form-control" id="codigoInterno">
+                <span class="help-block"></span>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" name="nombre" class="form-control" id="nombre">
-            <span class="help-block"></span>
+          <div class="row">
+            <div class="col-lg-12">
+              <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" name="nombre" class="form-control" id="nombre">
+                <span class="help-block"></span>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-lg-6"></div>
+            <div class="col-lg-6"></div>
           </div>
 
           <div class="row">
@@ -156,10 +196,15 @@
               </div>
             </div>
             <div class="col-lg-6" id="content-lote">
-              <label for="chkLotes">¿Controlar por lotes?</label>
+              <!-- <label for="chkLotes">¿Controlar por lotes?</label>
               <div class="material-switch pull-right">
                 <input id="chkLotes" name="chkLotes" type="checkbox">
                 <label for="chkLotes" class="label-success"></label>
+              </div> -->
+              <label for="estado_stockcaja">¿Controlar stock en caja?</label>
+              <div class="material-switch pull-right">
+                <input id="estado_stockcaja" name="estado_stockcaja" type="checkbox">
+                <label for="estado_stockcaja" class="label-success"></label>
               </div>
             </div>
           </div>
@@ -167,7 +212,7 @@
           <div class="form-group" id="soloestandar" style="display: none;">
             <div class="row">
               <div class="col-lg-6 col-md-6">
-                <label>Precio Compra Paquete (Soles)</label>
+                <label>Precio Compra Paquete (S/)</label>
                 <input type="text" value="0" name="preciocomprapaquetes" class="form-control money" id="preciocomprapaquetes">
                 <span class="help-block"></span>
               </div>
@@ -184,7 +229,7 @@
 
 
           <div class="form-group" id="costos">
-            <label>Precio Compra Unidad (Soles)</label>
+            <label>Precio Compra Unidad (S/)</label>
             <input type="text" value="0" name="preciocompra" class="form-control" id="preciocompra">
             <span class="help-block"></span>
           </div>
@@ -192,13 +237,21 @@
           <div class="form-group" id="content-venta-1">
             <div class="row">
               <div class="col-lg-6">
-                <label>Precio Venta Unidad (Soles)</label>
+                <label>Precio Venta Unidad (S/)</label>
+                <div class="material-switch pull-right">
+                  <input id="estado_precioventa" name="estado_precioventa" type="checkbox" />
+                  <label for="estado_precioventa" class="label-success"></label>
+                </div>
                 <input type="text" value="0" name="precioventa" class="form-control money" id="precioventa">
                 <span class="help-block"></span>
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
-                  <label>Precio Distribuidor unidad (Soles)</label>
+                  <label>Precio Distribuidor unidad (S/)</label>
+                  <div class="material-switch pull-right">
+                    <input id="estado_preciodistribuidor" name="estado_preciodistribuidor" type="checkbox" />
+                    <label for="estado_preciodistribuidor" class="label-success"></label>
+                  </div>
                   <input type="text" value="0" name="preciodistribuidor" class="form-control money" id="preciodistribuidor">
                   <span class="help-block"></span>
                 </div>
@@ -210,12 +263,20 @@
           <div class="form-group" id="content-venta-2">
             <div class="row">
               <div class="col-lg-6">
-                <label>Precio Mayorista unidad (Soles)</label>
+                <label>Precio Mayorista unidad (S/)</label>
+                <div class="material-switch pull-right">
+                  <input id="estado_preciomayorista" name="estado_preciomayorista" type="checkbox" />
+                  <label for="estado_preciomayorista" class="label-success"></label>
+                </div>
                 <input type="text" value="0" name="preciomayorista" class="form-control money" id="preciomayorista">
                 <span class="help-block"></span>
               </div>
               <div class="col-lg-6">
                 <label>Precio Especial unidad(Soles)</label>
+                <div class="material-switch pull-right">
+                  <input id="estado_precioespecial" name="estado_precioespecial" type="checkbox" />
+                  <label for="estado_precioespecial" class="label-success"></label>
+                </div>
                 <input type="text" value="0" name="precioespecial" class="form-control money" id="precioespecial">
                 <span class="help-block"></span>
               </div>
@@ -238,16 +299,37 @@
 
             </div>
           </div>
-
-          <div class="form-group">
-            <div class="row">
-              <div class="col-lg-12">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
                 <label>Fecha de caducidad</label>
                 <input type="date" name="fecha_caducidad" class="form-control" id="fecha_caducidad">
                 <span class="help-block"></span>
               </div>
             </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Establecer color.</label>
+                <select class="form-control" name="color" id="color">
+                  <option style="background-color:#000000; color:white" value="color01">NEGRO</option>
+                  <option style="background-color:#008000" value="color02">VERDE</option>
+                  <option style="background-color:#7cfc00" value="color03">LIMA</option>
+                  <option style="background-color:#0000ff" value="color04">AZUL</option>
+                  <option style="background-color:#800080" value="color05">MORADO</option>
+                  <option style="background-color:#ff4500" value="color06">NARANJA</option>
+                  <option style="background-color:#ff0000" value="color07">ROJO</option>
+                  <option style="background-color:#ffffff" value="color08">BLANCO</option>
+                  <option style="background-color:#8b4513" value="color09">MARRON</option>
+                  <option style="background-color:#ffff00" value="color10">AMARILLO</option>
+                  <option style="background-color:#808080" value="color11">GRIS</option>
+                  <option style="background-color:#ff69b4" value="color12">ROSADO</option>
+                  <option style="background-color:#008b8b" value="color13">CYAN</option>
+                  <option style="background-color:#20b2aa" value="color14">CELESTE</option>
+                </select>
+              </div>
+            </div>
           </div>
+
 
           <div class="form-group">
             <label>Imagen</label>
@@ -257,25 +339,7 @@
             <label>Descripcion del Producto</label>
             <textarea class="form-control" id="descripcion" name="descripcion"></textarea>
           </div>
-          <div class="form-group">
-            <label>Elige el color para mostrar en el Punto de Ventas.</label>
-            <select class="form-control" name="color" id="color">
-              <option style="background-color:#000000; color:white" value="color01">NEGRO</option>
-              <option style="background-color:#008000" value="color02">VERDE</option>
-              <option style="background-color:#7cfc00" value="color03">LIMA</option>
-              <option style="background-color:#0000ff" value="color04">AZUL</option>
-              <option style="background-color:#800080" value="color05">MORADO</option>
-              <option style="background-color:#ff4500" value="color06">NARANJA</option>
-              <option style="background-color:#ff0000" value="color07">ROJO</option>
-              <option style="background-color:#ffffff" value="color08">BLANCO</option>
-              <option style="background-color:#8b4513" value="color09">MARRON</option>
-              <option style="background-color:#ffff00" value="color10">AMARILLO</option>
-              <option style="background-color:#808080" value="color11">GRIS</option>
-              <option style="background-color:#ff69b4" value="color12">ROSADO</option>
-              <option style="background-color:#008b8b" value="color13">CYAN</option>
-              <option style="background-color:#20b2aa" value="color14">CELESTE</option>
-            </select>
-          </div>
+
           <?php if ($this->perfil == 1 || $this->perfil == 2) { ?>
             <div class="form-group">
               <label>Empresa</label>
@@ -401,10 +465,10 @@
             </div>
           </div>
           <div class="form-group text-right">
-          <button type="button" id="btnSaveCombo" onclick="savecombo()" class="btn btn-primary"></button>
+            <button type="button" id="btnSaveCombo" onclick="savecombo()" class="btn btn-primary"></button>
           </div>
         </form>
-        
+
       </div>
       <div class="modal-footer">
         <div class="row">
@@ -473,34 +537,50 @@
             </div>
           </div>
         </div>
-        <form action="#" id="form_zona" class="form-horizontal" autocomplete="off">
+        <form action="#" id="form_zona" autocomplete="off">
           <input type="hidden" class="form-control" name="varianteproducto" id="varianteproducto">
           <input type="hidden" class="form-control" name="idvariante" id="idvariante">
           <div class="form-body">
-            <div class="form-group">
-              <label class="control-label col-md-3">NOMBRE<span class="required">*</span></label>
-              <div class="col-md-9">
-                <input type="text" class="form-control" name="nombrevariante" id="nombrevariante">
-                <span class="help-block"></span>
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>NOMBRE<span class="required">*</span></label>
+                  <input type="text" class="form-control" name="nombrevariante" id="nombrevariante">
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group" id="cont-cant-varia">
+                  <label>CANTIDAD<span class="required">*</span></label>
+                  <input type="number" class="form-control" name="cantidadvariante" id="cantidadvariante">
+                  <span class="help-block"></span>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label class="control-label col-md-3">PRECIO<span class="required">*</span></label>
-              <div class="col-md-9">
-                <input type="number" class="form-control" name="preciovariante" id="preciovariante">
-                <span class="help-block"></span>
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>PRECIO COMPRA<span class="required">*</span></label>
+                  <input type="number" class="form-control" name="preciocompravariante" id="preciocompravariante">
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>PRECIO VENTA<span class="required">*</span></label>
+                  <input type="number" class="form-control" name="preciovariante" id="preciovariante">
+                  <span class="help-block"></span>
+                </div>
               </div>
             </div>
-            <div class="form-group" id="cont-cant-varia">
-              <label class="control-label col-md-3">CANTIDAD<span class="required">*</span></label>
-              <div class="col-md-9">
-                <input type="number" class="form-control" name="cantidadvariante" id="cantidadvariante">
-                <span class="help-block"></span>
-              </div>
-            </div>
+
+
+
+
+
           </div>
         </form>
-        <button type="button" id="btnSaveZona" onclick="savezona()" class="btn btn-primary pull-right"></button>
+        <button type="button" id="btnSaveZona" onclick="savevariante()" class="btn btn-primary pull-right"></button>
         <div class="clearfix"></div>
 
         <div class="row m-row-1">
@@ -512,13 +592,14 @@
               </div>
               <!-- /.box-header -->
               <div class="panel-body table-responsive" id="cont-tabl-variante">
-                <table id="tabla_zona" class="table table-bordered table-striped">
+                <table id="tabla_variantes" class="table table-bordered table-striped">
                   <thead>
                     <tr class="text-title-panel">
                       <th>#</th>
                       <th>Descripción</th>
                       <th>Cantidad</th>
-                      <th>Precio</th>
+                      <th>Precio Compra</th>
+                      <th>Precio Venta</th>
                       <th>Btn Acciones</th>
                     </tr>
                   </thead>
@@ -587,6 +668,60 @@
   </div>
 </div>
 <!-- Modal end-->
+
+  <!--Modal de agregar un ingreso individual-->
+<div class="modal fade" id="ingreso_productos" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title-stock-inicial text-center" id="ingreso-title"></h4>
+      </div>
+      <div class="modal-body">
+        <form action="" id="form_ingreso_guardar" method="POST" role="form">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label>Empresa</label>
+                <select class="form-control" name="empresa" id="empresastockinicial" onchange="empresaalmacen()">
+                  <?php foreach ($empresas as $empresa) { ?>
+                    <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie ?></option>
+                  <?php } ?>
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label>Almacen</label>
+                <select class="form-control" name="almacen" id="almacen">
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="" class="col-form-label">Cantidad de Ingreso:</label>
+                <input type="text" class="form-control" id="cantidadstock" autocomplete="off" placeholder="Ingrese el stock inicial">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
+        <button type="button" id="btnSaveStock" class="btn btn-primary" data-dismiss="modal" onclick="">GUARDAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--  -->
 
 <div class="modal fade" id="modal_lotesAlmacen" role="dialog" style="overflow:auto; ">
   <div class="modal-dialog modal-lg">
@@ -708,7 +843,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h3 class="modal-title"></h3>
+        <h3 class="modal-title text-center" id="title-marca"></h3>
       </div>
       <div class="modal-body form">
         <form action="#" id="formMarca" class="form-horizontal" autocomplete="off">
@@ -732,16 +867,15 @@
 </div><!-- /.modal -->
 
 <!-- Modal  crear categoria-->
-<div class="modal fade" id="modal_crearcategoria" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document">
+<div class="modal fade" id="modal_crearcategoria" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Nombre de la Categoria</h4>
+        <h4 class="modal-title text-center" id="modal-title-categoria">Nombre de la Categoria</h4>
       </div>
-
-      <form action="#" role="form" id="formcategoria" autocomplete="off">
-        <div class="modal-body">
+      <div class="modal-body form">
+        <form action="#" role="form" id="formcategoria" autocomplete="off">
           <input type="hidden" name="id" class="form-control" id="id">
           <div class="form-group">
             <label>Nombre de la Categoria</label>
@@ -764,16 +898,69 @@
             <label>Imagen</label>
             <input type="file" accept="image/*" name="foto2" id="foto2">
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrado</button>
-          <button type="button" id="btnSaveCategoria" onclick="savecategoria()" class="btn btn-primary">Guardar</button>
-        </div>
-      </form>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrado</button>
+        <button type="button" id="btnSaveCategoria" onclick="savecategoria()" class="btn btn-primary">Guardar</button>
+      </div>
     </div>
   </div>
 </div>
 <!-- /.Modal -->
+
+
+<div class="modal fade" id="ingreso" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title text-center" id="ingreso-title"></h4>
+      </div>
+      <div class="modal-body">
+        <form action="" id="formularioingreso_guardar" method="POST" role="form">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label>Empresa</label>
+                <select class="form-control" name="empresa" id="empresastockinicial" onchange="empresaalmacen()">
+                  <?php foreach ($empresas as $empresa) { ?>
+                    <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie ?></option>
+                  <?php } ?>
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label>Almacen</label>
+                <select class="form-control" name="almacen" id="almacen">
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="" class="col-form-label">Cantidad de Ingreso:</label>
+                <input type="text" class="form-control" id="cantidadstock" autocomplete="off" placeholder="Ingrese el stock inicial">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="guardarstock_inicial()">AGREGAR</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script type="text/javascript">
   //for save method string
@@ -782,6 +969,7 @@
   var tables;
   var tablest;
   $(document).ready(function() {
+    empresaalmacen();
     detallesproductos();
     dataInsert = [];
     /*
@@ -789,7 +977,7 @@
       max: 100
     });
     */
-   $("#nombrecategoria").mayusculassintildes();
+    $("#nombrecategoria").mayusculassintildes();
     $("#nombrevariante").mayusculassintildes();
     $("#nombre").mayusculassintildes();
     $("#unidad").mayusculassintildes();
@@ -816,17 +1004,21 @@
       });
 
       if ($('#tipo').val() === '0') {
-        $("#content-lote").show();
-        $('#costos').show();
-        $('#alertas').show();
-        $('#unidades').show();
-        $("#soloestandar").show();
+        $("#label-stockinicial").removeClass("sinstockinicio");
+        $("#btn-ingresostockinicial").attr("disabled", false);
+        $("#content-lote").show("fast");
+        $('#costos').show("fast");
+        $('#alertas').show("fast");
+        $('#unidades').show("fast");
+        $("#soloestandar").show("fast");
       } else {
-        $("#soloestandar").hide();
-        $('#costos').hide();
-        $('#alertas').hide();
-        $('#unidades').hide();
-        $("#content-lote").hide();
+        $("#btn-ingresostockinicial").attr("disabled", true);
+        $("#label-stockinicial").addClass("sinstockinicio");
+        $("#soloestandar").hide("fast");
+        $('#costos').hide("fast");
+        $('#alertas').hide("fast");
+        $('#unidades').hide("fast");
+        $("#content-lote").hide("fast");
       }
 
     });
@@ -928,7 +1120,7 @@
 
   });
 
-  
+
   function detallesproductos() {
     event.preventDefault();
     table = $('#tablamain').DataTable({
@@ -960,71 +1152,76 @@
     });
   }
 
-/*
-  function detallesproductos() {
-    event.preventDefault();
-    $.ajax({
-      url: '<-?= $this->url ?>/detallesproductos/' + $('#empresa').val(),
-      type: 'post',
-      beforeSend: function() {
-        $("#div_grafico").html('<br><h3>Cargando datos...</h3>');
-      },
-      success: function(data) {
-        $("#div_grafico").html(data);
-        let tabladata =  $('#tablamain').dataTable({
-          language: {
-            "decimal": "",
-            "emptyTable": "No hay información",
-            "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-            "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
-            "infoFiltered": "(Filtrado de _MAX_ total entradas)",
-            "infoPostFix": "",
-            "thousands": ",",
-            "lengthMenu": "Mostrar _MENU_ Entradas",
-            "loadingRecords": "Cargando...",
-            "processing": "Procesando...",
-            "search": "Buscar:",
-            "zeroRecords": "Sin resultados encontrados",
-            "paginate": {
-              "first": "Primero",
-              "last": "Ultimo",
-              "next": "Siguiente",
-              "previous": "Anterior"
-            }
-          },
-        });
-      }
-    });
-  };
-*/
+  /*
+    function detallesproductos() {
+      event.preventDefault();
+      $.ajax({
+        url: '<-?= $this->url ?>/detallesproductos/' + $('#empresa').val(),
+        type: 'post',
+        beforeSend: function() {
+          $("#div_grafico").html('<br><h3>Cargando datos...</h3>');
+        },
+        success: function(data) {
+          $("#div_grafico").html(data);
+          let tabladata =  $('#tablamain').dataTable({
+            language: {
+              "decimal": "",
+              "emptyTable": "No hay información",
+              "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+              "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+              "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+              "infoPostFix": "",
+              "thousands": ",",
+              "lengthMenu": "Mostrar _MENU_ Entradas",
+              "loadingRecords": "Cargando...",
+              "processing": "Procesando...",
+              "search": "Buscar:",
+              "zeroRecords": "Sin resultados encontrados",
+              "paginate": {
+                "first": "Primero",
+                "last": "Ultimo",
+                "next": "Siguiente",
+                "previous": "Anterior"
+              }
+            },
+          });
+        }
+      });
+    };
+  */
   function add() {
     save_method = 'add';
+    $('.col-lg-6').removeClass('has-error');
     $('#form')[0].reset(); // reset form on modals
     $("#chkVariante").attr("checked", false);
-
+    $("#content-tipo").removeClass('col-lg-12');
+    $("#content-tipo").addClass('col-lg-6');
+    $("#content-stockinicial").show();
     if ($("#chkVariante").is(":checked")) {
-      $("#content-venta-1").hide();
-      $("#content-venta-2").hide();
+      $("#content-venta-1").hide("fast");
+      $("#content-venta-2").hide("fast");
     } else {
-      $("#content-venta-1").show();
-      $("#content-venta-2").show();
+      $("#content-venta-1").show("fast");
+      $("#content-venta-2").show("fast");
     }
-
-
     if ($('#tipo').val() === '0') {
-      $("#content-lote").show()
-      $('#costos').show();
-      $('#alertas').show();
-      $('#unidades').show();
-      $("#soloestandar").show();
+      $("#btn-ingresostockinicial").attr("disabled", false);
+      $("#label-stockinicial").removeClass("sinstockinicio");
+      $("#content-lote").show("fast")
+      $('#costos').show("fast");
+      $('#alertas').show("fast");
+      $('#unidades').show("fast");
+      $("#soloestandar").show("fast");
     } else {
-      $("#soloestandar").hide();
-      $('#costos').hide();
-      $('#alertas').hide();
-      $('#unidades').hide();
-      $("#content-lote").hide();
+      $("#btn-ingresostockinicial").attr("disabled", true);
+      $("#label-stockinicial").addClass("sinstockinicio");
+      $("#soloestandar").hide("fast");
+      $('#costos').hide("fast");
+      $('#alertas').hide("fast");
+      $('#unidades').hide("fast");
+      $("#content-lote").hide("fast");
     }
-
+    $(".input-group").removeClass('has-error');
     $('.form-group').removeClass('has-error'); // clear error class
     $('.help-block').empty(); // clear error string
     $('#modal_form').modal('show'); // show bootstrap modal
@@ -1083,11 +1280,11 @@
     var url;
 
     if (save_method == 'add') {
-      url = "<?= $this->url ?>/ajax_add";
+      url = "<?= $this->url ?>/ajax_add/" + save_method;
       msgsuccess = "El registro fue creado exitosamente.";
       msgerror = "El registro no se pudo crear verifique las validaciones.";
     } else {
-      url = "<?= $this->url ?>/ajax_update";
+      url = "<?= $this->url ?>/ajax_update/" + save_method;
       msgsuccess = "El registro fue actualizado exitosamente.";
       msgerror = "El registro no se pudo actualizar. Verifique la operación";
     }
@@ -1097,12 +1294,13 @@
     if ($("input#chkVariante").is(":checked")) {
       $("input#chkVariante").val("1");
     }
-
-    if ($("input#chkLotes").is(":checked")) {
-      $("input#chkLotes").val("1");
-    } else {
-      $("input#chkLotes").val("0");
-    }
+    $("input#estado_stockcaja").is(":checked") ? $("input#estado_stockcaja").val("1") : $("input#estado_stockcaja").val("0");
+    $("input#chkVariante").is(":checked") ? $("input#chkVariante").val("1") : $("input#chkVariante").val("0");
+    $("input#chkLotes").is(":checked") ? $("input#chkLotes").val("1") : $("input#chkLotes").val("0");
+    $("input#estado_precioventa").is(":checked") ? $("input#estado_precioventa").val("1") : $("input#estado_precioventa").val("1");
+    $("input#estado_preciodistribuidor").is(":checked") ? $("input#estado_preciodistribuidor").val("1") : $("input#estado_preciodistribuidor").val("1");
+    $("input#estado_preciomayorista").is(":checked") ? $("input#estado_preciomayorista").val("1") : $("input#estado_preciomayorista").val("1");
+    $("input#estado_precioespecial").is(":checked") ? $("input#estado_precioespecial").val("1") : $("input#estado_precioespecial").val("1");
 
     $.ajax({
       url: url,
@@ -1122,8 +1320,8 @@
             position: "top right",
             msg: msgsuccess
           });
+          $("#cantidadstock").val("");
         } else {
-          console.log(data);
           for (var i = 0; i < data.inputerror.length; i++) {
             if (i == 0) {
               $('[name="' + data.inputerror[i] + '"]').focus();
@@ -1157,10 +1355,14 @@
 
   function edit(id) {
     save_method = 'update';
-    $('#form')[0].reset(); // reset form on modals
-    $('.form-group').removeClass('has-error'); // clear error class
-    $('.help-block').empty(); // clear error string
-    //Ajax Load data from ajax
+    $('#form')[0].reset();
+    $('.col-lg-6').removeClass('has-error');
+    $('.input-group').removeClass('has-error');
+    $('.form-group').removeClass('has-error');
+    $('.help-block').empty();
+    $("#content-tipo").removeClass('col-lg-6');
+    $("#content-tipo").addClass('col-lg-12');
+    $("#content-stockinicial").hide();
     $.ajax({
       url: "<?= $this->url ?>/ajax_edit/" + id,
       type: "GET",
@@ -1171,17 +1373,17 @@
         $('[name="tipo"]').val(data.tipo);
 
         if (data.tipo !== '0') {
-          $("#soloestandar").hide();
-          $('#costos').hide();
-          $('#alertas').hide();
-          $('#unidades').hide();
-          $("#content-lote").hide();
+          $("#soloestandar").hide("fast");
+          $('#costos').hide("fast");
+          $('#alertas').hide("fast");
+          $('#unidades').hide("fast");
+          $("#content-lote").hide("fast");
         } else {
-          $("#soloestandar").show();
-          $('#costos').show();
-          $('#alertas').show();
-          $('#unidades').show();
-          $("#content-lote").show();
+          $("#soloestandar").show("fast");
+          $('#costos').show("fast");
+          $('#alertas').show("fast");
+          $('#unidades').show("fast");
+          $("#content-lote").show("fast");
         }
 
 
@@ -1196,13 +1398,13 @@
 
         if (data.variante == 1) {
           $('[name="chkVariante"]').prop('checked', true);
-          $("#content-venta-1").hide();
-          $("#content-venta-2").hide();
+          $("#content-venta-1").hide("fast");
+          $("#content-venta-2").hide("fast");
 
         } else {
           $('[name="chkVariante"]').prop('checked', false);
-          $("#content-venta-1").show();
-          $("#content-venta-2").show();
+          $("#content-venta-1").show("fast");
+          $("#content-venta-2").show("fast");
         }
 
         if (data.status_lote == 1) {
@@ -1210,6 +1412,12 @@
         } else {
           $('[name="chkLotes"]').prop('checked', false);
         }
+
+        data.estado_precioventa == "1" ? $('[name="estado_precioventa"]').prop('checked', true) : "";
+        data.estado_preciodistribuidor == "1" ? $('[name="estado_preciodistribuidor"]').prop('checked', true) : "";
+        data.estado_preciomayorista == "1" ? $('[name="estado_preciomayorista"]').prop('checked', true) : "";
+        data.estado_precioespecial == "1" ? $('[name="estado_precioespecial"]').prop('checked', true) : "";
+        data.estado_stockcaja == "1" ? $('[name="estado_stockcaja"]').prop('checked', true) : "";
 
         $('[name="numero"]').val(data.numero);
         if (data.marca != null) {
@@ -1237,7 +1445,68 @@
         });
       }
     });
-  };
+  }
+
+
+  function stock_inicial($id){
+    save_method = 'update';
+    $('#form')[0].reset();
+    $('#btnSave').text('guardando...'); //change button text
+    $('#btnSave').attr('disabled', true); //set button disable
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_edit/" + id,
+      type: "GET",
+      dataType: "JSON",
+      success: function(data) {
+        
+        
+
+        $('#ingreso_productos').modal('show');
+        $('.modal-title-stock-inicial').text('Aumentar su Stock Inicial');
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: 'Error al obtener datos de ajax.'
+        });
+      }
+    });
+
+  }
+
+
+  function ingreso() {
+    $("#ingreso").addClass("centrarmodal");
+    $('#ingreso-title').text('STOCK INICIAL');
+    $('#ingreso').modal('show');
+  }
+
+  function empresaalmacen() {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_empresaAlmacen/" + $("#empresastockinicial").val(),
+      type: "POST",
+      dataType: "JSON",
+      success: function(data) {
+        $("#almacen").html("");
+        if (data.dataAlmacen.length > 0) {
+          for (value of data.dataAlmacen) {
+            $("#almacen").append(`<option value="${value.id}">${value.nombre}</option>`);
+          }
+        } else {
+          $("#almacen").append(`<option value="0"><span style="font-weight:bold; color:#e42424">NO SE ENCONTRO NINGUN ALMACEN REGISTRADO</span></option>`);
+        }
+        $("#codigo").val(data.codigoActualizado);
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: "El registro no se pudo actualizar. Verifique la operación"
+        });
+      }
+    });
+  }
 
   function detalle(id, empresa) {
     //Ajax Load data from ajax
@@ -1436,63 +1705,63 @@
     tables.ajax.reload(null, false); //reload datatable ajax
   };
 
-  function desactivar(id) {
-    bootbox.confirm("Seguro desea desactivar este registro?", function(result) {
-      if (result === true) {
-        $.ajax({
-          url: "<?= $this->url ?>/ajax_desactivar/" + id,
-          type: "POST",
-          dataType: "JSON",
-          success: function(data) {
-            //if success reload ajax table
-            $('#modal_form').modal('hide');
-            reload_table();
-            Lobibox.notify('success', {
-              size: 'mini',
-              position: "top right",
-              msg: 'El registro fue desactivado exitosamente.'
-            });
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            Lobibox.notify('error', {
-              size: 'mini',
-              position: "top right",
-              msg: 'No se puede desactivar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
-            });
-          }
-        });
-      }
-    });
-  };
+  // function desactivar(id) {
+  //   bootbox.confirm("Seguro desea desactivar este registro?", function(result) {
+  //     if (result === true) {
+  //       $.ajax({
+  //         url: "<?= $this->url ?>/ajax_desactivar/" + id,
+  //         type: "POST",
+  //         dataType: "JSON",
+  //         success: function(data) {
+  //           //if success reload ajax table
+  //           $('#modal_form').modal('hide');
+  //           reload_table();
+  //           Lobibox.notify('success', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'El registro fue desactivado exitosamente.'
+  //           });
+  //         },
+  //         error: function(jqXHR, textStatus, errorThrown) {
+  //           Lobibox.notify('error', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'No se puede desactivar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+  //           });
+  //         }
+  //       });
+  //     }
+  //   });
+  // };
 
-  function activar(id) {
-    bootbox.confirm("Seguro desea activar este registro?", function(result) {
-      if (result === true) {
-        $.ajax({
-          url: "<?= $this->url ?>/ajax_activar/" + id,
-          type: "POST",
-          dataType: "JSON",
-          success: function(data) {
-            //if success reload ajax table
-            $('#modal_form').modal('hide');
-            reload_table();
-            Lobibox.notify('success', {
-              size: 'mini',
-              position: "top right",
-              msg: 'El registro fue activado exitosamente.'
-            });
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            Lobibox.notify('error', {
-              size: 'mini',
-              position: "top right",
-              msg: 'No se puede activar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
-            });
-          }
-        });
-      }
-    });
-  };
+  // function activar(id) {
+  //   bootbox.confirm("Seguro desea activar este registro?", function(result) {
+  //     if (result === true) {
+  //       $.ajax({
+  //         url: "<?= $this->url ?>/ajax_activar/" + id,
+  //         type: "POST",
+  //         dataType: "JSON",
+  //         success: function(data) {
+  //           //if success reload ajax table
+  //           $('#modal_form').modal('hide');
+  //           reload_table();
+  //           Lobibox.notify('success', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'El registro fue activado exitosamente.'
+  //           });
+  //         },
+  //         error: function(jqXHR, textStatus, errorThrown) {
+  //           Lobibox.notify('error', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'Prodcuto activado correctamente'
+  //           });
+  //         }
+  //       });
+  //     }
+  //   });
+  // };
 
   // ZONAS
   function variante(producto, tipo) {
@@ -1533,7 +1802,7 @@
   };
 
   function cargar_variantes(producto) {
-    tableZ = $('#tabla_zona').DataTable({
+    tableZ = $('#tabla_variantes').DataTable({
       language: {
         "decimal": "",
         "emptyTable": "No hay información",
@@ -1555,9 +1824,6 @@
         }
       },
       "destroy": true,
-      //Feature control the processing indicator.
-      "processing": true,
-      // Load data for the table's content from an Ajax source
       "ajax": {
         "url": "<?= $this->url ?>/ajax_listvariante/" + producto,
         "type": "GET"
@@ -1565,7 +1831,7 @@
     });
   };
 
-  function savezona() {
+  function savevariante() {
     $('#btnSaveZona').text('guardando...'); //change button text
     $('#btnSaveZona').attr('disabled', true); //set button disable
     var url;
@@ -1587,8 +1853,6 @@
       data: $('#form_zona').serialize(),
       dataType: "JSON",
       success: function(data) {
-        //if success close modal and reload ajax table
-
         if (data.status) {
 
           save_method = 'add';
@@ -1599,7 +1863,7 @@
           $("#nombrevariante").val("");
           $("#preciovariante").val("");
           $("#cantidadvariante").val("");
-
+          $("#preciocompravariante").val("");
 
           Lobibox.notify('success', {
             size: 'mini',
@@ -1644,6 +1908,7 @@
         $('[name="idvariante"]').val(data.id);
         $('[name="nombrevariante"]').val(data.nombre);
         $('[name="preciovariante"]').val(data.precio);
+        $('[name="preciocompravariante"]').val(data.preciocompra);
         $('[name="cantidadvariante"]').val(data.cantidad);
         $('#varianteproducto').val(data.producto);
         $('#btnSaveZona').text('MODIFICAR');
@@ -1907,6 +2172,7 @@
   }
 
   function crearmarca() {
+    $("#title-marca").text("CREAR MARCA");
     $("#modal_crearmarca").modal("show");
     $("#modal_crearmarca").addClass("centrarmodal");
   }
@@ -1953,10 +2219,10 @@
         $("#btnSaveMarca").text("GUARDAR");
       },
     });
-
   }
 
   function crearcategoria() {
+    $("#modal-title-categoria").text("CREAR CATEGORIA")
     $("#modal_crearcategoria").modal("show");
     $("#modal_crearcategoria").addClass("centrarmodal");
 
@@ -1996,7 +2262,7 @@
           $('#modal_crearcategoria').modal('hide');
         } else {
           for (var i = 0; i < parametrorecibido.inputerror.length; i++) {
-            $(`[name="${parametrorecibido.inputerror[i]}"]`).parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+            $(`[name="${parametrorecibido.inputerror[i]}"]`).parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
             $(`[name="${parametrorecibido.inputerror[i]}"]`).next().text(parametrorecibido.error_string[i]); //select span help-block class set text error string
           }
         }
@@ -2015,6 +2281,50 @@
       },
     });
 
+  }
+
+  function desactiva(event, id) {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_desactivar/" + id,
+      type: "POST",
+      dataType: "JSON",
+      success: function(data) {
+        reload_table();
+        Lobibox.notify('warning', {
+          size: 'mini',
+          position: "top right",
+          msg: 'Advertencia: Producto desactivado'
+        });
+      },
+
+    })
+  }
+
+
+  function activa(event, id) {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_activar/" + id,
+      type: "POST",
+      dataType: "JSON",
+      success: function(data) {
+        //if success reload ajax table
+        reload_table();
+        Lobibox.notify('success', {
+          size: 'mini',
+          position: "top right",
+          msg: 'Producto activado correctamente'
+        });
+      }
+    });
+  }
+
+  function guardarstock_inicial() {
+    let cantidadstock = $("#cantidadstock").val();
+    let tienda = $("#empresastockinicial").val();
+    let almacen = $("#almacen").val();
+    $("#cantidadstockingreso").val(cantidadstock);
+    $("#tiendastockingreso").val(tienda);
+    $("#almacenstockingreso").val(almacen)
   }
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

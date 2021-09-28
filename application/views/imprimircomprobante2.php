@@ -58,7 +58,7 @@
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td align="center" class="negrita"><?= 'RECIBO DE INGRESO N째 ' . $ingreso->id ?></td>
+            <td align="center" class="negrita"><?= 'RECIBO DE INGRESO N° ' . $ingreso->id ?></td>
         </tr>
         <tr>
             <td>&nbsp;</td>
@@ -95,7 +95,11 @@
         <tr>
             <td><span class="negrita">MODO: </span> <?= $ingreso->metodopago ?></td>
         </tr>
-        
+        <?php if($ingreso->metodopago <> "EFECTIVO"){ ?>
+        <tr>
+            <td><span class="negrita">N° DE OPERACION: </span> <?= $ingreso->operacion ?></td>
+        </tr>
+        <?php } ?>
     </table>
     <hr>
     <table>
@@ -115,18 +119,6 @@
         </tr>
         <tr>
             <td><span class="negrita">IMPORTE EN LETRA:</span> <?= num_to_letras($ingreso->monto) ?></td>
-        </tr>
-    </table>
-    <hr>
-    <table>
-        <tr>
-            <td align="center">NO SE ACEPTAN DEVOLUCIONES Y/O</td>
-        </tr>
-        <tr>
-            <td align="center">CAMBIOS DESPUES DE LOS 2 DIAS</td>
-        </tr>
-        <tr>
-            <td>&nbsp;</td>
         </tr>
     </table>
 </body>

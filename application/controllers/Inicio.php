@@ -30,7 +30,7 @@ class Inicio extends CI_Controller
     $this->venta = $this->session->userdata('venta') ? $this->session->userdata('venta') : FALSE;
     $this->usuario = $this->session->userdata('usuario') ? $this->session->userdata('usuario') : FALSE;
     $this->empresa = $this->session->userdata('empresa') ? $this->session->userdata('empresa') : FALSE;
-    $this->NumberTable = $this->session->userdata('NumberTable') ? $this->session->userdata('NumberTable') : FALSE;
+    $this->cajaprincipal = $this->session->userdata('cajaprincipal') ? $this->session->userdata('cajaprincipal') : FALSE;
   }
 
   public function index()
@@ -40,7 +40,7 @@ class Inicio extends CI_Controller
       'empresa' => $this->Controlador_model->get($this->empresa, 'empresa'),
       'zonas' => $this->caja ? $this->Controlador_model->ventapendiente($this->caja) : '',
       'header' => $this->venta ? $this->Controlador_model->getmesa($this->venta) : '',
-      'tiendas' => $this->Controlador_model->getAll('empresa'),
+      'cajaprincipales' => $this->Controlador_model->getAll('cajaprincipal'),
       'zonasa' => $this->Controlador_model->getZonasEmpresa($this->empresa),
       'mesotas' => $this->Controlador_model->getMesasEmpresa($this->empresa),
       'categorias' => $this->Controlador_model->getAll('productocategoria'),
@@ -50,58 +50,114 @@ class Inicio extends CI_Controller
 
   public function openregister()
   {
-    $apertura = $this->Controlador_model->cajabierta('0', $this->input->post('empresa'));
+    $apertura = $this->Controlador_model->cajabierta('0', $this->input->post('cajaprincipal'));
     if ($apertura) {
       redirect($this->url);
+      exit();
     }
-    $numero = $this->Controlador_model->maximo('caja', $this->input->post('empresa'));
+    $numero = $this->Controlador_model->maximo('caja', $this->input->post('cajaprincipal'));
     $numeros = $numero ? $numero->numero + 1 : 1;
-
     $cadena = "";
     for ($i = 0; $i < 5 - strlen($numeros); $i++) {
       $cadena = $cadena . '0';
     }
+    $dataCajaPincipal = $this->Controlador_model->get($this->input->post('cajaprincipal'), "cajaprincipal");
     $data['descripcion'] = 'CAJA N° ' . $cadena . $numeros;
     $data['numero'] = $numeros;
-    $data['empresa'] = $this->input->post('empresa');
+    $data['cajaprincipal'] = $this->input->post('cajaprincipal');
     $data['saldoinicial'] = $this->input->post('saldoinicial');
     $data['usuario'] = $this->usuario;
     $data['apertura'] = date("Y-m-d H:i:s");
     $data['created'] = date('Y-m-d');
     $registro = $this->Controlador_model->save('caja', $data);
+    $this->procesoCajaStock($registro, $this->input->post('cajaprincipal'), TRUE);
     $CI = &get_instance();
     $CI->session->set_userdata('caja', $registro);
+    $CI->session->set_userdata('cajaprincipal',  $this->input->post('cajaprincipal'));
     $this->caja = $CI->session->userdata('caja') ? $CI->session->userdata('caja') : FALSE;
+    $this->cajaprincipal = $CI->session->userdata('cajaprincipal') ? $CI->session->userdata('cajaprincipal') : FALSE;
+    //Registro de empresa en la en
+    $queryventa = $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $dataCajaPincipal->tienda, $registro); //? hacer que la consulta sea por caja
+    if ($queryventa->num_rows() == 0) {
+      $dataVenta['empresa'] = $dataCajaPincipal->tienda;
+      $dataVenta['usuario_creador'] = $this->usuario;
+      $dataVenta['caja'] = $registro;
+      $dataVenta['mesa'] = NULL;
+      $dataVenta['cliente'] = 1;
+      $dataVenta['tipoventa'] = $dataCajaPincipal->tipoventa;
+      $dataVenta['hora'] = date("H:i:s");
+      $dataVenta['created'] = date("Y-m-d");
+      $this->Controlador_model->save('venta', $dataVenta);
+    }
     echo json_encode(array("status" => TRUE));
   }
 
-  public function aperturar($tienda)
+  public function aperturar($cajaprincipal)
   {
-    $CI = &get_instance();
-    $CI->session->set_userdata('empresa', $tienda);
-    $apertura = $this->Controlador_model->cajabierta('0', $tienda);
-    $open_reg = $apertura ? $apertura : $this->Controlador_model->maximo('caja', $tienda);
-    $CI->session->set_userdata('caja', $open_reg->id);
-    $queryventa = $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $this->empresa);
-    $query = $this->db->where("id", $this->empresa)->get('empresa')->row();
-    if ($queryventa->num_rows() == 0) {
-      $data['empresa'] = $this->empresa;
-      $data['usuario_creador'] = $this->usuario;
-      $data['caja'] = $open_reg->id;
-      $data['mesa'] = NULL;
-      $data['cliente'] = 1;
-      $data['tipoventa'] = $query->tipoventa;
-      $data['hora'] = date("H:i:s");
-      $data['created'] = date("Y-m-d");
-      $this->Controlador_model->save('venta', $data);
+    $cajaAbierto = $this->Controlador_model->cajabierta('0', $cajaprincipal);
+    if ($cajaAbierto) {
+      $dataCajaPrincipal = $this->Controlador_model->get($cajaprincipal, "cajaprincipal");
+      $CI = &get_instance();
+      $CI->session->set_userdata('cajaprincipal', $cajaprincipal);
+      $CI->session->set_userdata('caja', $cajaAbierto->id);
+      $queryventa = $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $dataCajaPrincipal->tienda, $cajaAbierto->id);
+      if ($queryventa->num_rows() == 0) {
+        $dataVenta['empresa'] = $cajaAbierto->tienda;
+        $dataVenta['usuario_creador'] = $this->usuario;
+        $dataVenta['caja'] = $cajaAbierto->id;
+        $dataVenta['mesa'] = NULL;
+        $dataVenta['cliente'] = 1;
+        $dataVenta['tipoventa'] = $cajaAbierto->tipoventa;
+        $dataVenta['hora'] = date("H:i:s");
+        $dataVenta['created'] = date("Y-m-d");
+        $this->Controlador_model->save('venta', $dataVenta);
+      }
     }
     redirect($this->url);
   }
 
+  /* function impresiondesesiones()
+  {
+    echo "sesion cajaprincipal". $this->cajaprincipal." <br>";
+    echo "sesion caja". $this->caja;
+  } */
+
+
+  private function procesoCajaStock($idcaja, $cajaprincipal, $estado)
+  {
+    if ($estado) {
+      //? REGISTRO DEL STOCK INICIO
+      $dataCajaPrincipal = $this->Controlador_model->get($cajaprincipal, "cajaprincipal");
+      $queryproductos = $this->db->where("estado", "0")->where("estado_stockcaja", "1")->get("producto")->result();
+      foreach ($queryproductos as $value) {
+        $queryStock = $this->Controlador_model->getStockAlmacen($value->id,  $dataCajaPrincipal->almacen, NULL, $dataCajaPrincipal->tienda);
+        $dataStockCaja["caja"] = $idcaja;
+        $dataStockCaja["producto"] = $value->id;
+        $dataStockCaja["categoria"] = $value->categoria;
+        $dataStockCaja["tienda"] = $dataCajaPrincipal->tienda;
+        $dataStockCaja["almacen"] = $dataCajaPrincipal->almacen;
+        $dataStockCaja["tipo"] = "PRODUCTO";
+        $dataStockCaja["nombre"] = $value->nombre;
+        $dataStockCaja["inicio_stock"] = $queryStock ? $queryStock->cantidad : 0;
+        $dataStockCaja["created_datetime"] = date("Y-m-d H:i:s");
+        $this->Controlador_model->save("cajastock", $dataStockCaja);
+      }
+    } else {
+      //? ACTUALIZACION  DEL STOCK FINAL
+      $queryCajaStock = $this->db->where("caja", $idcaja)->get("cajastock")->result();
+      foreach ($queryCajaStock as $data) {
+        $queryStockFinal = $this->Controlador_model->getStockAlmacen($data->producto,  $data->almacen, NULL, $data->tienda);
+        $dataStockCajaFinal["final_stock"] = $queryStockFinal ? $queryStockFinal->cantidad : 0;
+        $this->db->where("id", $data->id)->update("cajastock", $dataStockCajaFinal);
+      }
+    }
+  }
+
   function ajax_CrearNewVenta()
   {
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
     $dataventa = [
-      'empresa' => $this->empresa,
+      'empresa' => $dataCajaPincipal->tienda,
       'usuario_creador' => $this->usuario,
       'caja' => $this->caja,
       'mesa' => null,
@@ -110,72 +166,29 @@ class Inicio extends CI_Controller
       'created' => date("Y-m-d")
     ];
     $insert = $this->Controlador_model->save('venta', $dataventa);
-
     if ($insert) {
       echo json_encode(["status" => TRUE]);
     }
   }
 
-
-  public function eliminar($id)
-  {
-    $venta = $this->Controlador_model->get($id, 'venta');
-    $this->Controlador_model->delete_by_id($venta->mesa, 'mesa');
-    $this->Controlador_model->delete_by_venta($id, 'ventadetalle');
-    $this->Controlador_model->delete_by_venta($id, 'ventatemporal');
-    $this->Controlador_model->delete_by_id($id, 'venta');
-    redirect($this->url);
-  }
-
-
-  public function switshregister()
-  {
-    $CI = &get_instance();
-    $CI->session->set_userdata('caja', NULL);
-    redirect($this->url);
-  }
-
-  public function switshtable()
-  {
-    $CI = &get_instance();
-    $CI->session->set_userdata('venta', NULL);
-    $CI->session->set_userdata('NumberTable', NULL);
-    redirect($this->url);
-  }
-
-  public function habilitar()
-  {
-    if ($this->Controlador_model->habilitar($this->caja, 'caja')) {
-      mensaje_alerta('hecho', 'habilitar');
-    } else {
-      mensaje_alerta('error', 'habilitar');
-    }
-    redirect($this->url);
-  }
-
-
   function ajax_salir_caja()
   {
     $CI = &get_instance();
     $CI->session->set_userdata('caja', NULL);
+    $CI->session->set_userdata('cajaprincipal', NULL);
     echo json_encode(array("status" => TRUE));
   }
 
-  public function opcionmenu()
+  public function ajax_opcionmenu()
   {
     $data = '';
-
     $data .= '<li data-toggle="tooltip" data-html="true" data-placement="left" title="Regreso">
     <a onclick="salircaja()"><i class="fa fa-reply" aria-hidden="true"></i></a></li>';
-
-
     $data .= '<li data-toggle="tooltip" data-html="true" data-placement="left" title="Cerrar&nbsp;Caja">
     <a onclick="CloseRegister()" id="boton-CloseRegister"><i class="fa fa-times" aria-hidden="true"></i></a>
    </li>';
-
     $data .= '<li data-toggle="tooltip" data-html="true" data-placement="left" title="Cargar&nbsp;Pagina">
     <a href="javascript:void(0)" onclick="location.reload()"><i class="fa fa-refresh" aria-hidden="true"></i></a></li>';
-
     echo json_encode(["html" => $data]);
   }
 
@@ -187,60 +200,53 @@ class Inicio extends CI_Controller
     }
   }
 
-  public function autocompleteCodigoBarra()
-  {
-    if (isset($_GET['term'])) {
-      $q = strtoupper($_GET['term']);
-      $this->Controlador_model->autocompletarcodigobarra($q);
-    }
-  }
 
   public function ajax_codigodebarra()
   {
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
     $codigobarra = $this->input->post("codigodebarra");
     $query = $this->Controlador_model->getCodigoBarra($codigobarra);
     if ($query) {
       if ($query->tipo == "1") {
         echo json_encode(
           [
-            'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa],
+            'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa, 'nombreproducto' => $query->nombre],
             'lote' => ['status' => $query->status_lote],
           ]
         );
         exit();
       } else if ($query->tipo == "0") {
-        $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");
         if ($query->status_lote == "1") {
-          $dataLotes = $this->Controlador_model->dataLotes($query->id, $dataEmpresa->almacen, $this->empresa);
+          $dataLotes = $this->Controlador_model->dataLotes($query->id, $dataCajaPrincipal->almacen, $dataCajaPrincipal->tienda);
           if ($dataLotes->num_rows() > 1) {
             //? MODAL
             echo json_encode(
               [
-                'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa],
+                'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa, 'nombreproducto' => $query->nombre],
                 'lote' => ['status' => $query->status_lote, 'totalotes' => $dataLotes->num_rows()]
               ]
             );
           } else {
-            //? REGISTRO DIRECTO DEL LOTES
+            //? REGISTRO DIRECTO DE LOTES
             $dataStock = $dataLotes->row();
             echo json_encode(
               [
-                'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa],
+                'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa, 'nombreproducto' => $query->nombre],
                 'lote' => ['status' => $query->status_lote,  'totalotes' => $dataLotes->num_rows(), 'lote' => $dataStock ? $dataStock->lote : null]
               ]
             );
           }
         } else {
-          $queryStock = $this->Controlador_model->queryStock($query->id, $dataEmpresa->almacen, $this->empresa);
+          $queryStock = $this->Controlador_model->queryStock($query->id, $dataCajaPrincipal->almacen, $dataCajaPrincipal->tienda);
           if ($queryStock) {
             echo json_encode(
               [
-                'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa, 'statuslote' => $query->status_lote],
+                'consulta' => ['status' => TRUE, 'idproducto' => $query->id, 'precioproducto' => $query->precioventa, 'statuslote' => $query->status_lote, "nombreproducto" => $query->nombre],
                 'lote' => ['status' => $query->status_lote]
               ]
             );
           } else {
-            echo json_encode(['consulta' => ["status" => FALSE, "msg" => $query->nombre . " SIN STOCK"]]);
+            echo json_encode(['consulta' => ["status" => FALSE, "msg" => $query->nombre . " SIN STOCK (´･_･`)"]]);
           }
         }
       } else {
@@ -331,7 +337,7 @@ class Inicio extends CI_Controller
 
 
 
-  public function ajax_addcliente()
+  public function ajax_addcliente($idventa)
   {
     $this->_validatecliente();
     $data['tipodocumento'] = $this->input->post('tipo');
@@ -343,36 +349,29 @@ class Inicio extends CI_Controller
     $data['correo'] = $this->input->post('email');
     $ultimo = $this->Controlador_model->save('cliente', $data);
     $venta['cliente'] = $ultimo;
-    $this->Controlador_model->update(array('id' => $this->venta), $venta, 'venta');
+    $this->Controlador_model->update(array('id' => $idventa), $venta, 'venta');
     $recoverCliente = $this->Controlador_model->get($ultimo, 'cliente');
     $cliente = $recoverCliente->id;
     $clientes = $recoverCliente->documento . ' | ' . $recoverCliente->nombre . ' ' . $recoverCliente->apellido;
     echo json_encode(array("status" => TRUE, 'cliente' => $cliente, 'clientes' => $clientes));
   }
 
-  public function _validatecliente2()
+  function validateProductoLibre()
   {
     $data = array();
     $data['error_string'] = array();
     $data['inputerror'] = array();
     $data['status'] = TRUE;
-    $detallelist = $this->Controlador_model->check($this->input->post('documento2'));
 
-    if ($this->input->post('documento2') == '') {
-      $data['inputerror'][] = 'documento2';
+    if ($this->input->post('nombreproductolibre') == '') {
+      $data['inputerror'][] = 'nombreproductolibre';
       $data['error_string'][] = 'Este campo es obligatorio.';
       $data['status'] = FALSE;
     }
 
-    if ($this->input->post('nombre2') == '') {
-      $data['inputerror'][] = 'nombre2';
+    if ($this->input->post('precioventa') == '') {
+      $data['inputerror'][] = 'precioventa';
       $data['error_string'][] = 'Este campo es obligatorio.';
-      $data['status'] = FALSE;
-    }
-
-    if ($detallelist) {
-      $data['inputerror'][] = 'documento2';
-      $data['error_string'][] = 'Este campo ya existe en la base de datos.';
       $data['status'] = FALSE;
     }
 
@@ -382,59 +381,32 @@ class Inicio extends CI_Controller
     }
   }
 
-  public function ajax_addcliente2()
-  {
-    $this->_validatecliente2();
-    $data['tipodocumento'] = $this->input->post('tipo2');
-    $data['documento'] = $this->input->post('documento2');
-    $data['nombre'] = $this->input->post('nombre2');
-    $data['apellido'] = $this->input->post('apellido2');
-    $data['direccion'] = $this->input->post('direccion2');
-    $data['telefono'] = $this->input->post('direccion2');
-    $data['correo'] = $this->input->post('email2');
-    $ultimo = $this->Controlador_model->save('cliente', $data);
-    $recoverCliente = $this->Controlador_model->get($ultimo, 'cliente');
-    $cliente = $recoverCliente->id;
-    $clientes = $recoverCliente->documento . ' | ' . $recoverCliente->nombre . ' ' . $recoverCliente->apellido;
-    echo json_encode(array("status" => TRUE, 'cliente' => $cliente, 'clientes' => $clientes));
-  }
 
   public function ajax_addproductolibre()
   {
-    $data['nombre'] = $this->input->post('nombre');
-    $data['precioventa'] = $this->input->post('precioventa');
-    $data['categoria'] = 14;
-    $data['empresa'] = $this->empresa;
-    $data['tipo'] = '1';
-    $data['unidad'] = 'UND';
-    $producto = $this->Controlador_model->save('producto', $data);
-    if ($producto > 0) {
-      $productos = $this->Controlador_model->get($producto, 'producto');
-      echo json_encode(array("status" => TRUE, "producto" => $productos->id, "nombre_producto" => $productos->nombre, "categoria" => 14, "precio" => $productos->precioventa));
-    } else {
-      echo json_encode(array("status" => FALSE));
-    }
+    $this->validateProductoLibre();
+    echo json_encode(array("status" => TRUE));
   }
 
-  function NewVenta()
+  private function NewVenta()
   {
-    $queryVentas = $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $this->empresa);
-    $query = $this->db->where('id', $this->empresa)->get('empresa')->row();
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    $queryVentas = $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $dataCajaPrincipal->tienda, $this->caja);
     if ($queryVentas->num_rows() == 0) {
-      $data['empresa'] = $this->empresa;
+      $data['empresa'] = $dataCajaPrincipal->tienda;
       $data['cliente'] = 1;
       $data['hora'] = date("H:i:s");
       $data['created'] = date("Y-m-d");
       $data['usuario_creador'] = $this->usuario;
       $data['caja'] = $this->caja;
       $data['mesa'] = null;
-      $data['tipoventa'] = $query->tipoventa;
+      $data['tipoventa'] = $dataCajaPrincipal->tipoventa;
       $insert = $this->Controlador_model->save('venta', $data);
     }
   }
 
 
-  public function printfcomprobante($idventa, $metodoPago)
+  private function printfcomprobante($idventa, $metodoPago)
   {
     $venta = $this->Controlador_model->get($idventa, 'venta');
     $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
@@ -530,7 +502,7 @@ class Inicio extends CI_Controller
     return ["htmlComprobante" => $htmlComprobante, "htmlFotter" => $htmlFotter];
   }
 
-  function sendemail()
+  public function ajax_sendemail()
   {
     $idventa = $this->input->post('idventa');
     $this->crearPDF($idventa);
@@ -596,7 +568,7 @@ class Inicio extends CI_Controller
     }
   }
 
-  public function CloseRegister()
+  public function ajax_CloseRegister()
   {
     $mostrar = '
       <h2 class="text-center">
@@ -686,26 +658,22 @@ class Inicio extends CI_Controller
     }
   }
 
-  public function SubmitRegister()
+  public function ajax_SubmitRegister()
   {
     if ($this->input->post('tipoproceso') == 1) {
       $this->_validateCierre();
     }
-
     $queryVentas = $this->Controlador_model->geVentastCaja($this->caja, 'venta');
-    $expences = $this->Controlador_model->getCaja($this->caja, 'egreso');
     $ventasContado = 0;
     $montoCreditos = 0;
     $totalVentasCredito = 0;
     $gasto = 0;
     $totalVentasContados = 0;
     $totalGastos = 0;
-
     $pagosEfectivo = $this->Controlador_model->getCajaPagos($this->caja, 'ingreso', "EFECTIVO"); //VENTA
     $pagosEfectivoGenerados = $this->Controlador_model->totalGenerados($this->caja, "EFECTIVO"); // VENTA GENERADOS
     $pagosTarjeta = $this->Controlador_model->getCajaPagos($this->caja, 'ingreso', "TARJETA"); //VENTA
     $pagosTarjetaGenerados = $this->Controlador_model->totalGenerados($this->caja, "TARJETA"); // VENTA GENERADOS
-
     $abonosCaja =  $this->Controlador_model->abonosCaja($this->caja);
     $totalAbono = 0;
     $totalAbonoGenerado = 0;
@@ -721,7 +689,6 @@ class Inicio extends CI_Controller
       $devoluciones += $devolucion->deudatotal;
       $devolucionesGeneradas += 1;
     }
-
     foreach ($queryVentas as $venta) {
       if ($venta->formapago == 'CONTADO') {
         $ventasContado += $venta->deudatotal;
@@ -731,33 +698,33 @@ class Inicio extends CI_Controller
         $totalVentasCredito += 1;
       }
     }
-
+    $expences = $this->db->where("caja", $this->caja)->where("tipo", "CAJA")->where("tipopago", "EFECTIVO")->get("egreso")->result();
     foreach ($expences as $expence) {
       $gasto += $expence->montototal;
       $totalGastos += 1;
     }
-
-
-
-    $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    $dataEmpresa = $this->Controlador_model->get($dataCajaPincipal->tienda, "empresa");
     $data['usuario_cierre'] = $this->usuario;
-    $data['contado'] = $ventasContado;
+    $data['contado'] = $ventasContado; //? Todas las ventas de tipo a contado
     $data['contadosgenerados'] = $totalVentasContados;
-    $data['credito'] = $montoCreditos;
+    $data['credito'] = $montoCreditos; //? Todas las ventas a tipo a credito
     $data['creditosgenerados'] = $totalVentasCredito;
-    $data['efectivocontado'] = $pagosEfectivo->totalpagos ? $pagosEfectivo->totalpagos : 0;
+    $data['efectivocontado'] = $pagosEfectivo->totalpagos ? $pagosEfectivo->totalpagos : 0; //? trae todos los pagos de la venta de tipo en efectivo
     $data['efectivogenerados'] = $pagosEfectivoGenerados;
-    $data['tarjetacontado'] = $pagosTarjeta->totalpagos ? $pagosTarjeta->totalpagos : 0;
+    $data['tarjetacontado'] = $pagosTarjeta->totalpagos ? $pagosTarjeta->totalpagos : 0; //? trae todos los pagos de la venta de tipo en Tarjeta
     $data['tarjetagenerados'] = $pagosTarjetaGenerados;
-    $data['gasto'] = $gasto;
+    $data['gasto'] = $gasto; //? trae todos los gatos en efectivo de modalidad FLETE/COMPRA/OPERACION
     $data['gastosgenerados'] = $totalGastos;
-    $data['abonos'] = $totalAbono;
+    $data['abonos'] = $totalAbono; //? Trae todos los igresos a caja en efectivo de modalidad VENTA/ABONO/CUENTAPORCOBRAR
     $data['abonosgenerados'] = $totalAbonoGenerado;
-    $data['devoluciones'] = $devoluciones;
+    $data['devoluciones'] = $devoluciones; //? Trae todas las ventas que fueron anuladas
     $data['devolucionesgeneradas'] = $devolucionesGeneradas;
+    $data['cierre'] = date("Y-m-d H:i:s");
     $data['estado'] = '1';
     $this->Controlador_model->update(array('id' => $this->caja), $data, 'caja');
-    $datamonedero['empresa'] = $this->empresa;
+
+    $datamonedero['empresa'] = $dataCajaPincipal->tienda;
     $datamonedero['usuario'] = $this->usuario;
     $datamonedero['caja'] = $this->caja;
     $datamonedero['status'] = $this->input->post('tipoproceso');
@@ -790,137 +757,16 @@ class Inicio extends CI_Controller
       $datamonedero['montototal'] = $this->input->post('montototalcaja');
     }
     $idCajaAntesDeVaciar = $this->caja;
+    $dataPerfil = $this->Controlador_model->get($this->perfil, "perfil");
     $this->Controlador_model->save('monedero', $datamonedero);
+    $this->procesoCajaStock($this->caja, NULL, FALSE); //? SE ENVIA FALSE PAARA QUE AGREGUE EL SOTCK FINAL
     $CI = &get_instance();
     $CI->session->set_userdata('caja', NULL);
-    echo json_encode(array("status" => TRUE, "usuarioperfil" => $this->perfil, "tipoimpresora" => $dataEmpresa->tipoimpresora, "idcaja" => $idCajaAntesDeVaciar, "datacaja" => $data));
+    echo json_encode(array("status" => TRUE, "estado_reportecajacierre" => $dataPerfil->estado_reportecajacierre, "tipoimpresora" => $dataEmpresa->tipoimpresora, "idcaja" => $idCajaAntesDeVaciar, "datacaja" => $data));
     exit();
   }
 
-
-  public function imprimircomanda()
-  {
-    $venta = $this->Controlador_model->get($this->venta, 'venta');
-    $mesa = $this->Controlador_model->get($venta->mesa, 'mesa');
-    $usuario = $this->Controlador_model->get($venta->usuario_creador, 'usuario');
-    $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
-    $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
-    if ($venta->estado == '0') {
-      $pedidotemporal = $this->Controlador_model->pedidotemporal($this->venta);
-      $numerobebida = 0;
-      $numerocomida = 0;
-      foreach ($pedidotemporal as $value) {
-        $producto = $this->Controlador_model->get($value->producto, 'producto');
-        if ($producto->categoria == 5) {
-          $numerobebida++;
-        } else {
-          $numerocomida++;
-        }
-      }
-      if ($numerobebida > 1000) {
-        $nombre_impresora = $empresa->nombreimpresora;
-        $connector = new WindowsPrintConnector($nombre_impresora);
-        $printer = new Printer($connector);
-        $printer->setJustification(Printer::JUSTIFY_LEFT);
-        $printer->setTextSize(2, 2);
-        $printer->text("------------------------------------------------" . "\n");
-        $printer->text("CAJA --> BEBIDAS" . "\n");
-        $printer->text(date("Y-m-d H:i:s") . "\n");
-        $printer->text("------------------------------------------------" . "\n");
-        $printer->text("Mesa: " . ($mesa) ? $mesa->nombre : "MESA TEMPORAL" . "\n");
-        $printer->text("Camarera: " . $usuario->nombre . "\n");
-        $printer->text("------------------------------------------------" . "\n");
-        /* Ahora vamos a imprimir los productos. Alinear a la izquierda para la cantidad y el nombre */
-        $printer->setJustification(Printer::JUSTIFY_LEFT);
-        $total = 0;
-        foreach ($pedidotemporal as $value) {
-          $total += $value->precio * $value->cantidad;
-          $producto = $this->Controlador_model->get($value->producto, 'producto');
-          if ($producto->categoria == 5) {
-            $printer->text($value->cantidad . " UND. " . $value->nombre . " " . $value->opcion . "      \n");
-          }
-        }
-        /* Terminamos de imprimir los productos, ahora va el total */
-        $printer->text("------------------------------------------------" . "\n");
-        /* Alimentamos el papel 3 veces */
-        $printer->feed(3);
-        /* Cortamos el papel. Si nuestra impresora no tiene soporte para ello, no generará ningún error */
-        $printer->cut();
-        /* Por medio de la impresora mandamos un pulso. Esto es útil cuando la tenemos conectada por ejemplo a un cajón */
-        $printer->pulse();
-        /* Para imprimir realmente, tenemos que "cerrar" la conexión con la impresora. Recuerda incluir esto al final de todos los archivos */
-        $printer->close();
-      }
-      if ($numerocomida > 1000) {
-        $nombre_impresora = $empresa->nombreimpresora;
-        $connector = new WindowsPrintConnector($nombre_impresora);
-        $printer = new Printer($connector);
-        $printer->setJustification(Printer::JUSTIFY_LEFT);
-        $printer->setTextSize(2, 2);
-        // $printer->text("------------------------------------------------"."\n");
-        // $printer->text("------------------------"."\n");
-        $printer->text("------------------------" . "\n");
-        $printer->text("CAJA --> COMIDAS" . "\n");
-        $printer->text(date("Y-m-d H:i:s") . "\n");
-        $printer->text("------------------------" . "\n");
-        $printer->text("Mesa: " . ($mesa) ? $mesa->nombre : "MESA TEMPORAL" . "\n");
-        $printer->text("Camarera: " . $usuario->nombre . "\n");
-        $printer->text("------------------------" . "\n");
-        /* Ahora vamos a imprimir los productos. Alinear a la izquierda para la cantidad y el nombre */
-        $printer->setJustification(Printer::JUSTIFY_LEFT);
-        $total = 0;
-        foreach ($pedidotemporal as $value) {
-          $total += $value->precio * $value->cantidad;
-          $producto = $this->Controlador_model->get($value->producto, 'producto');
-          if ($producto->categoria <> 5) {
-            $printer->text($value->cantidad . " UND. " . $value->nombre . " " . $value->opcion . " " . $value->precio . "      \n");
-          }
-        }
-        /* Terminamos de imprimir los productos, ahora va el total */
-        $printer->text("------------------------" . "\n");
-        /* Alimentamos el papel 3 veces */
-        $printer->feed(3);
-        /* Cortamos el papel. Si nuestra impresora no tiene soporte para ello, no generará ningún error */
-        $printer->cut();
-        /* Por medio de la impresora mandamos un pulso. Esto es útil cuando la tenemos conectada por ejemplo a un cajón */
-        $printer->pulse();
-        /* Para imprimir realmente, tenemos que "cerrar" la conexión con la impresora. Recuerda incluir esto al final de todos los archivos */
-        $printer->close();
-      }
-    }
-  }
-
-  public function showcomanda()
-  {
-    $venta = $this->Controlador_model->get($this->venta, 'venta');
-    $pedidotemporal = $this->Controlador_model->pedidotemporal($this->venta);
-    $numerobebida = 0;
-    $numerocomida = 0;
-    foreach ($pedidotemporal as $value) {
-      $producto = $this->Controlador_model->get($value->producto, 'producto');
-      if ($producto->categoria == 5) {
-        $numerobebida++;
-      } else {
-        $numerocomida++;
-      }
-    }
-    $mesa = $this->Controlador_model->get($venta->mesa, 'mesa');
-    $data = array(
-      'venta' => $venta,
-      'numerobebida' => $numerobebida,
-      'numerocomida' => $numerocomida,
-      'ventadetalle' => $pedidotemporal,
-      'mesa' => $mesa,
-      'zona' => $this->Controlador_model->get($mesa->zona, 'zona'),
-      'cliente' => $this->Controlador_model->get($venta->cliente, 'cliente'),
-      'usuario' => $this->Controlador_model->get($venta->usuario, 'usuario'),
-      'empresa' => $this->Controlador_model->get($venta->empresa, 'empresa')
-    );
-    $this->load->view('imprimircomanda', $data);
-  }
-
-
-  public function imprimircomprobante()
+  public function ajax_imprimircomprobante()
   {
     $venta = $this->Controlador_model->get($this->input->post("venta"), 'venta');
     $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
@@ -990,7 +836,7 @@ class Inicio extends CI_Controller
     $total = 0;
     if ($venta->consumo == '1') {
       $total = $venta->montototal;
-      $printer->text("Por consumosssssss" . "\n");
+      $printer->text("Por consumo" . "\n");
       $printer->text("[1]                    " . $venta->montototal . "    " . number_format($venta->montototal, 2) . " \n");
     } else {
       $ventadetalle = $this->Controlador_model->pedidodetalle($this->venta);
@@ -1065,7 +911,7 @@ class Inicio extends CI_Controller
     $printer->close();
   }
 
-  public function showcomprobante($ventaid)
+  public function ajax_showcomprobante($ventaid)
   {
     $venta = $this->Controlador_model->get($ventaid, 'venta');
     $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
@@ -1097,37 +943,13 @@ class Inicio extends CI_Controller
     $this->load->view('imprimircomprobante', $data);
   }
 
-  public function getimprimir()
-  {
-    $venta = $this->Controlador_model->get($this->venta, 'venta');
-    $cliente = $this->Controlador_model->get($venta->cliente, 'cliente');
-    $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
-    $comprobante = $venta->serie . '|' . $venta->numero;
-    $numerocomprobante = $venta->serie . '-' . $venta->numero;
-    $tipo = $venta->tipoventa == 'FACTURA' ? 6 : 1;
-    $tipocom = $venta->tipoventa == 'FACTURA' ? "01" : "03";
-    $url_base = 'archivos_xml_sunat/imgqr/';
-    $encriptado = password_hash($venta->numero, PASSWORD_BCRYPT);
-    $encriptadohash = substr(str_replace("$2y$10$", "", $encriptado), 0, 27) . '=';
-    $codigohash = $venta->hash ? $venta->hash : $encriptadohash;
-    $data = array(
-      'ventas' => $venta,
-      'empresa' => $empresa,
-      'cliente' => $cliente,
-      'usuario' => $this->Controlador_model->get($venta->usuario_creador, 'usuario'),
-      'vuelto' => number_format($venta->pago - $venta->total, 2),
-      'codigoqr' => $empresa->ruc . '|' . $tipocom . '|' . $comprobante . '|0.00|' . $venta->montototal . '|' . date('d/m/Y', strtotime($venta->created)) . '|' . $tipo . '|' . $cliente->documento . '|' . $codigohash . '|',
-      'importeletra' => num_to_letras($venta->total),
-      'pagos' => $this->Controlador_model->getDetalle($this->venta, 'ingreso'),
-      'ventadetalle' => $this->Controlador_model->getDetalle($this->venta, 'ventadetalle')
-    );
-    echo json_encode($data);
-  }
 
-  public function imprimircierre($idcaja)
+  public function ajax_imprimircierre($idcaja)
   {
+    //? impresion directa
     $caja = $this->Controlador_model->get($idcaja, 'caja');
-    $empresa = $this->Controlador_model->get($caja->empresa, 'empresa');
+    $dataCajaPincipal = $this->Controlador_model->get($caja->cajaprincipal, 'cajaprincipal');
+    $empresa = $this->Controlador_model->get($dataCajaPincipal->tienda, 'empresa');
     $usuario = $this->Controlador_model->get($caja->usuario, 'usuario');
     $monedero = $this->db->where('caja', $idcaja)->get('monedero')->row();
     $diezcentimos = $monedero->diezcentimos * 0.10;
@@ -1226,51 +1048,93 @@ class Inicio extends CI_Controller
     $printer->close();
   }
 
-  public function showcierre($idcaja)
+  public function ajax_showcierre($idcaja)
   {
     $monedero = $this->db->where('caja', $idcaja)->get('monedero')->row();
+    $caja = $this->Controlador_model->get($idcaja, 'caja');
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, 'cajaprincipal');
     $data = array(
       'monedero' => $monedero,
       'montoCerrarCaja' => $monedero->montototal,
-      'caja' => $caja = $this->Controlador_model->get($idcaja, 'caja'),
+      'caja' => $caja,
       'usuario' => $this->Controlador_model->get($caja->usuario, 'usuario'),
-      'empresa' => $this->Controlador_model->get($caja->empresa, 'empresa'),
+      'empresa' => $this->Controlador_model->get($dataCajaPincipal->tienda, 'empresa'),
       'posales' => $this->Controlador_model->resumenventa($idcaja)
     );
     $this->load->view('imprimircierre', $data);
   }
 
-  public function backup()
-  {
-    /*
-    $this->Controlador_model->backup();
-    mensaje_alerta('hecho', 'crear');
-    */
-    $CI = &get_instance();
-    $CI->session->set_userdata('caja', NULL);
-    redirect($this->url);
-  }
-
+  //! todo FALTA TERMINAR LA ALERTA
   public function alertaStock()
   {
-    $stocks = $this->Controlador_model->getAlertaStock();
+    $html = "";
+    $totalAlertas = 0;
+    $tiendas = $this->Controlador_model->getAll("empresa");
+    foreach ($tiendas as $key => $tienda) {
+      $htmltienda = "<label class='label label-default tiendaAlert' style='font-size: 12px; " . ($key != 0 ? 'border-top-left-radius: 0px;border-top-right-radius: 0px;' : '') . " '>  $tienda->ruc $tienda->nombre</label>";
+      $almacenes = $this->db->where("empresa", $tienda->id)->get("almacen")->result();
+      $productosConAlerta = 0;
+      $htmlAlamcenes = "";
+      foreach ($almacenes as $almacen) {
+        $HtmlProductosSinStock = "";
+        $alertaEnAlmacenes = 0;
+        $queryProductos = $this->db->where("estado", "0")->get("producto")->result();
+        foreach ($queryProductos as $producto) {
+          $StockAlmacen = $this->Controlador_model->getStockAlmacen($producto->id, $almacen->id, NULL, $tienda->id);
+          $stockActual = $StockAlmacen ? $StockAlmacen->cantidad : 0;
+          if ($stockActual <= $producto->alertqt) {
+            $alertaEnAlmacenes += 1;
+            $totalAlertas += 1;
+            $productosConAlerta += 1;
+            $HtmlProductosSinStock .= "
+          <div style='margin-bottom:6px;'>
+              <label class='label label-default' style='margin: 0px;display:block;border-bottom-left-radius: 0px;border-bottom-right-radius: 0px;'>
+              $producto->nombre
+              </label> 
+              <div style='display:flex'>
+              <label class='label label-warning' style='border-radius: 0px;background:#ffc107;color:#212529;display:block;flex:1;'>
+              Stock Minimo: $producto->alertqt
+              </label>
+              <label class='label label-danger' style='border-radius: 0px;display:block;flex:1;'>
+              Stock Actual $stockActual
+              </label>
+              </div> 
+          </div>";
+          }
+        }
+        if ($alertaEnAlmacenes > 0) {
+          $htmlAlamcenes .= "
+          <label class='alert alert-info' style='margin: 10px;display:block;text-align: center;padding: 3px;'>
+          <div style='margin-bottom:5px'>$almacen->nombre</div> 
+          " . "$HtmlProductosSinStock 
+          </label>";
+        }
+      }
+      if ($productosConAlerta > 0) {
+        $html .= $htmltienda . $htmlAlamcenes;
+      }
+    }
+    echo json_encode(array('data' => $html, 'numeroStock' => $totalAlertas));
+  }
+
+  public function alertaVence()
+  {
     $html = "";
     $numeroStock = 0;
-
-    foreach ($stocks as $stock) {
-      $dataproducto = $this->Controlador_model->get($stock->idproducto, "producto");
-      $html .= "<li class='list-group-item '>
-      <h4 class='list-group-item-heading'>"
-        . $stock->nombre . "</h4>" . "
-      <p class='list-group-item-text'>Cantidad minima: " . $dataproducto->alertqt . "</p>
-      <p class='list-group-item-text'>Cantidad actual: " . $stock->cantidad . "</p>
-      </li>";
-      $numeroStock++;
-    }
-
+    $mescaducidad = $this->db->where("fechacaducidad <>", "0000-00-00")->select("DATEDIFF( fechacaducidad,CURRENT_DATE())  'dias', nombre, fechacaducidad")->get("producto")->result();
     $caducidad = $this->db->where("fechacaducidad <>", "0000-00-00")->where("fechacaducidad <", date("Y-m-d"))->get("producto")->result();
+    $empresa = $this->Controlador_model->get($this->empresa, "empresa");
+    foreach ($mescaducidad as $value) {
+      $alerta = $empresa ? $empresa->fecha_aviso : 0;
+      $faltante = $value->dias ? $value->dias : 0;
+      if ($faltante <= $alerta && $faltante > 0) {
+        $html .= "
+      <li class='list-group-item '>
+      <h4 class='list-group-item-heading'>" . $value->nombre . "</h4>" . "<p class='list-group-item-text'> <span class=\"label label-warning\" style=\"background:#ffc107; color:#212529\">CADUCA EN " . $faltante . ($faltante == 1 ? ' DIA' : ' DIAS') . "</span></p></li>";
+        $numeroStock++;
+      }
+    }
     foreach ($caducidad as $value) {
-
       $hoy = new DateTime("NOW");
       $caducado = new DateTime($value->fechacaducidad);
       $direferencia = $hoy->diff($caducado);
@@ -1283,10 +1147,10 @@ class Inicio extends CI_Controller
     echo json_encode(array('data' => $html, 'numeroStock' => $numeroStock));
   }
 
-
   public function ajax_agregarAdicionales($producto)
   {
     $dataProducto = $this->Controlador_model->get($producto, "producto");
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
     $columna = 0;
     //TODO: VARIANTES
     if ($dataProducto->variante == "1") {
@@ -1294,7 +1158,9 @@ class Inicio extends CI_Controller
       $statusvariante = TRUE;
       $datavariantes = $this->Controlador_model->getVariante($producto);
       $htmlVariantes = "";
+      $totalVariantes = 0;
       foreach ($datavariantes->result() as $variante) {
+        $totalVariantes += 1;
         $htmlVariantes .= '
             <div style="display:inline-block">
               <label id="label-variante-' . $variante->id . '" for="input-variante-' . $variante->id . '" class="content-animalista" >
@@ -1313,6 +1179,9 @@ class Inicio extends CI_Controller
             </div> 
             ';
       }
+
+      $mensajeVariantes = "<div class='alert alert-danger'><div>°‿‿°</div> <div>NO SE ENCONTRARON VARIANTES DEL PRODUCTO</div></div>";
+      $totalVariantes == 0 ? $htmlVariantes .= $mensajeVariantes : "";
     } else {
       $htmlVariantes = "";
       $statusvariante = 0;
@@ -1348,8 +1217,7 @@ class Inicio extends CI_Controller
       $statusextra = FALSE;
     }
     //TODO: LOTES
-    $empresa = $this->Controlador_model->get($this->empresa, "empresa");
-    $loteAlmacen = $this->db->where("producto", $dataProducto->id)->where("almacen", $empresa->almacen)->where("lote IS NOT NULL")->get("stock");
+    $loteAlmacen = $this->db->where("producto", $dataProducto->id)->where("almacen", $dataCajaPincipal->almacen)->where("lote IS NOT NULL")->get("stock");
     if ($dataProducto->status_lote == '1' and $loteAlmacen->num_rows() > 1) {
       $statuslote = TRUE;
       $htmlLotes = "";
@@ -1394,7 +1262,7 @@ class Inicio extends CI_Controller
     ]);
   }
 
-  public function showcomprobanteSaved($url, $phone, $idventa)
+  private function showcomprobanteSaved($url, $phone, $idventa)
   {
     $venta = $this->Controlador_model->get($idventa, 'venta');
     $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
@@ -1433,7 +1301,6 @@ class Inicio extends CI_Controller
     $output = $this->dompdf->output();
     file_put_contents($filename, $output);
     $this->sendCPToNumber($filename, $phone);
-    //$this->switshtable();
     // $this->dompdf->stream($filename, array("Attachment"=>1));
   }
 
@@ -1442,12 +1309,11 @@ class Inicio extends CI_Controller
     $url = "CPETemp";
     if (!file_exists($url)) {
       mkdir($url, 0777, true);
-      // var_dump("entro");
     }
     $this->showcomprobanteSaved($url, $phone, $venta);
   }
 
-  public function crearPDF($idventa)
+  private function crearPDF($idventa)
   {
     $url = "CPETemp";
     if (!file_exists($url)) {
@@ -1490,12 +1356,10 @@ class Inicio extends CI_Controller
     $this->dompdf->render();
     $output = $this->dompdf->output();
     file_put_contents($filename, $output);
-    //$this->switshtable();
     // $this->dompdf->stream($filename, array("Attachment"=>1));
-
   }
 
-  public function sendCPToNumber($uri, $phone)
+  private function sendCPToNumber($uri, $phone)
   {
     $texto = "Hola, gracias por tu consumo. Puedes descargar tu Comprobante Electronico en el siguiente enlace! " . urlencode(base_url() . $uri);
     redirect("https://wa.me/51" . $phone . "?text=" . $texto);
@@ -1518,252 +1382,22 @@ class Inicio extends CI_Controller
       rmdir($dir);
     }
   }
-  public function consulta_reniec()
+
+  public function ajax_newventa()
   {
-    consuta_reniec_helper();
-  }
-  public function load_CategriaSeleccionar()
-  {
-    $html = "";
-    $categoria = $this->db->where('estado', '0')->get('productocategoria')->result();
-    foreach ($categoria as $key => $category) {
-      $html .= '<div class="contenedor">
-                  <a class="tap" onclick="categoria(' . $category->id . ')">
-                    <div class="card-wrap">
-                      <div class="card" style="transform: rotateY(0deg) rotateX(0deg);">';
-      if ($category->photo) {
-        $html .= '<div class="card-bg" style="background-image: url(' . base_url() . 'files/productocategoria/' . $category->photothumb . '" alt="' . $category->nombre . ';);transform: translateX(0px) translateY(0px);"></div>';
-      }
-      $html .= '
-      <div class="card-info"><h1>' . $category->nombre . '</h1>
-      <p>' . ($category->descripcion != '' ? $category->descripcion : "S/D") . '</p>
-      </div>
-                      </div>
-                    </div>
-                  </a>
-                </div>';
-    }
-    $html .= '<div class="contenedor">
-      <a class="tap" onclick="productolibre()">
-        <div class="card-wrap">';
-    $html .= '<div class="card" style="transform: rotateY(0deg) rotateX(0deg);text-align: center;">
-           <h1 style="text-align:center"><i class="fa fa-plus-circle fa-3x" aria-hidden="true"></i></h1>
-           <p>Producto Libre</p>
-            </div>
-            </div>
-            </a>
-            </div>';
-    echo $html;
-  }
-
-
-  public function ajax_productos_categoria()
-  {
-    $html = "";
-    $productos = $this->db->where("estado", "0")->where('categoria', $this->input->post('categoria'))->get("producto")->result();
-    $dataEmpresa = $this->Controlador_model->get($this->empresa, 'empresa');
-    foreach ($productos as $key => $value) {
-      $EstadoProducto = FALSE;
-      $datacategoria = $this->Controlador_model->get($value->categoria, "productocategoria");
-      if ($value->tipo == '0') {
-        //todo: El tipo estandar
-        $registro = $this->Controlador_model->get($this->caja, 'caja');
-        if ($value->status_lote == '1') {
-          $totalLote = $this->Controlador_model->dataLotes($value->id, $dataEmpresa->almacen, $this->empresa);
-          if ($totalLote->num_rows() > 1) {
-            $existenciaStock = TRUE;
-          } else {
-            $dataproductolote = $totalLote->row();
-            if ($dataproductolote) {
-              $existenciaStock = TRUE;
-            } else {
-              $existenciaStock = FALSE;
-            }
-          }
-        } else {
-          $existenciaStock = $this->db->where('empresa',  $this->empresa)->where('producto',  $value->id)->where('almacen', $dataEmpresa->almacen)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
-        }
-
-        if ($existenciaStock) {
-          if ($value->status_lote == '1') {
-            $totalLote2 = $this->Controlador_model->dataLotes($value->id, $dataEmpresa->almacen, $this->empresa);
-            if ($totalLote2->num_rows() > 1) {
-              $stok_D = FALSE; //? PARA QUE NO SE BLOQUEE Y MUESTRE EL MODAL DONDE ESTAN TODOS SUS LOTES
-            } else {
-              $stok_D = $this->db->where('lote IS NOT NULL')->where('empresa', $registro->empresa)->where('almacen', $dataEmpresa->almacen)->where('producto', $value->id)->where("cantidad <=", 0)->get('stock')->row();
-            }
-          } else {
-            $stok_D = $this->db->where('empresa', $registro->empresa)->where('almacen', $dataEmpresa->almacen)->where('producto', $value->id)->where("cantidad <=", 0)->get('stock')->row();
-          }
-          if ($stok_D) {
-            $EstadoProducto = TRUE; //? SE BLOQUEA EL PRODUCTO
-          } else {
-            $EstadoProducto = FALSE; //? NO SE BLOQUEA
-          }
-        } else {
-          $EstadoProducto = TRUE; //? SE BLOQUEA EL PRODUCTO
-        }
-      } else if ($value->tipo == '2') {
-        //todo: El tipo de producto 2 es combo
-        $combo = $this->db->where('producto',  $value->id)->get('combo')->result(); //todo: verificamos si el tiene registro en la tabal combo
-        if ($combo) {
-          foreach ($combo as $key => $value2) {
-            $ProductoCombo = $this->Controlador_model->get($value2->item_id, 'combo');
-            //Si no cuenta con sufuciente STOCK el como saldra como agotado
-            $existenciaStockCombo = $this->db->where('producto',  $value2->item_id)->where('almacen', $dataEmpresa->almacen)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
-            if ($existenciaStockCombo) {
-              $productoStock = $this->db->where('producto', $value2->item_id)->where('almacen', $dataEmpresa->almacen)->where('cantidad <', $value2->cantidad)->get('stock')->row();
-              if ($productoStock) {
-                $EstadoProducto = TRUE; //cuando $EstadoProducto es TRUE ara que el div/boton este desahabilitado
-                break;
-              } else {
-                $EstadoProducto = FALSE;
-              }
-            } else {
-              $EstadoProducto = TRUE;
-              break;
-            }
-          }
-        } else {
-          //todo: si no tine que productos en el combo se desahanilita el producto es tipo combo
-          $EstadoProducto = TRUE;
-        }
-      } else {
-        $EstadoProducto = FALSE;
-      }
-
-      $queryLotes = $this->Controlador_model->queryLotes($this->empresa, $value->id, $dataEmpresa->almacen);
-      if ($value->variante == "1" or $datacategoria->estadoextras == "1" or ($value->status_lote == "1" and $queryLotes->num_rows() > 1)) {
-        $evento = ' onclick="agregarAdicionales(' . $value->id . ')" ';
-      } else {
-        if ($value->status_lote == "1" and $queryLotes->num_rows() == 1) {
-          $dataLote = $queryLotes->row();
-          $lote = $dataLote ? $dataLote->lote : null;
-          $statuslote = $lote ? true : false;
-          $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : ' . $lote . ' ,statuslote : ' . $statuslote . '} ,\'\')"';
-        } else {
-          $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : null, statuslote: false} ,\'\')"';
-        }
-      }
-
-      if ($value->variante == TRUE or $value->variante == 1 or $value->variante == "1") {
-        $dataMask = '<label class="label label-info" style="display:block">' . ($value->variante == TRUE ? "variante" : "") . '</label>';
-      } else {
-        $dataMask = '<div class="mask" style="color:#D6D6D6">' . number_format($value->precioventa, 2, '.', '') . ' Soles </div>';
-      }
-
-      if ($datacategoria->estadoextras == "1") {
-        $textextras = "<label class='label label-success' style='display:block'>Extras</label>";
-      } else {
-        $textextras = "";
-      }
-
-      if ($value->status_lote == "1") {
-        $textLotes = "<label class='label label-default' style='display:block'>Lotes</label>";
-      } else {
-        $textLotes = "";
-      }
-
-
-      if ($EstadoProducto) {
-        $disabled = "disabled";
-      } else {
-        $disabled = "";
-      }
-
-      $html .= '
-      <div class="col-sm-2 col-xs-4 text-center" id="content-producto-' . $value->id . '">
-      <input type="hidden" id="tipomedida-' . $value->id . '" value="UND"/>
-      <input type="hidden" id="cantidad-tm' . $value->id . '" value="1"/>
-      <input type="hidden" id="nombre-producto-' . $value->id . '" value="' . $value->nombre . '"/>
-      <input type="hidden" id="precio-producto-' . $value->id . '" value="' . $value->precioventa . '"/>
-
-      <button ' . $disabled . ' 
-      style="display:inline-block; border-width:0px; position:relative" href="javascript:void(0)" 
-      class="addPct" 
-      id="boton-product-' . $value->id . '"  ' . $evento . ' >';
-
-      if ($value->tipo == 2) {
-        $EstiloCajaCombo = "border: 0px solid #00fcb8; box-shadow:0px 0px 30px 5px #00fcb8";
-      } else {
-        $EstiloCajaCombo = '';
-      }
-      if ($EstadoProducto) {
-        $html .= '<label id="Agotado' . $value->id . '" class="agotado"  >AGOTADO</label>';
-      }
-
-      if ($EstadoProducto) {
-        $EstadoProductoData = "opacar_div";
-      } else {
-        $EstadoProductoData = "";
-      }
-
-
-      //TODO: Esta clase da color cuando seleccina algo .productoIsSelected
-      $html .= '
-          <div class="product ' . $value->color . ' flat-box  ' . $EstadoProductoData . '" style="' . $EstiloCajaCombo . '" id="ProductoLista' . $value->id . '">
-            <h3 id="proname">
-            ' . $value->nombre . '
-            ' . $dataMask . '
-            ' . $textLotes . '
-            ' . $textextras . '
-            
-            </h3>
-            ';
-
-      /* if ($value->photo) {
-        $html .= '<img src="' . base_url() . 'files/products/' . $value->photothumb . '" alt="' . $value->nombre . '">';
-      } */
-      if ($value->tipo == 02) {
-        $html .= '<label style="font-size: 20px; font-weight:900; color:#00fcb8">COMBO</label>';
-      }
-
-      $botonStock = '<button class="btn btn-info btn-sm" id="verStock-' . $value->id . '-1" onclick="verstockactual(' . $value->id . ', 1)" style="padding:1px; font-size:10px" title="Ver Stock">STOCK <i class="fa fa-search" ></i></button>';
-      $botonverimg = '<button class="btn btn-warning btn-sm" name ="photo "id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')" style="padding:1px; font-size:10px"  title="Ver Imagen"> VER <i class="fa fa-eye"></i></button>';
-      $botonverimg2 = '<button class="btn  btn-warning btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')" style="padding:1px; font-size:10px" title="Ver Imagen">VER <i class="fa fa-eye"></i></button>';
-      $botonverimg3 = '<button class="btn  btn-warning btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')" style="padding:1px; font-size:10px" title="Ver Imagen">VER <i class="fa fa-eye"></i></button>';
-      $html .= '
-      </div>
-      </button>
-
-      ' . ($value->tipo == '0' ? $botonStock : "") . '
-      ' . ($value->tipo == '0' ? $botonverimg : "") . '
-      ' . ($value->tipo == '1' ? $botonverimg : "") . '
-      ' . ($value->tipo == '2' ? $botonverimg2 : "") . '
-      </div>';
-    }
-    echo $html;
-  }
-
-  function ajax_total_ventas()
-  {
-    $query = $this->db->where("estado", "0")->where("caja", $this->caja)->where("usuario_creador", $this->usuario)->get("venta")->result();
-    $data = [];
-
-    if ($query) {
-      foreach ($query as $value) {
-        $data[] = $value->id;
-      }
-    }
-
-    echo json_encode($data);
-  }
-
-  function ajax_newventa()
-  {
-    $query = $this->db->where('id', $this->empresa)->get('empresa')->row();
-    $data['empresa'] = $this->empresa;
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    $data['empresa'] = $dataCajaPrincipal->tienda;
     $data['cliente'] = 1;
     $data['usuario_creador'] = $this->usuario;
     $data['hora'] = date("H:i:s");
     $data['created'] = date("Y-m-d");
     $data['caja'] = $this->caja;
     $data['mesa'] = NULL;
-    $data['tipoventa'] = $query->tipoventa;
+    $data['tipoventa'] = $dataCajaPrincipal->tipoventa;
     $insert = $this->Controlador_model->save('venta', $data);
     $ventainsertada = $this->Controlador_model->get($insert, 'venta');
     $cliente = $this->Controlador_model->get($ventainsertada->cliente, 'cliente');
-    $querynNum =  $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $this->empresa);
+    $querynNum =  $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $dataCajaPrincipal->tienda, $this->caja);
     if ($insert) {
       echo json_encode(
         [
@@ -1779,7 +1413,9 @@ class Inicio extends CI_Controller
 
   function ajax_ventasReload()
   {
-    $query =  $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $this->empresa);
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    //? caca me quede
+    $query =  $this->Controlador_model->totalVentasNoProcesadas($this->usuario, $dataCajaPrincipal->tienda, $this->caja);
     $html = "";
     $idselec = "";
     if ($query) {
@@ -1806,64 +1442,63 @@ class Inicio extends CI_Controller
 
   function ajax_verif_stock()
   {
-    $queryventa = $this->Controlador_model->estadoVenta($this->input->post("venta"), $this->empresa, "0");
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    $queryventa = $this->Controlador_model->estadoVenta($this->input->post("venta"), $dataCajaPrincipal->tienda, "0");
     if ($queryventa) {
       $productos = json_decode($this->input->post("productos"), true);
-      $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");
       $dataenviar = [];
-      $empresa = $this->Controlador_model->get($this->empresa, "empresa");
       foreach ($productos as $key => $value) {
-        $EstadoProducto = FALSE;
-        $idproducto = $value['id_producto'];
-        $cantidadproducto = $value['statusvariante'] ?  ($value['cantidad_variante'] * $value['cantidad']) : $value['cantidad'];
-        $cantidadTotalVerif = $cantidadproducto;
-        $producto = $this->Controlador_model->get($idproducto, 'producto');
-        if ($producto->tipo == '0') {
-          //todo: El tipo de producto 0 es estandar
-          $registro = $this->Controlador_model->get($this->caja, 'caja');
-          $existenciaStock = $this->Controlador_model->existenciaStock($producto->id, $empresa->almacen, $value['lote'], $cantidadTotalVerif, $this->empresa); //todo: verificamos si el producto esta registra en stock
-          if ($existenciaStock) {
-            $EstadoProducto = $existenciaStock->cantidad >= $cantidadTotalVerif ? FALSE : TRUE;
-          } else {
-            $EstadoProducto = TRUE;
-          }
-        } else if ($producto->tipo == '2') {
-          //todo: El tipo de producto 2 es combo
-          $combo = $this->db->where('producto', $producto->id)->get('combo')->result(); //todo: verificamos si el tiene registro en la tabal combo
-          if ($combo) {
-            foreach ($combo as $key => $value2) {
-              $ProductoCombo = $this->Controlador_model->get($value2->item_id, 'combo');
-              //Si no cuenta con sufuciente STOCK el como saldra como agotado
-              $existenciaStockCombo = $this->db->where('almacen', $empresa->almacen)->where('empresa', $this->empresa)->where('producto',  $value2->item_id)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
-              if ($existenciaStockCombo) {
-                $productoStock = $this->db->where('almacen', $empresa->almacen)->where('producto', $value2->item_id)->where('cantidad <', $value2->cantidad * $cantidadTotalVerif)->get('stock')->row();
-                if ($productoStock) {
-                  $EstadoProducto = TRUE; //cuando $EstadoProducto es TRUE ara que el div/boton este desahabilitado
-                  break;
+        if ($value["tipoproducto"] == "NORMAL") {
+          $EstadoProducto = FALSE;
+          $idproducto = $value['id_producto'];
+          $cantidadproducto = $value['statusvariante'] ?  ($value['cantidad_variante'] * $value['cantidad']) : $value['cantidad'];
+          $cantidadTotalVerif = $cantidadproducto;
+          $producto = $this->Controlador_model->get($idproducto, 'producto');
+          if ($producto->tipo == '0') {
+            //todo: El tipo de producto 0 es estandar
+            $existenciaStock = $this->Controlador_model->existenciaStock($producto->id, $dataCajaPrincipal->almacen, $value['lote'], $dataCajaPrincipal->tienda); //todo: verificamos si el producto esta registra en stock
+            if ($existenciaStock) {
+              $EstadoProducto = $existenciaStock->cantidad >= $cantidadTotalVerif ? FALSE : TRUE;
+            } else {
+              $EstadoProducto = TRUE;
+            }
+          } else if ($producto->tipo == '2') {
+            //todo: El tipo de producto 2 es combo
+            $combo = $this->db->where('producto', $producto->id)->get('combo')->result(); //todo: verificamos si el tiene registro en la tabal combo
+            if ($combo) {
+              foreach ($combo as $key => $value2) {
+                //Si no cuenta con sufuciente STOCK el como saldra como agotado
+                $existenciaStockCombo = $this->db->where('almacen', $dataCajaPrincipal->almacen)->where('empresa', $dataCajaPrincipal->tienda)->where('producto',  $value2->item_id)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
+                if ($existenciaStockCombo) {
+                  $productoStock = $this->db->where('almacen', $dataCajaPrincipal->almacen)->where('producto', $value2->item_id)->where('cantidad <', $value2->cantidad * $cantidadTotalVerif)->get('stock')->row();
+                  if ($productoStock) {
+                    $EstadoProducto = TRUE; //cuando $EstadoProducto es TRUE ara que el div/boton este desahabilitado
+                    break;
+                  } else {
+                    $EstadoProducto = FALSE;
+                  }
                 } else {
-                  $EstadoProducto = FALSE;
+                  $EstadoProducto = TRUE;
+                  break;
                 }
-              } else {
-                $EstadoProducto = TRUE;
-                break;
               }
+            } else {
+              //todo: si no tine que productos en el combo se desahanilita el producto es tipo combo
+              $EstadoProducto = TRUE;
             }
           } else {
-            //todo: si no tine que productos en el combo se desahanilita el producto es tipo combo
-            $EstadoProducto = TRUE;
+            $EstadoProducto = FALSE;
           }
-        } else {
-          $EstadoProducto = FALSE;
-        }
-        $dataLote = $this->Controlador_model->get($value['lote'], "lote");
-        if ($EstadoProducto == TRUE) {
-          $totalstock = $this->totalStock($idproducto, 0, $value['lote']);
-          $dataenviar[] = ["idproducto" => $idproducto, "totalstock" => $totalstock, "key_primary" => $value['key_primary'], "nombrelote" => ($dataLote ? $dataLote->lote : "")];
+          $dataLote = $this->Controlador_model->get($value['lote'], "lote");
+          if ($EstadoProducto == TRUE) {
+            $totalstock = $this->totalStock($idproducto, 0, $value['lote']);
+            $dataenviar[] = ["idproducto" => $idproducto, "totalstock" => $totalstock, "key_primary" => $value['key_primary'], "nombrelote" => ($dataLote ? $dataLote->lote : "")];
+          }
         }
       }
       echo json_encode([
         "venta" => ["status" => TRUE],
-        "tresPasos" => $dataEmpresa->pasos,
+        "tresPasos" => $dataCajaPrincipal->pasos,
         "dataenviar" => $dataenviar,
       ]);
     } else {
@@ -1892,13 +1527,11 @@ class Inicio extends CI_Controller
   {
     //? contamos para cuantas selecciones de ese producto le resta
     $queryproducto = $this->Controlador_model->get($idproducto, "producto");
-    $dataempresa = $this->Controlador_model->get($this->empresa, 'empresa');
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, 'cajaprincipal');
     $cantidadRestante = [];
-
     if ($queryproducto->tipo == '0') {
       //todo: El tipo de producto 0 es estandar
-      $registro = $this->Controlador_model->get($this->caja, 'caja');
-      $stockproducto = $this->Controlador_model->stockproducto($queryproducto->id, $registro->empresa, $dataempresa->almacen, $lote); //todo: verificamos si el producto esta registra en stock
+      $stockproducto = $this->Controlador_model->stockproducto($queryproducto->id, $dataCajaPrincipal->tienda, $dataCajaPrincipal->almacen, $lote); //todo: verificamos si el producto esta registra en stock
       if ($stockproducto) {
         $cantidadRestante[] =  $cantidadvariante > 0 ? $stockproducto->cantidad / $cantidadvariante : $stockproducto->cantidad;
       } else {
@@ -1909,9 +1542,9 @@ class Inicio extends CI_Controller
       $combo = $this->db->where('producto',  $queryproducto->id)->get('combo')->result(); //todo: verificamos si el tiene registro en la tabal combo
       if ($combo) {
         foreach ($combo as $key => $value2) {
-          $existenciaStockCombo = $this->db->where('producto',  $value2->item_id)->where("almacen", $dataempresa->almacen)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
+          $existenciaStockCombo = $this->db->where('producto',  $value2->item_id)->where("almacen", $dataCajaPrincipal->almacen)->get('stock')->row(); //todo: verificamos si el producto esta registra en stock
           if ($existenciaStockCombo) {
-            $verificarCantidad = $this->db->where('producto',  $value2->item_id)->where('cantidad >=', $value2->cantidad)->where('almacen', $dataempresa->almacen)->get('stock')->row();
+            $verificarCantidad = $this->db->where('producto',  $value2->item_id)->where('cantidad >=', $value2->cantidad)->where('almacen', $dataCajaPrincipal->almacen)->get('stock')->row();
             if ($verificarCantidad) {
               $cantidadTotalStock =  $verificarCantidad->cantidad;
               $cantidadCombo = $value2->cantidad;
@@ -1931,7 +1564,6 @@ class Inicio extends CI_Controller
     } else {
       $cantidadRestante[] = "Varios";
     }
-
     return min($cantidadRestante);
   }
 
@@ -1993,7 +1625,7 @@ class Inicio extends CI_Controller
   function ajax_procesarVenta()
   {
     $dataPerfil = $this->Controlador_model->get($this->perfil, 'perfil');
-    $dataEmpresa = $this->Controlador_model->get($this->empresa, 'empresa');
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, 'cajaprincipal');
     $idventa = $this->input->post("idventa");
     $dataventa = $this->db->where("id", $idventa)->where("estado", "0")->or_where("estado", '4')->get("venta")->row();
     if ($dataventa) {
@@ -2002,106 +1634,191 @@ class Inicio extends CI_Controller
         echo json_encode(["proceso" => ["status" => TRUE, "validate" => FALSE, "contenido" => $respuestaValidate]]);
       } else {
         $dataproductos = json_decode($this->input->post("dataproductos"));
-        if ($dataPerfil->cobradorcaja == '1' and $dataEmpresa->pasos == '1') {
+        if ($dataPerfil->cobradorcaja == '1' and $dataCajaPrincipal->pasos == '1') {
           $this->db->where("venta", $idventa)->delete("ventadetalle");
+        }
+        if ($this->input->post("formapago") == "CREDITOCLIENTE") {
+          if ($this->input->post("creditosdisponibles") == "0") {
+            //? Crear un nuevo credito
+            $venta = $this->Controlador_model->get($idventa, "venta");
+            $numero = $this->Controlador_model->ultimocredito($dataCajaPrincipal->tienda);
+            $utimoCorrelativo = $numero ? $numero->numero + 1 : 1;
+            $cadena = "";
+            for ($i = 0; $i < 3 - strlen($utimoCorrelativo); $i++) {
+              $cadena .= '0';
+            }
+            $dataCredito["tienda"] = $dataCajaPrincipal->tienda;
+            $dataCredito["usuario_creador"] = $this->usuario;
+            $dataCredito["cliente"] = $venta->cliente;
+            $dataCredito["numero"] = $utimoCorrelativo;
+            $dataCredito['codigo'] = 'C' . date('Y') . $cadena . $utimoCorrelativo;
+            $dataCredito['inicio'] = date("Y-m-d");
+            $dataCredito['created_time'] = date("Y-m-d H:i:s");
+            $idcredito = $this->Controlador_model->save("credito", $dataCredito);
+          } else {
+            $idcredito = $this->input->post("creditosdisponibles");
+          }
+          $dataVentaDetalle["credito"] = $idcredito;
+          $dataVentaDetalle["tienda"] = $dataCajaPrincipal->tienda;
+          $dataVentaDetalle["venta"] = NULL;
+          $dataVentaDetalleLibre["credito"] = $idcredito;
+          $dataVentaDetalleLibre["venta"] = NULL;
+        } else {
+          $dataVentaDetalle["credito"] = NULL;
+          $dataVentaDetalle["tienda"] = NULL;
+          $dataVentaDetalle["venta"] = $idventa;
+          $dataVentaDetalleLibre["credito"] = NULL;
+          $dataVentaDetalleLibre["venta"] = $idventa;
         }
         $CantidadItem = 0;
         $DeudaTotal = 0;
         foreach ($dataproductos as $value) {
-          $producto = $value->id_producto;
-          $cantidad_V = $value->cantidad_variante;
-          $productodata = $this->Controlador_model->get($producto, 'producto');
           $cantidadEscogido = $value->cantidad;
-          $cantidadDescontar = $value->statusvariante ? $value->cantidad_variante_total :  $value->cantidad;
-          $dataVentaDetalle =  [
-            "venta" => $idventa,
-            'producto' => $producto,
-            "variante" => ($value->statusvariante ? $value->id_variante : NULL),
-            'lote' => ($value->statuslote ? $value->lote : NULL),
-            'nombre' => $value->text_proudcto,
-            'precio' => $value->precio_producto,
-            'preciocompra' => $productodata->preciocompra,
-            "cantidad" => $value->cantidad,
-            "subtotal" => $value->total_pagar,
-            "cantidadvariante" => ($value->statusvariante ? $cantidad_V : NULL),
-            "time" => date("H:i:s"),
-            "estado" => '1' // TODO Estado "1" Significa que cocina ya lo antendio
-          ];
           $CantidadItem += $cantidadEscogido;
           $DeudaTotal += $value->total_pagar;
-          $this->Controlador_model->save('ventadetalle', $dataVentaDetalle);
-          if ($productodata->tipo == '0') {
-            $cantidad = $this->Controlador_model->getStockAlmacen($producto, $dataEmpresa->almacen, $value->lote, $this->empresa);
-            $movimiento['empresa'] = $this->empresa;
-            $movimiento['usuario'] = $this->usuario;
-            $movimiento['venta'] = $idventa;
-            $movimiento['tipooperacion'] = "VENTA";
-            $movimiento['producto'] = $producto;
-            $movimiento['almacen'] = $dataEmpresa->almacen;
-            $movimiento['lote'] =  ($value->statuslote ? $value->lote : NULL);
+          if ($value->tipoproducto == "NORMAL") {
+            $producto = $value->id_producto;
+            $productodata = $this->Controlador_model->get($producto, 'producto');
             if ($value->statusvariante) {
-              $dataVariante = $this->Controlador_model->get($value->id_variante, "productovariante");
-              $totalDescontar = $dataVariante->cantidad * $value->cantidad;
-              $movimiento['medida'] =  $dataVariante->nombre;
-              $movimiento['medidacantidad'] = $dataVariante->cantidad;
-              $movimiento['cantidaditem'] = $dataVariante->cantidad * $value->cantidad;
-              $movimiento['totalitemoperacion'] = $dataVariante->cantidad * $value->cantidad;
+              $dataVariante = $this->Controlador_model->get($value->id_variante, 'productovariante');
+              $preciocomprainsert = $dataVariante ? $dataVariante->preciocompra : 0.00;;
             } else {
-              $totalDescontar = $value->cantidad;
-              $movimiento['medida'] =  "UNIDAD";
-              $movimiento['medidacantidad'] = 1;
-              $movimiento['cantidaditem'] = $value->cantidad;
-              $movimiento['totalitemoperacion'] = $value->cantidad;
+              $preciocomprainsert = $productodata->preciocompra;
             }
-            $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
-            $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
-            $movimiento['tipo'] =  'SALIDA VENTA';
-            $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) - $totalDescontar;
-            $movimiento['created'] = date('Y-m-d');
-            $movimiento['hora'] = date("H:i:s");
-            $this->Controlador_model->save('movimiento', $movimiento);
-          } else if ($productodata->tipo == '2') {
-            $combos = $this->db->where('producto',  $producto)->get('combo')->result();
-            foreach ($combos as $combo) {
-              $stock = $this->Controlador_model->getStockProceso($combo->item_id, $dataEmpresa->almacen, NULL, $this->empresa);
-              $movimientoCombo['empresa'] = $this->empresa;
-              $movimientoCombo['usuario'] = $this->usuario;
-              $movimientoCombo['venta'] = $idventa;
-              $movimientoCombo['tipooperacion'] = "VENTA";
-              $movimientoCombo['producto'] = $combo->item_id;
-              $movimientoCombo['productocombo'] = $producto;
-              $movimientoCombo['almacen'] = $dataEmpresa->almacen;
-              $movimientoCombo['lote'] =  ($value->statuslote ? $value->lote : NULL);
-              $movimientoCombo['medida'] =  "COMBO";
-              $movimientoCombo['medidacantidad'] = $combo->cantidad;
-              $movimientoCombo['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
-              $movimientoCombo['cantidaditem'] = $combo->cantidad * $value->cantidad;
-              $movimientoCombo['totalitemoperacion'] = $combo->cantidad * $value->cantidad;
-              $movimientoCombo['stockanterior'] = $stock ? $stock->cantidad : 0;
-              $movimientoCombo['tipo'] =  'SALIDA VENTA COMBO';
-              $movimientoCombo['stockactual'] = ($stock ? $stock->cantidad : 0) - ($combo->cantidad * $value->cantidad);
-              $movimientoCombo['created'] = date('Y-m-d');
-              $movimientoCombo['hora'] = date("H:i:s");
-              $this->Controlador_model->save('movimiento', $movimientoCombo);
+            $cantidadDescontar = $value->statusvariante ? $value->cantidad_variante_total :  $value->cantidad;
+            $dataVentaDetalle["usuario"] = $this->usuario;
+            $dataVentaDetalle["producto"] = $producto;
+            $dataVentaDetalle["variante"] = ($value->statusvariante ? $value->id_variante : NULL);
+            $dataVentaDetalle["lote"] = ($value->statuslote ? $value->lote : NULL);
+            $dataVentaDetalle["nombre"] =  $value->text_proudcto;
+            $dataVentaDetalle["precio"] = $value->precio_producto;
+            $dataVentaDetalle["preciocompra"] = $preciocomprainsert;
+            $dataVentaDetalle["cantidad"] = $value->cantidad;
+            $dataVentaDetalle["tipoprecio"] = $value->tipoprecio;
+            $dataVentaDetalle["subtotal"] = $value->total_pagar;
+            $dataVentaDetalle["cantidadvariante"] = ($value->statusvariante ? $value->cantidad_variante : NULL);
+            $dataVentaDetalle["time"] = date("H:i:s");
+            $dataVentaDetalle["created"] = date("Y-m-d");
+            $dataVentaDetalle["estado"] = "1";
+            $this->Controlador_model->save('ventadetalle', $dataVentaDetalle);
+            //? Todo este proceso sale con normalidad 
+            //? registro de movimientos del producto
+            if ($productodata->tipo == '0') {
+              $cantidad = $this->Controlador_model->getStockAlmacen($producto, $dataCajaPrincipal->almacen, $value->lote, $dataCajaPrincipal->tienda);
+              $movimiento['modalidad'] = "SALIDA";
+              $movimiento['empresa'] = $dataCajaPrincipal->tienda;
+              $movimiento['usuario'] = $this->usuario;
+              if ($this->input->post("formapago") == "CREDITOCLIENTE") {
+                $movimiento['credito'] = $idcredito;
+                $movimiento['tipooperacion'] = "VENTA DE CREDITO AL CLIENTE";
+              } else if ($this->input->post("formapago") == "CREDITO") {
+                $movimiento['venta'] = $idventa;
+                $movimiento['tipooperacion'] = "VENTA DE CREDITO";
+              } else {
+                $movimiento['venta'] = $idventa;
+                $movimiento['tipooperacion'] = "VENTA";
+              }
+              $movimiento['producto'] = $producto;
+              $movimiento['almacen'] = $dataCajaPrincipal->almacen;
+              $movimiento['lote'] =  ($value->statuslote ? $value->lote : NULL);
+              if ($value->statusvariante) {
+                $dataVariante = $this->Controlador_model->get($value->id_variante, "productovariante");
+                $totalDescontar = $dataVariante->cantidad * $value->cantidad;
+                $movimiento['medida'] =  $dataVariante->nombre;
+                $movimiento['medidacantidad'] = $dataVariante->cantidad;
+                $movimiento['cantidaditem'] = $dataVariante->cantidad * $value->cantidad;
+                $movimiento['totalitemoperacion'] = $dataVariante->cantidad * $value->cantidad;
+              } else {
+                $totalDescontar = $value->cantidad;
+                $movimiento['medida'] =  "UNIDAD";
+                $movimiento['medidacantidad'] = 1;
+                $movimiento['cantidaditem'] = $value->cantidad;
+                $movimiento['totalitemoperacion'] = $value->cantidad;
+              }
+              $movimiento['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+              $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
+              if ($this->input->post("formapago") == "CREDITOCLIENTE") {
+                $movimiento['tipo'] = 'SALIDA POR VENTA CON CREDITO AL CLIENTE';
+              } else if ($this->input->post("formapago") == "CREDITO") {
+                $movimiento['tipo'] = 'SALIDA POR VENTA CON CREDITO';
+              } else {
+                $movimiento['tipo'] = 'SALIDA POR VENTA';
+              }
+              $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) - $totalDescontar;
+              $movimiento['created'] = date('Y-m-d');
+              $movimiento['hora'] = date("H:i:s");
+              $this->Controlador_model->save('movimiento', $movimiento);
+            } else if ($productodata->tipo == '2') {
+              $combos = $this->db->where('producto',  $producto)->get('combo')->result();
+              foreach ($combos as $combo) {
+                $stock = $this->Controlador_model->getStockProceso($combo->item_id, $dataCajaPrincipal->almacen, NULL, $dataCajaPrincipal->tienda);
+                $movimientoCombo['modalidad'] = "SALIDA";
+                $movimientoCombo['empresa'] = $dataCajaPrincipal->tienda;
+                $movimientoCombo['usuario'] = $this->usuario;
+                if ($this->input->post("formapago") == "CREDITOCLIENTE") {
+                  $movimientoCombo['credito'] = $idcredito;
+                  $movimientoCombo['tipooperacion'] = "VENTA DE CREDITO AL CLIENTE";
+                } else if ($this->input->post("formapago") == "CREDITO") {
+                  $movimientoCombo['venta'] = $idventa;
+                  $movimientoCombo['tipooperacion'] = "VENTA DE CREDITO";
+                } else {
+                  $movimientoCombo['venta'] = $idventa;
+                  $movimientoCombo['tipooperacion'] = "VENTA";
+                }
+                $movimientoCombo['producto'] = $combo->item_id;
+                $movimientoCombo['productocombo'] = $producto;
+                $movimientoCombo['almacen'] = $dataCajaPrincipal->almacen;
+                $movimientoCombo['lote'] =  ($value->statuslote ? $value->lote : NULL);
+                $movimientoCombo['medida'] =  "COMBO";
+                $movimientoCombo['medidacantidad'] = $combo->cantidad;
+                $movimientoCombo['cantidad'] = $value->cantidad; //? LO QUE REGISTRA
+                $movimientoCombo['cantidaditem'] = $combo->cantidad * $value->cantidad;
+                $movimientoCombo['totalitemoperacion'] = $combo->cantidad * $value->cantidad;
+                $movimientoCombo['stockanterior'] = $stock ? $stock->cantidad : 0;
+                if ($this->input->post("formapago") == "CREDITOCLIENTE") {
+                  $movimientoCombo['tipo'] = 'SALIDA POR VENTA DE COMBO CON CREDITO AL CLIENTE"';
+                } else if ($this->input->post("formapago") == "CREDITO") {
+                  $movimientoCombo['tipo'] = 'SALIDA POR VENTA DE COMBO CON CREDITO';
+                } else {
+                  $movimientoCombo['tipo'] = 'SALIDA POR VENTA DE COMBO';
+                }
+                $movimientoCombo['stockactual'] = ($stock ? $stock->cantidad : 0) - ($combo->cantidad * $value->cantidad);
+                $movimientoCombo['created'] = date('Y-m-d');
+                $movimientoCombo['hora'] = date("H:i:s");
+                $this->Controlador_model->save('movimiento', $movimientoCombo);
+              }
             }
+            $this->ajax_descontar_stock($producto, $cantidadDescontar, $value->lote, $dataCajaPrincipal->almacen, $dataCajaPrincipal->tienda);
+          } else {
+            $dataVentaDetalleLibre["usuario"] = $this->usuario;
+            $dataVentaDetalleLibre["producto"] = NULL;
+            $dataVentaDetalleLibre["variante"] = NULL;
+            $dataVentaDetalleLibre["tipo"] = "2";
+            $dataVentaDetalleLibre["lote"] = NULL;
+            $dataVentaDetalleLibre["nombre"] = $value->text_proudcto;
+            $dataVentaDetalleLibre["precio"] = $value->precio_producto;
+            $dataVentaDetalleLibre["cantidad"] = $value->cantidad;
+            $dataVentaDetalleLibre["tipoprecio"] = $value->tipoprecio;
+            $dataVentaDetalleLibre["subtotal"] = $value->total_pagar;
+            $dataVentaDetalleLibre["cantidadvariante"] = NULL;
+            $dataVentaDetalleLibre["created"] = date("Y-m-d");
+            $dataVentaDetalleLibre["time"] = date("H:i:s");
+            $dataVentaDetalleLibre["estado"] = "1";
+            $this->Controlador_model->save('ventadetalle', $dataVentaDetalleLibre);
           }
-          $this->ajax_descontar_stock($producto, $cantidadDescontar, $value->lote, $dataEmpresa->almacen);
         }
+
         //? pagar venta
         $venta = $this->Controlador_model->get($idventa, 'venta');
         $empresa = $this->Controlador_model->get($venta->empresa, 'empresa');
-        
         $dataventaUpdate['formapago'] = $this->input->post('formapago');
-        
         $deudaTotal = $this->input->post("deuda") - $this->input->post("descuento");
         $dataventaUpdate['caja'] = $this->caja;
-        
         $dataventaUpdate['usuario_proceso'] = $this->usuario;
         $dataventaUpdate['atender'] = "1";
         $dataventaUpdate['sound'] = "1";
         $dataventaUpdate['hf_procesado'] = date("Y-m-d H:i:s");
-        $dataventaUpdate['vence'] = $this->input->post('vence');
-        
+        $dataventaUpdate['vence'] = $this->input->post('formapago') == "CREDITO" ? $this->input->post('vence') : NULL;
         $dataventaUpdate['created'] = $this->input->post('fecha');
         $dataventaUpdate['totalitems'] = $CantidadItem;
         $dataventaUpdate['estado'] = '1';
@@ -2109,24 +1826,25 @@ class Inicio extends CI_Controller
         $dataventaUpdate['montototal'] = $this->input->post("deuda");
         $dataventaUpdate['descuento'] = $this->input->post("descuento");
         $dataventaUpdate['deudatotal'] = $deudaTotal;
+        $serie = substr($venta->tipoventa, 0, 1) . substr($empresa->serie, 1, 3);
+        $numero = $this->Controlador_model->codigos($venta->tipoventa, $serie);
+        $numeros = $numero ? $numero->consecutivo + 1 : 1;
+        $cadena = "";
+        for ($i = 0; $i < 6 - strlen($numeros); $i++) {
+          $cadena = $cadena . '0';
+        }
+        $dataventaUpdate['serie'] = $serie;
+        $dataventaUpdate['numero'] = $cadena . $numeros;
+        $dataventaUpdate['consecutivo'] = $numeros;
         if ($this->input->post('formapago') == 'CONTADO') {
-          $serie = substr($venta->tipoventa, 0, 1) . substr($empresa->serie, 1, 3);
-          $numero = $this->Controlador_model->codigos($venta->tipoventa, $serie);
-          $numeros = $numero ? $numero->consecutivo + 1 : 1;
-          $cadena = "";
-          for ($i = 0; $i < 6 - strlen($numeros); $i++) {
-            $cadena = $cadena . '0';
-          }
-          $dataventaUpdate['serie'] = $serie;
-          $dataventaUpdate['numero'] = $cadena . $numeros;
-          $dataventaUpdate['consecutivo'] = $numeros;
           $dataventaUpdate['montoactual'] = 0;
           $dataventaUpdate['pago'] = $this->input->post('pago');
           $dataventaUpdate['vuelto'] = $this->input->post('pago') - $deudaTotal;
           //? REGISTRO EN LA TABLA INGRESO
-          $dataingreso['tipo'] = 'VENTA';
+          $dataingreso['tipo'] = 'CAJA';
+          $dataingreso['modalidad'] = 'VENTA';
           $dataingreso['monto'] = $deudaTotal;
-          $dataingreso['empresa'] = $this->empresa;
+          $dataingreso['empresa'] = $venta->empresa;
           $dataingreso['usuario'] = $this->usuario;
           //? CONCEPTO 3 ES INGRESO EN EFECTIVO
           //? CONCEPTO 23 ES INGRESO TRANSF. DINERO AREAS
@@ -2138,24 +1856,33 @@ class Inicio extends CI_Controller
           $dataingreso['created'] = date('Y-m-d');
           $dataingreso['hora'] = date('H:i:s');
           $this->Controlador_model->save('ingreso', $dataingreso);
-        } else {
-          $comprobante = $this->db->where("tipo","CREDITOS")->where("empresa",$this->empresa)->get("comprobante")->row();
-          if(isset($comprobante))
-          {
+        } else if ($this->input->post('formapago') == 'CREDITO') {
+          /*  $comprobante = $this->db->where("tipo", "CREDITOS")->where("empresa", $this->empresa)->get("comprobante")->row();
+          if (isset($comprobante)) {
             $dataventaUpdate["serie"]           = $comprobante->serie;
-            $dataventaUpdate["numero"]          = $this->Controlador_model->addLeadingZeros(($comprobante->correlativo+1));
-            $dataventaUpdate["consecutivo"]     = (int)$comprobante->correlativo +1;
-            $z["correlativo"]                   = $dataventaUpdate["consecutivo"] ;
+            $dataventaUpdate["numero"]          = $this->Controlador_model->addLeadingZeros(($comprobante->correlativo + 1));
+            $dataventaUpdate["consecutivo"]     = (int)$comprobante->correlativo + 1;
+            $z["correlativo"]                   = $dataventaUpdate["consecutivo"];
             $this->Controlador_model->update(array('id' => $comprobante->id), $z, 'comprobante');
-          }
+          } */
           $dataventaUpdate['montoactual'] = $deudaTotal;
+        } else {
+          $dataCredito = $this->Controlador_model->get($idcredito, "credito");
+          $dataUpdateCredito['montototal'] = $dataCredito->montototal + $DeudaTotal;
+          $dataUpdateCredito['montoactual'] = $dataCredito->montoactual + $DeudaTotal;
+          $dataUpdateCredito['totalitems'] = $dataCredito->totalitems + $CantidadItem;
+          $dataUpdateCredito['totalpedido'] = $dataCredito->totalpedido + 1;
+          $dataUpdateVenta["cliente"] = 1;
+          $this->Controlador_model->update(["id" => $idventa], $dataUpdateVenta, "venta");
+          $this->Controlador_model->update(["id" => $idcredito], $dataUpdateCredito, "credito");
         }
-        $this->Controlador_model->update(array('id' => $idventa), $dataventaUpdate, 'venta');
-
-        $htmlComprobante = $this->input->post('formapago') == 'CONTADO' ? $this->printfcomprobante($idventa, $this->input->post('metodopago')) : "";
-        $this->NewVenta();
-
-
+        if ($this->input->post('formapago') <> 'CREDITOCLIENTE') {
+          $this->Controlador_model->update(array('id' => $idventa), $dataventaUpdate, 'venta');
+          $htmlComprobante = $this->input->post('formapago') == 'CONTADO' ? $this->printfcomprobante($idventa, $this->input->post('metodopago')) : "";
+          $this->NewVenta();
+        } else {
+          $htmlComprobante = "";
+        }
         echo json_encode(["proceso" => ["status" => TRUE, "validate" => TRUE, "htmlcomprobante" => $htmlComprobante]]);
       }
     } else {
@@ -2176,13 +1903,13 @@ class Inicio extends CI_Controller
     }
   }
 
-  public function ajax_descontar_stock($idproducto, $cantidad, $lote, $almacenDescontar)
+  public function ajax_descontar_stock($idproducto, $cantidad, $lote, $almacenDescontar, $tienda)
   {
     //todo: hacemos el descuento del stock
     $producto = $this->Controlador_model->get($idproducto, 'producto');
     if ($producto->tipo == 0) {
       //VALIDAR SI EL DESCUENTO ES POR LOTE
-      $stock = $this->Controlador_model->getStockProceso($producto->id, $almacenDescontar, $lote, $this->empresa);
+      $stock = $this->Controlador_model->getStockProceso($producto->id, $almacenDescontar, $lote, $tienda);
       $updateStock = [
         'cantidad' => ($stock->cantidad - $cantidad)
       ];
@@ -2190,7 +1917,7 @@ class Inicio extends CI_Controller
     } else if ($producto->tipo == 2) {
       $combo = $this->Controlador_model->ProductoCombo($producto->id);
       foreach ($combo as $value) {
-        $stock = $this->Controlador_model->getStockProceso($value->item_id, $almacenDescontar, $lote, $this->empresa);
+        $stock = $this->Controlador_model->getStockProceso($value->item_id, $almacenDescontar, $lote, $tienda);
         $updateStock = [
           'cantidad' => $stock->cantidad - ($value->cantidad * $cantidad)
         ];
@@ -2201,16 +1928,14 @@ class Inicio extends CI_Controller
     }
   }
 
-  function Actualiar_venta($CantidadItem, $DeudaTotal, $idventa)
-  {
-  }
 
-  function ajax_stockactual()
+  public function ajax_stockactual()
   {
     $idproducto = $this->input->post("idproducto");
     $queryProducto = $this->Controlador_model->get($idproducto, "producto");
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
     if ($queryProducto->tipo == '0') {
-      $almacenes = $this->db->where("empresa", $this->empresa)->get('almacen')->result();
+      $almacenes = $this->db->where("empresa", $dataCajaPincipal->tienda)->get('almacen')->result();
       $html = '
     <div class="row">
      <div class="col-lg-12">
@@ -2225,7 +1950,7 @@ class Inicio extends CI_Controller
      ';
       foreach ($almacenes as $value) {
         $dataProducto = $this->Controlador_model->get($idproducto, "producto");
-        $dataStock = $this->Controlador_model->stockAlmacen($idproducto, $value->id, $this->empresa);
+        $dataStock = $this->Controlador_model->stockAlmacen($idproducto, $value->id, $dataCajaPincipal->tienda);
         $cantidadStock =  $dataStock->cantidad == "" ? 0 : $dataStock->cantidad;
         $html .= '
           <tbody>
@@ -2255,7 +1980,6 @@ class Inicio extends CI_Controller
     $html = '<div class="col-lg-12">';
     $totalBoletas = 0;
     if ($queryCPBoletas->num_rows() > 0) {
-
       $html .= '
       <div style="display:flex; justify-content:space-between; align-items:center">
       <h5>BOLETAS</h5>
@@ -2292,10 +2016,11 @@ class Inicio extends CI_Controller
       }
       $html .= '</ul>';
     }
-    $html .= '</div';
+    $html .= '</div>';
     $totalCP = $totalBoletas + $totalFacturas;
     echo json_encode(["dataCP" => $html, "subtotalBoletas" => $totalBoletas, "subtotalFacturas" => $totalFacturas, "totalCP" => $totalCP]);
   }
+
   function ajax_img($id)
   {
     $datas = $this->Controlador_model->get($id, "producto");
@@ -2303,7 +2028,6 @@ class Inicio extends CI_Controller
     $data = array(
       'photo' => $datas->photo
     );
-
     echo json_encode($data);
   }
 
@@ -2312,15 +2036,18 @@ class Inicio extends CI_Controller
     $draw = intval($this->input->get("draw"));
     $start = intval($this->input->get("start"));
     $length = intval($this->input->get("length"));
-    $query = $this->db->order_by('id', 'desc')->where('empresa', $this->empresa)->where('estado', "4")->get('venta')->result();
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    $query = $this->db->order_by('id', 'ASC')->where('empresa', $dataCajaPincipal->tienda)->where('estado', "4")->get('venta')->result();
     $data = [];
     foreach ($query as $key => $value) {
       $vendedor = $this->Controlador_model->get($value->usuario_creador, "usuario");
       $totalDeuda = $this->db->select_sum("subtotal")->where("venta", $value->id)->get("ventadetalle")->row();
+      $cliente = $this->Controlador_model->get($value->cliente, "cliente");
       $boton = '';
       $boton .= "<a class='btn btn-success' id='cobrar-$value->id' onclick='cobrar($value->id)'><i class='fa fa-money'></i></a></td>";
       $data[] = array(
         $key + 1,
+        ($cliente ? $cliente->documento . " | " . $cliente->nombre . " " . $cliente->apellido : "SIN DATOS"),
         $value->referencia,
         $vendedor->nombre,
         $totalDeuda->subtotal,
@@ -2343,23 +2070,27 @@ class Inicio extends CI_Controller
     $idventa = $this->input->post("idventa");
     $dataproductos = json_decode($this->input->post("pedidosVentaDetalle"));
     foreach ($dataproductos as $value) {
-      $producto = $value->id_producto;
-      $cantidad_V = $value->cantidad_variante;
-      $productodata = $this->Controlador_model->get($producto, 'producto');
-      $dataVentaDetalle =  [
-        "venta" => $idventa,
-        'producto' => $producto,
-        "variante" => ($value->statusvariante ? $value->id_variante : NULL),
-        'lote' => ($value->statuslote ? $value->lote : NULL),
-        'nombre' => $value->text_proudcto,
-        'precio' => $value->precio_producto,
-        'preciocompra' => $productodata->preciocompra,
-        "cantidad" => $value->cantidad,
-        "subtotal" => $value->total_pagar,
-        "cantidadvariante" => ($value->statusvariante ? $cantidad_V : NULL),
-        "time" => date("H:i:s"),
-        "estado" => '1' // TODO Estado "1" Significa que cocina ya lo antendio
-      ];
+      //? el producto es libre
+      $dataVentaDetalle["venta"] = $idventa;
+      $dataVentaDetalle["nombre"] = $value->text_proudcto;
+      $dataVentaDetalle["precio"] =  $value->precio_producto;
+      $dataVentaDetalle["cantidad"] =  $value->cantidad;
+      $dataVentaDetalle["subtotal"] = $value->total_pagar;
+      $dataVentaDetalle["time"] = date("H:i:s");
+      $dataVentaDetalle["estado"] = "1";
+      if ($value->tipoproducto == "NORMAL") {
+        $producto = $value->id_producto;
+        $cantidad_V = $value->cantidad_variante;
+        $productodata = $this->Controlador_model->get($producto, 'producto');
+        $dataVentaDetalle["producto"] = $producto;
+        $dataVentaDetalle["variante"] = ($value->statusvariante ? $value->id_variante : NULL);
+        $dataVentaDetalle["lote"] = ($value->statuslote ? $value->lote : NULL);
+        $dataVentaDetalle["preciocompra"] = $productodata->preciocompra;
+        $dataVentaDetalle["cantidadvariante"] =  ($value->statusvariante ? $cantidad_V : NULL);
+        $dataVentaDetalle["tipo"] = "0"; //? el producto es normal
+      } else {
+        $dataVentaDetalle["tipo"] = "2"; //? el producto es libre
+      }
       $this->Controlador_model->save('ventadetalle', $dataVentaDetalle);
     }
     $dataUpdateVenta = ["estado" => "4", "referencia" => $this->input->post("referencia")];
@@ -2381,54 +2112,100 @@ class Inicio extends CI_Controller
     $draw = intval($this->input->get("draw"));
     $start = intval($this->input->get("start"));
     $length = intval($this->input->get("length"));
-    $query = $this->db->order_by('id', 'desc')->where("estado", "0")->where("categoria <>", 14)->get("producto")->result();
+    $query = $this->db->order_by('id', 'desc')->where("estado", "0")->get("producto")->result();
+    $dataCajaPincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
     $data = [];
     foreach ($query as $key => $value) {
-      $dataEmpresa = $this->Controlador_model->get($this->empresa, 'empresa');
       $datacategoria = $this->Controlador_model->get($value->categoria, 'productocategoria');
-      $dataAdicionales = "<input type=hidden id='tipomedida-$value->id' value=UND/>
-      <input type=hidden id='cantidad-tm$value->id' value='1'/>
-      <input type=hidden id='nombre-producto-$value->id' value='$value->nombre'/>
-      <input type=hidden id='precio-producto-$value->id' value='$value->precioventa'/>";
-      $boton = '';
-      $dataextrasProducto = "";
-      $dataextrasProducto .= $datacategoria->estadoextras == "1" ?  " <label class='label label-success' style='margin:0px 1px'>EXTRAS</label> " : "";
-      $dataextrasProducto .= $value->status_lote == "1" ? " <label class='label label-default' style='margin:0px 1px'>LOTES</label> " : "";
-      $dataextrasProducto .= $value->variante == "1" ? " <label class='label label-info' style='margin:0px 1px'>VARIANTES</label> " : "";
-      if ($value->tipo == '0') {
-        $textTipo = "<label class='label label-default' style='display:flex; justify-content:center; align-items:center'>NORMAL $dataextrasProducto</label>";
-      } else if ($value->tipo == '1') {
-        $textTipo = "<label class='label label-warning' style='display:flex; justify-content:center; align-items:center'>SERVICIO $dataextrasProducto</label>";
-      } else if ($value->tipo == '2') {
-        $textTipo = "<label class='label label-purple' style='display:flex; justify-content:center; align-items:center'>COMBO $dataextrasProducto</label>";
-      }
-
-      $queryLotes = $this->Controlador_model->queryLotes($this->empresa, $value->id, $dataEmpresa->almacen);
-      if ($value->variante == "1" or $datacategoria->estadoextras == "1" or ($value->status_lote == "1" and $queryLotes->num_rows() > 1)) {
-        $evento = ' onclick="agregarAdicionales(' . $value->id . ')" ';
-      } else {
-        if ($value->status_lote == "1" and $queryLotes->num_rows() == 1) {
-          $dataLote = $queryLotes->row();
-          $lote = $dataLote ? $dataLote->lote : null;
-          $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : ' . $lote . ' ,statuslote : ' . ($lote ? true : false) . '} ,\'\')"';
-        } else {
-          $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : null, statuslote: false} ,\'\')"';
+      if ($datacategoria->estado == "0") {
+        $dataAdicionales = "<input type=hidden id='tipomedida-$value->id' value=UND/>
+        <input type=hidden id='cantidad-tm$value->id' value='1'/>
+        <input type=hidden id='nombre-producto-$value->id' value='$value->nombre'/>
+        <input type=hidden id='precio-producto-$value->id' value='$value->precioventa'/>";
+        $botonprecios = "";
+        $boton = '';
+        $preciosActivados = 0;
+        $dataextrasProducto = "";
+        $dataextrasProducto .= $datacategoria->estadoextras == "1" ?  " <label class='label label-success' style='margin:0px 1px'>EXTRAS</label> " : "";
+        $dataextrasProducto .= $value->status_lote == "1" ? " <label class='label label-default' style='margin:0px 1px'>LOTES</label> " : "";
+        $dataextrasProducto .= $value->variante == "1" ? " <label class='label label-info' style='margin:0px 1px'>VARIANTES</label> " : "";
+        if ($value->tipo == '0') {
+          $textTipo = "<label class='label label-default' style='display:flex; justify-content:center; align-items:center'>NORMAL $dataextrasProducto</label>";
+        } else if ($value->tipo == '1') {
+          $textTipo = "<label class='label label-warning' style='display:flex; justify-content:center; align-items:center; background:#ffc107; color:#212529'>SERVICIO $dataextrasProducto</label> ";
+        } else if ($value->tipo == '2') {
+          $textTipo = "<label class='label label-purple' style='display:flex; justify-content:center; align-items:center'>COMBO $dataextrasProducto</label>";
         }
-      }
-      $nombreProducto = $value->nombre . ' <button class="btn  btn-default btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')"  title="Ver Imagen"><i class="fa fa-file-image-o"></i></button>';
 
-      if ($value->tipo == '0' || $value->tipo == '2') {
-        $boton .= '<button class="btn  btn-info btn-sm" id="verStock-' . $value->id . '-0" onclick="verstockactual(' . $value->id . ', 0)" title="Ver Stock">STOCK <i class="fa fa-search"></i></button> ';
+        $queryLotes = $this->Controlador_model->queryLotes($dataCajaPincipal->tienda, $value->id, $dataCajaPincipal->almacen);
+        if ($value->variante == "1" or $datacategoria->estadoextras == "1" or ($value->status_lote == "1" and $queryLotes->num_rows() > 1)) {
+          $preciosActivados += 1;
+          $eventovariantes = ' onclick="agregarAdicionales(' . $value->id . ')" ';
+          $botonprecios .= " <button id='boton-producto-$value->id' style='display:block; margin:3px; width:100%;padding:1px'  class='btn btn-sm btn-success'  data-toggle='tooltip' title='AGREGAR' $eventovariantes  >
+          <i class='fa fa-cart-plus' style='font-size: 16px;'></i>
+          </button>";
+        } else {
+          if ($value->status_lote == "1" and $queryLotes->num_rows() == 1) {
+            $dataLote = $queryLotes->row();
+            $lote = $dataLote ? $dataLote->lote : null;
+            $evento = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : ' . $lote . ' ,statuslote : ' . ($lote ? true : false) . ', tipoproducto: \'NORMAL\', cantidad:1, cantidadvariante: null, codigoBarra : false,} ,\'\')"';
+            $botonprecios .= "
+            <button style='display:block; margin:3px; width:100%;padding:1px'  class='btn btn-sm btn-success'  data-toggle='tooltip' title='AGREGAR' $evento  >
+            <i class='fa fa-cart-plus' style='font-size: 16px;'></i>
+            </button>";
+          } else {
+            $evento_precioventa = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioventa . ',{statusvariante : false, lote : null, statuslote: false, tipoproducto: \'NORMAL\', cantidad:1, tipoprecio: \'NORMAL\', cantidadvariante: null, codigoBarra : false,} ,\'\')"';
+            $evento_mayorista = 'onclick="agregaarventa(' . $value->id . ', ' . $value->preciomayorista . ',{statusvariante : false, lote : null, statuslote: false, tipoproducto: \'NORMAL\', cantidad:1, tipoprecio: \'MAYORISTA\', cantidadvariante: null, codigoBarra : false,} ,\'\')"';
+            $evento_distribuidor = 'onclick="agregaarventa(' . $value->id . ', ' . $value->preciodistribuidor . ',{statusvariante : false, lote : null, statuslote: false, tipoproducto: \'NORMAL\', cantidad:1, tipoprecio:\'DISTRIBUIDOR\', cantidadvariante: null, codigoBarra : false,} ,\'\')"';
+            $evento_especial = 'onclick="agregaarventa(' . $value->id . ', ' . $value->precioespecial . ',{statusvariante : false, lote : null, statuslote: false, tipoproducto: \'NORMAL\', cantidad:1, tipoprecio: \'ESPECIAL\', cantidadvariante: null, codigoBarra : false,} ,\'\')"';
+            if ($value->estado_precioventa == "1") {
+              $preciosActivados += 1;
+              $botonprecios .= "
+              <button style='display:block; margin:3px; width:100%;padding:1px'  class='btn btn-sm btn-success'  data-toggle='tooltip' title='AGREGAR' $evento_precioventa  ><i class='fa fa-cart-plus' style='font-size: 16px;'></i> 
+              PRECIO VENTA S/. $value->precioventa 
+              </button>";
+            }
+            if ($value->estado_preciomayorista == "1") {
+              $preciosActivados += 1;
+              $botonprecios .= "
+              <button style='display:block; margin:3px; width:100%; padding:1px'  class='btn btn-sm btn-success'  data-toggle='tooltip' title='AGREGAR' $evento_distribuidor  ><i class='fa fa-cart-plus' style='font-size: 16px;'></i> 
+              PRECIO DISTRIBUIDOR S/. $value->preciomayorista
+              </button>";
+            }
+            if ($value->estado_preciomayorista == "1") {
+              $preciosActivados += 1;
+              $botonprecios .= "
+              <button style='display:block; margin:3px; width:100%; padding:1px'  class='btn btn-sm btn-success'  data-toggle='tooltip' title='AGREGAR' $evento_mayorista  >
+              PRECIO MAYORISTA S/. $value->preciomayorista <i class='fa fa-cart-plus' style='font-size: 16px;'></i>
+              </button>";
+            }
+            if ($value->estado_precioespecial == "1") {
+              $preciosActivados += 1;
+              $botonprecios .= "
+              <button style='display:block; margin:3px; width:100%; padding:1px'  class='btn btn-sm btn-success'  data-toggle='tooltip' title='AGREGAR' $evento_especial  >
+              PRECIO ESPECIAL S/. $value->precioespecial <i class='fa fa-cart-plus' style='font-size: 16px;'></i>
+              </button>";
+            }
+          }
+        }
+        $nombreProducto = $value->nombre;
+        //$botonImagen = '<button style="display:block; width:50%; padding:0px" class="btn  btn-default btn-sm" name="photo" id="verFoto-' . $value->id . '" onclick="verimg(' . $value->id . ')"  title="Ver Imagen"><i class="fa fa-file-image-o"></i></button>';
+        if ($value->tipo == '0' || $value->tipo == '2') {
+          $botonVerStock = '<button style="display:block; width:100%; padding:0px; margin-top:5px" class="btn  btn-info btn-sm" id="verStock-' . $value->id . '-0" onclick="verstockactual(' . $value->id . ', 0)" title="Ver Stock">STOCK <i class="fa fa-search"></i></button> ';
+        } else {
+          $botonVerStock = "";
+        }
+        $mensajeprecio = "<div style='margin:0px; padding:10px 4px' class='alert alert-danger'><div>◔_◔</div><div>NO TIENES PRECIOS ACTIVADOS</div></div>";
+        $data[] = array(
+          $key + 1,
+          $textTipo . $nombreProducto . $dataAdicionales . $botonVerStock,
+          $value->codigoBarra,
+          $datacategoria ? $datacategoria->nombre : "SIN DATOS",
+          ($preciosActivados > 0 ? $botonprecios : $mensajeprecio),
+        );
+      } else {
+        continue;
       }
-      $boton .= " <button  class='btn btn-sm btn-success' id='boton-producto-$value->id' title='AGREGAR' $evento><i class='fa fa-shopping-cart'></i></button>";
-      $data[] = array(
-        $key + 1,
-        $textTipo . $nombreProducto . $dataAdicionales,
-        $value->codigoBarra,
-        $datacategoria ? $datacategoria->nombre : "SIN DATOS",
-        $value->precioventa,
-        $boton
-      );
     }
     $result = array(
       "draw" => $draw,
@@ -2438,5 +2215,13 @@ class Inicio extends CI_Controller
     );
     //output to json format
     echo json_encode($result);
+  }
+
+  function ajax_creditos_cliente()
+  {
+    $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
+    $cliente = $this->input->post("cliente");
+    $creditos = $this->db->where("cliente", $cliente)->where("tienda", $dataCajaPrincipal->tienda)->where("estado", "0")->get("credito")->result();
+    echo json_encode($creditos);
   }
 }

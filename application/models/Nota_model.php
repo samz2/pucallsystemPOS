@@ -149,7 +149,8 @@ class Nota_model extends CI_Model
 		return $this->db->where('producto', $producto)->get('combo')->result();
 	}
 
-	public function getDetalle($idventa, $tabla){
+	public function getDetalle($idventa, $tabla)
+	{
 		return $this->db->where('id', $idventa)->get($tabla)->result();
-		}
+	}
 }

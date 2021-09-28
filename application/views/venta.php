@@ -28,9 +28,8 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="verventas()" class="btn btn-warning" data-toggle="tooltip">Buscar <i class="fa fa-search"></i></a>
-            <a onclick="enviomasivo_documento_electronico()" class="btn btn-danger" data-toggle="tooltip">Envio masivo <i class="fa fa-upload"></i></a>
-            <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+            <a onclick="verventas()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+            <a onclick="enviomasivo_documento_electronico()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-upload"></i> ENVIO MASIVO</a>
           </div>
         </form>
       </div>
@@ -41,24 +40,31 @@
     <div class="col-xs-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?></h3>
+          <h3 class="panel-title clearfix">
+            <div class="pull-left">
+              Lista de <?= $this->titulo_controlador ?>
+            </div>
+            <div class="pull-right">
+              <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+            </div>
+          </h3>
         </div>
         <!-- /.box-header -->
         <div class="panel-body table-responsive">
           <table id="venta" class="table table-striped table-bordered">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Caja</th>
-                <th>Metodo pago</th>
-                <th>Tipo</th>
-                <th>Venta</th>
-                <th>Cliente</th>
-                <th>Estado</th>
-                <th>Sunat</th>
-                <th>Monto</th>
-                <th>Fecha</th>
-                <th>Acciones BTN</th>
+                <th><b>#</b></th>
+                <th><b>Caja</b></th>
+                <th><b>Metodo pago</b></th>
+                <th><b>Tipo</b></th>
+                <th><b>Venta</b></th>
+                <th><b>Cliente</b></th>
+                <th><b>Estado</b></th>
+                <th><b>Sunat</b></th>
+                <th><b>Monto</b></th>
+                <th><b>Fecha</b></th>
+                <th><b>Acciones BTN</b></th>
               </tr>
             </thead>
             <tbody></tbody>

@@ -5,8 +5,8 @@
         <h3 class="panel-title text-title-panel">
           Lista de <?= $this->titulo_controlador ?>
           <div class="pull-right">
-            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Nuevo"><i class="fa fa-plus"></i></a>
+            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
           </div>
           <div class="clearfix"></div>
         </h3>
@@ -42,25 +42,82 @@
         <form action="" id="form" class="form-horizontal" autocomplete="off">
           <input type="hidden" class="form-control" id="id" name="id">
           <div class="form-body">
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Perfil<span class="required">*</span></label>
-              <div class="col-md-10">
-                <input id="nombre" name="nombre" class="form-control" type="text">
-                <span class="help-block"></span>
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Perfil<span class="required">*</span></label>
+                  <div class="col-md-10">
+                    <input id="nombre" name="nombre" class="form-control" type="text">
+                    <span class="help-block"></span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label" for="chkCobradorCaja">¿Cobrador de caja?</label>
-                <div class="col-md-10 material-switch pull-right">
-                  <input id="chkCobradorCaja" name="chkCobradorCaja" type="checkbox"/>
-                  <label for="chkCobradorCaja" class="label-success"></label>
+
+            <div class="row">
+
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="chkCobradorCaja">¿Cobrador de caja?</label>
+                  <div class="material-switch">
+                    <input id="chkCobradorCaja" name="chkCobradorCaja" type="checkbox" />
+                    <label for="chkCobradorCaja" class="label-success"></label>
+                  </div>
                 </div>
+              </div>
+
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="estado_aperturacaja">¿Apertura caja?</label>
+                  <div class="material-switch">
+                    <input id="estado_aperturacaja" name="estado_aperturacaja" type="checkbox" />
+                    <label for="estado_aperturacaja" class="label-success"></label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="estado_ajustestock">¿Ajuste de Stock?</label>
+                  <div class="material-switch">
+                    <input id="estado_ajustestock" name="estado_ajustestock" type="checkbox" />
+                    <label for="estado_ajustestock" class="label-success"></label>
+                  </div>
+                </div>
+              </div>
+
             </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Descripcion<span class="required">*</span></label>
-              <div class="col-md-10">
-                <textarea id="descripcion" name="descripcion" class="form-control"></textarea>
-                <span class="help-block"></span>
+
+            <div class="row">
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="estado_hacerventas">¿Hacer ventas?</label>
+                  <div class="material-switch">
+                    <input id="estado_hacerventas" name="estado_hacerventas" type="checkbox" />
+                    <label for="estado_hacerventas" class="label-success"></label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <div class="form-group" style="display: flex;justify-content: center;flex-direction: column;align-items: center;">
+                  <label for="estado_reportecajacierre">¿Ver reporte al cerrar caja?</label>
+                  <div class="material-switch">
+                    <input id="estado_reportecajacierre" name="estado_reportecajacierre" type="checkbox" />
+                    <label for="estado_reportecajacierre" class="label-success"></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Descripcion<span class="required">*</span></label>
+                  <div class="col-md-10">
+                    <textarea id="descripcion" name="descripcion" class="form-control"></textarea>
+                    <span class="help-block"></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -92,8 +149,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btnSavemenu" onclick="savemenu()" class="btn btn-primary">Guardar</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
+        <button type="button" id="btnSavemenu" onclick="savemenu()" class="btn btn-primary">GUARDAR</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
@@ -101,223 +158,231 @@
 <!-- End Bootstrap modal -->
 
 <script type="text/javascript">
-//for save method string
-var save_method;
-var table;
-$(document).ready(function() {
-  table = $('#tabla').DataTable({
-    language: {
-      "decimal": "",
-      "emptyTable": "No hay información",
-      "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-      "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
-      "infoFiltered": "(Filtrado de _MAX_ total entradas)",
-      "infoPostFix": "",
-      "thousands": ",",
-      "lengthMenu": "Mostrar _MENU_ Entradas",
-      "loadingRecords": "Cargando...",
-      "processing": "Procesando...",
-      "search": "Buscar:",
-      "zeroRecords": "Sin resultados encontrados",
-      "paginate": {
-        "first": "Primero",
-        "last": "Ultimo",
-        "next": "Siguiente",
-        "previous": "Anterior"
-      }
-    },
-    // Load data for the table's content from an Ajax source
-    "ajax": {
-      "url": "<?= $this->url ?>/ajax_list",
-      "type": "POST"
-    },
+  //for save method string
+  var save_method;
+  var table;
+  $(document).ready(function() {
+    table = $('#tabla').DataTable({
+      language: {
+        "decimal": "",
+        "emptyTable": "No hay información",
+        "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+        "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+        "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+        "infoPostFix": "",
+        "thousands": ",",
+        "lengthMenu": "Mostrar _MENU_ Entradas",
+        "loadingRecords": "Cargando...",
+        "processing": "Procesando...",
+        "search": "Buscar:",
+        "zeroRecords": "Sin resultados encontrados",
+        "paginate": {
+          "first": "Primero",
+          "last": "Ultimo",
+          "next": "Siguiente",
+          "previous": "Anterior"
+        }
+      },
+      // Load data for the table's content from an Ajax source
+      "ajax": {
+        "url": "<?= $this->url ?>/ajax_list",
+        "type": "POST"
+      },
+    });
+    //set input/textarea/select event when change value, remove class error and remove text help block
+    $("input").change(function() {
+      $(this).parent().parent().removeClass('has-error');
+      $(this).next().empty();
+    });
+    $("textarea").change(function() {
+      $(this).parent().parent().removeClass('has-error');
+      $(this).next().empty();
+    });
+    $("select").change(function() {
+      $(this).parent().parent().removeClass('has-error');
+      $(this).next().empty();
+    });
+    $("#perfil").mayusculassintildes();
   });
-  //set input/textarea/select event when change value, remove class error and remove text help block
-  $("input").change(function() {
-    $(this).parent().parent().removeClass('has-error');
-    $(this).next().empty();
-  });
-  $("textarea").change(function() {
-    $(this).parent().parent().removeClass('has-error');
-    $(this).next().empty();
-  });
-  $("select").change(function() {
-    $(this).parent().parent().removeClass('has-error');
-    $(this).next().empty();
-  });
-  $("#perfil").mayusculassintildes();
-});
-function add() {
-  save_method = 'add';
-  $('#form')[0].reset(); // reset form on modals
-  $('.form-group').removeClass('has-error'); // clear error class
-  $('.help-block').empty(); // clear error string
-  $('#modal_form').modal('show'); // show bootstrap modal
-  $('.modal-title').text('Crear <?= $this->titulo_controlador ?>'); // Set Title to Bootstrap modal title
-};
-function save() {
-  $('#btnSave').text('guardando...'); //change button text
-  $('#btnSave').attr('disabled',true); //set button disable
-  var url;
-  if(save_method == 'add') {
-    url = "<?= $this->url ?>/ajax_add";
-    msgsuccess = "El registro fue creado exitosamente.";
-    msgerror = "El registro no se pudo crear verifique las validaciones.";
-  } else {
-    url = "<?= $this->url ?>/ajax_update";
-    msgsuccess = "El registro fue actualizado exitosamente.";
-    msgerror = "El registro no se pudo actualizar. Verifique la operación";
-  }
 
-  if ($("input#chkCobradorCaja").is(":checked")) {
-      $("input#chkCobradorCaja").val("1");
-  }
+  function add() {
+    save_method = 'add';
+    $('#form')[0].reset(); // reset form on modals
+    $('.form-group').removeClass('has-error'); // clear error class
+    $('.help-block').empty(); // clear error string
+    $('#modal_form').modal('show'); // show bootstrap modal
+    $('.modal-title').text('Crear <?= $this->titulo_controlador ?>'); // Set Title to Bootstrap modal title
+  };
 
-  $.ajax({
-    url : url,
-    type: "POST",
-    data: $('#form').serialize(),
-    dataType: "JSON",
-    success: function(data) {
-      //if success close modal and reload ajax table
-      if(data.status) {
+  function save() {
+    $('#btnSave').text('guardando...'); //change button text
+    $('#btnSave').attr('disabled', true); //set button disable
+    var url;
+    if (save_method == 'add') {
+      url = "<?= $this->url ?>/ajax_add";
+      msgsuccess = "El registro fue creado exitosamente.";
+      msgerror = "El registro no se pudo crear verifique las validaciones.";
+    } else {
+      url = "<?= $this->url ?>/ajax_update";
+      msgsuccess = "El registro fue actualizado exitosamente.";
+      msgerror = "El registro no se pudo actualizar. Verifique la operación";
+    }
+    $("input#chkCobradorCaja").is(":checked") ? $("input#chkCobradorCaja").val("1") : "";
+    $("input#estado_aperturacaja").is(":checked") ? $("input#estado_aperturacaja").val("1") : "";
+    $("input#estado_ajustestock").is(":checked") ? $("input#estado_ajustestock").val("1") : "";
+    $("input#estado_hacerventas").is(":checked") ? $("input#estado_hacerventas").val("1") : "";
+    $("input#estado_reportecajacierre").is(":checked") ? $("input#estado_reportecajacierre").val("1") : "";
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: $('#form').serialize(),
+      dataType: "JSON",
+      success: function(data) {
+        //if success close modal and reload ajax table
+        if (data.status) {
           $('#modal_form').modal('hide');
           reload_table();
           Lobibox.notify('success', {
             size: 'mini',
-            position:"top right",
+            position: "top right",
             msg: msgsuccess
           });
-      } else {
-        for (var i = 0; i < data.inputerror.length; i++) {
-          $('[name="'+data.inputerror[i]+'"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-          $('[name="'+data.inputerror[i]+'"]').next().text(data.error_string[i]); //select span help-block class set text error string
+        } else {
+          for (var i = 0; i < data.inputerror.length; i++) {
+            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+            $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+          }
         }
+        $('#btnSave').text('Guardar'); //change button text
+        $('#btnSave').attr('disabled', false); //set button enable
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: msgerror
+        });
+        $('#btnSave').text('Guardar'); //change button text
+        $('#btnSave').attr('disabled', false); //set button enable
       }
-      $('#btnSave').text('Guardar'); //change button text
-      $('#btnSave').attr('disabled',false); //set button enable
-    },
-    error: function (jqXHR, textStatus, errorThrown) {
-      Lobibox.notify('error', {
-        size: 'mini',
-        position:"top right",
-        msg: msgerror
-      });
-      $('#btnSave').text('Guardar'); //change button text
-      $('#btnSave').attr('disabled',false); //set button enable
-    }
-  });
-};
-function edit(id) {
-  save_method = 'update';
-  $('#form')[0].reset(); // reset form on modals
-  $('.form-group').removeClass('has-error'); // clear error class
-  $('.help-block').empty(); // clear error string
-  //Ajax Load data from ajax
-  $.ajax({
-    url : "<?= $this->url ?>/ajax_edit/" + id,
-    type: "GET",
-    dataType: "JSON",
-    success: function(data) {
-      $('[name="id"]').val(data.id);
-      if(data.cobradorcaja === '1'){
-        $('[name="chkCobradorCaja"]').prop('checked', true);
-      }else{
-        $('[name="chkCobradorCaja"]').prop('checked', false);
+    });
+  };
+
+  function edit(id) {
+    save_method = 'update';
+    $('#form')[0].reset(); // reset form on modals
+    $('.form-group').removeClass('has-error'); // clear error class
+    $('.help-block').empty(); // clear error string
+    //Ajax Load data from ajax
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_edit/" + id,
+      type: "GET",
+      dataType: "JSON",
+      success: function(data) {
+        $('[name="id"]').val(data.id);
+        data.cobradorcaja === '1' ? $('[name="chkCobradorCaja"]').prop('checked', true) : $('[name="chkCobradorCaja"]').prop('checked', false);
+        data.estado_aperturacaja === '1' ? $('[name="estado_aperturacaja"]').prop('checked', true) : $('[name="estado_aperturacaja"]').prop('checked', false);
+        data.estado_ajustestock === '1' ? $('[name="estado_ajustestock"]').prop('checked', true) : $('[name="estado_ajustestock"]').prop('checked', false);
+        data.estado_hacerventas === '1' ? $('[name="estado_hacerventas"]').prop('checked', true) : $('[name="estado_hacerventas"]').prop('checked', false);
+        data.estado_reportecajacierre === '1' ? $('[name="estado_reportecajacierre"]').prop('checked', true) : $('[name="estado_reportecajacierre"]').prop('checked', false);
+        
+        $('[name="nombre"]').val(data.nombre);
+        $('[name="descripcion"]').val(data.descripcion);
+        $('#modal_form').modal('show'); // show bootstrap modal when complete loaded
+        $('.modal-title').text('Modificar <?= $this->titulo_controlador ?>'); // Set title to Bootstrap modal title
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert('Error get data from ajax');
       }
-      $('[name="nombre"]').val(data.nombre);
-      $('[name="descripcion"]').val(data.descripcion);
-      $('#modal_form').modal('show'); // show bootstrap modal when complete loaded
-      $('.modal-title').text('Modificar <?= $this->titulo_controlador ?>'); // Set title to Bootstrap modal title
-    },
-    error: function (jqXHR, textStatus, errorThrown) {
-      alert('Error get data from ajax');
-    }
-  });
-};
-function borrar(id) {
-  bootbox.confirm("Seguro desea Eliminar este registro?", function(result) {
-    if (result === true) {
-      $.ajax({
-        url : "<?= $this->url ?>/ajax_delete/"+id,
-        type: "POST",
-        dataType: "JSON",
-        success: function(data) {
-          //if success reload ajax table
-          $('#modal_form').modal('hide');
-          reload_table();
-          Lobibox.notify('success', {
-            size: 'mini',
-            position:"top right",
-            msg: 'El registro fue eliminado exitosamente.'
-          });
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-          Lobibox.notify('error', {
-            size: 'mini',
-            position:"top right",
-            msg: 'No se puede eliminar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
-          });
-        }
-      });
-    }
-  });
-};
-function menu(id) {
-  $.ajax({
-    url : "<?= $this->url ?>/listarmenu/"+id,
-    type: "POST",
-    success: function(data) {
-      $('#listarmenu').html(data);
-      $('#menu_form').modal('show'); // show bootstrap modal
-      $('.modal-title').text('Seleccionar menu'); // Set Title to Bootstrap modal title
-      $("ul.checktree").checktree();
-    },
-    error: function (jqXHR, textStatus, errorThrown) {
-      alert("error");
-    }
-  });
-};
-function savemenu() {
-  $('#btnSavemenu').text('guardando...'); //change button text
-  $('#btnSavemenu').attr('disabled',true); //set button disable
-  // ajax adding data to database
-  $.ajax({
-    url : "<?= $this->url ?>/ajax_add_menu",
-    type: "POST",
-    data: $('#menu').serialize(),
-    dataType: "JSON",
-    success: function(data) {
-      //if success close modal and reload ajax table
-      if(data.status) {
+    });
+  };
+
+  function borrar(id) {
+    bootbox.confirm("Seguro desea Eliminar este registro?", function(result) {
+      if (result === true) {
+        $.ajax({
+          url: "<?= $this->url ?>/ajax_delete/" + id,
+          type: "POST",
+          dataType: "JSON",
+          success: function(data) {
+            //if success reload ajax table
+            $('#modal_form').modal('hide');
+            reload_table();
+            Lobibox.notify('success', {
+              size: 'mini',
+              position: "top right",
+              msg: 'El registro fue eliminado exitosamente.'
+            });
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            Lobibox.notify('error', {
+              size: 'mini',
+              position: "top right",
+              msg: 'No se puede eliminar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+            });
+          }
+        });
+      }
+    });
+  };
+
+  function menu(id) {
+    $.ajax({
+      url: "<?= $this->url ?>/listarmenu/" + id,
+      type: "POST",
+      success: function(data) {
+        $('#listarmenu').html(data);
+        $('#menu_form').modal('show'); // show bootstrap modal
+        $('.modal-title').text('Seleccionar menu'); // Set Title to Bootstrap modal title
+        $("ul.checktree").checktree();
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("error");
+      }
+    });
+  };
+
+  function savemenu() {
+    $('#btnSavemenu').text('GUARDANDO...'); //change button text
+    $('#btnSavemenu').attr('disabled', true); //set button disable
+    // ajax adding data to database
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_add_menu",
+      type: "POST",
+      data: $('#menu').serialize(),
+      dataType: "JSON",
+      success: function(data) {
+        //if success close modal and reload ajax table
+        if (data.status) {
           $('#menu_form').modal('hide');
           reload_table();
           Lobibox.notify('success', {
             size: 'mini',
-            position:"top right",
+            position: "top right",
             msg: "El registro fue creado exitosamente."
           });
-      } else {
-        for (var i = 0; i < data.inputerror.length; i++) {
-          $('[name="'+data.inputerror[i]+'"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-          $('[name="'+data.inputerror[i]+'"]').next().text(data.error_string[i]); //select span help-block class set text error string
+        } else {
+          for (var i = 0; i < data.inputerror.length; i++) {
+            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+            $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+          }
         }
+        $('#btnSavemenu').text('GUARDAR'); //change button text
+        $('#btnSavemenu').attr('disabled', false); //set button enable
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: "El registro no se pudo crear verifique las validaciones."
+        });
+        $('#btnSavemenu').text('GUARDAR'); //change button text
+        $('#btnSavemenu').attr('disabled', false); //set button enable
       }
-      $('#btnSavemenu').text('Guardar'); //change button text
-      $('#btnSavemenu').attr('disabled',false); //set button enable
-    },
-    error: function (jqXHR, textStatus, errorThrown) {
-      Lobibox.notify('error', {
-        size: 'mini',
-        position:"top right",
-        msg: "El registro no se pudo crear verifique las validaciones."
-      });
-      $('#btnSavemenu').text('Guardar'); //change button text
-      $('#btnSavemenu').attr('disabled',false); //set button enable
-    }
-  });
-};
-function reload_table() {
-  table.ajax.reload(null,false); //reload datatable ajax
-};
+    });
+  };
+
+  function reload_table() {
+    table.ajax.reload(null, false); //reload datatable ajax
+  };
 </script>

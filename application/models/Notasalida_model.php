@@ -41,7 +41,7 @@ class Notasalida_model extends CI_Model
 				$totalStock = $this->db->select_sum("cantidad")->where('empresa', $empresa)->where('producto', $row->id)->get('stock')->row();
 				$row_set[] = array(
 					'producto' => $row->id,
-					'label' => $row->codigo . ' | ' . $row->nombre . ' ' . ' | CATEGORIA: ' . $nombre . ' | STOCK: ' . ($totalStock->cantidad > 0 ? $totalStock->cantidad : 0),
+					'label' => $row->codigo . ' | ' . $row->nombre . ' ' . ' | CATEGORIA: ' . $nombre,
 					'preciocompra' => $row->preciocompra,
 					'preciocomprapaquete' => $row->preciocomprapaquete,
 					'cantidadpaquete' => $row->cantidadpaquete,
@@ -101,6 +101,15 @@ class Notasalida_model extends CI_Model
 	public function get($id, $tabla)
 	{
 		return $this->db->where('id', $id)->get($tabla)->row();
+	}
+
+	public function stockAlmacen($producto, $almacen, $empresa)
+	{
+		$this->db->select_sum('cantidad');
+		$this->db->where("producto", $producto);
+		$this->db->where("almacen", $almacen);
+		$this->db->where("empresa", $empresa);
+		return $this->db->get("stock")->row();
 	}
 
 	public function statusLote($idproducto)
@@ -241,5 +250,24 @@ class Notasalida_model extends CI_Model
 			);
 		}
 		echo json_encode($row_set);
+	}
+
+	function stockproducto($producto, $empresa, $almacen, $lote)
+	{
+		$this->db->where('producto',  $producto);
+		$this->db->where('empresa',  $empresa);
+		$this->db->where('almacen',  $almacen);
+		if ($lote) {
+			$this->db->where('lote',  $lote);
+		}
+		return $this->db->get('stock')->row();
+	}
+
+	public function cantidadItem($idnotasalida, $idproducto)
+	{
+		$this->db->select_sum("cantidaditem");
+		$this->db->where("notasalida", $idnotasalida);
+		$this->db->where("producto", $idproducto);
+		return $this->db->get("notasalidadetalle")->row();
 	}
 }

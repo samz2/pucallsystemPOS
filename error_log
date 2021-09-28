@@ -2,3 +2,10 @@
 [07-Jul-2021 17:39:47 America/Lima] PHP Fatal error:  Cannot declare class Validaciondedatos, because the name is already in use in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.2/application/controllers/validaciondedatos.php on line 3
 [03-Aug-2021 19:33:48 America/Lima] PHP Fatal error:  Maximum execution time of 300 seconds exceeded in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.2/system/libraries/Session/drivers/Session_files_driver.php on line 212
 [13-Aug-2021 18:40:42 America/Lima] PHP Warning:  Unterminated comment starting line 1050 in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.2/application/controllers/Inicio.php on line 1050
+[17-Sep-2021 17:28:44 America/Lima] PHP Fatal error:  Cannot redeclare Compra::excel() in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Compra.php on line 943
+[19-Sep-2021 19:22:48 America/Lima] PHP Fatal error:  Cannot use empty array elements in arrays in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Caja.php on line 547
+[19-Sep-2021 19:22:52 America/Lima] PHP Fatal error:  Cannot use empty array elements in arrays in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Caja.php on line 547
+[20-Sep-2021 11:38:01 America/Lima] PHP Warning:  Unterminated comment starting line 1044 in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Inicio.php on line 1044
+[23-Sep-2021 17:38:11 America/Lima] PHP Warning:  Unterminated comment starting line 937 in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Inicio.php on line 937
+[24-Sep-2021 23:55:21 America/Lima] PHP Fatal error:  Cannot redeclare Producto::ajax_add() in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Producto.php on line 385
+[24-Sep-2021 23:55:35 America/Lima] PHP Fatal error:  Cannot redeclare Producto::ajax_add() in /home/htqvuwzi/public_html/PUCALLSYSTEM/beta/PucallPosV2.3/application/controllers/Producto.php on line 385

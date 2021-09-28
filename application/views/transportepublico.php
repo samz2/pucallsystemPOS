@@ -7,8 +7,8 @@
                         LISTA DE TRANSPORTES PUBLICOS
                     </div>
                     <div>
-                        <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
-                        <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
+                        <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+                        <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
                     </div>
                 </h3>
             </div>
@@ -17,10 +17,10 @@
                 <table id="tabla" class="table table-bordered table-striped">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Tipo documento</th>
-                            <th>Documento</th>
-                            <th>Razon social</th>
+                            <th><b>#</b></th>
+                            <th><b>Tipo documento</b></th>
+                            <th><b>Documento</b></th>
+                            <th><b>Razón social</b></th>
                             <th></th>
                         </tr>
                     </thead>

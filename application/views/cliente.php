@@ -3,10 +3,10 @@
   <div class="col-xs-12">
     <div class="panel panel-border panel-border-info">
       <div class="panel-heading">
-        <h3 class="panel-title text-title-panel">Lista de <?= $this->controlador ?>
+        <h3 class="panel-title text-title-panel">Lista de clientes
           <div class="pull-right">
-            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-            <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" onclick="add()" title="Nuevo"><i class="fa fa-plus"></i></a>
+            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" ><i class="fa fa-repeat"></i> RECARGAR</a>
+            <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" onclick="add()" ><i class="fa fa-plus"></i> NUEVO</a>
           </div>
           <div class="clearfix"></div>
         </h3>
@@ -92,8 +92,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btnSave" onclick="save()" class="btn btn-primary">Guardar</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
+        <button type="button" id="btnSave" onclick="save()" class="btn btn-primary">GUARDAR</button>
       </div>
     </div>
   </div>
@@ -134,15 +134,15 @@
     });
     //set input/textarea/select event when change value, remove class error and remove text help block
     $("input").keyup(function() {
-      $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
       $(this).next().empty();
     });
     $("textarea").keyup(function() {
-      $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
       $(this).next().empty();
     });
     $("select").change(function() {
-      $(this).parent().parent().removeClass('has-error');
+      $(this).parent().removeClass('has-error');
       $(this).next().empty();
     });
     $("#nombre").mayusculassintildes();
@@ -265,7 +265,7 @@
   };
 
   function save() {
-    $('#btnSave').text('guardando...'); //change button text
+    $('#btnSave').text('GUARDANDO...'); //change button text
     $('#btnSave').attr('disabled', true); //set button disable
     var url;
     if (save_method == 'add') {
@@ -295,11 +295,11 @@
           });
         } else {
           for (var i = 0; i < data.inputerror.length; i++) {
-            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+            $('[name="' + data.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
             $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
           }
         }
-        $('#btnSave').text('Guardar'); //change button text
+        $('#btnSave').text('GUARDAR'); //change button text
         $('#btnSave').attr('disabled', false); //set button enable
       },
       error: function(jqXHR, textStatus, errorThrown) {
@@ -308,7 +308,7 @@
           position: "top right",
           msg: msgerror
         });
-        $('#btnSave').text('Guardar'); //change button text
+        $('#btnSave').text('GUARDAR'); //change button text
         $('#btnSave').attr('disabled', false); //set button enable
       }
     });

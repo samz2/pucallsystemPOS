@@ -36,8 +36,9 @@ class Producto_model extends CI_Model
 		$this->db->where('categoria', $categoria);
 		return $this->db->get('producto')->row();
 	}
-	
-	public function codigoscategoria(){
+
+	public function codigoscategoria()
+	{
 		return $this->db->select_max('numero')->where('empresa', $this->empresa)->get('productocategoria')->row();
 	}
 
@@ -127,14 +128,34 @@ class Producto_model extends CI_Model
 		echo json_encode($row_set);
 	}
 
-	public function check($id, $nombre)
+	public function check($nombre)
 	{
-		if ($id) {
-			$this->db->where('id <>', $id);
-		}
 		$this->db->where('nombre', $nombre);
 		$query = $this->db->get('producto');
-		return $query->result();
+		return $query->row();
+	}
+
+	function checkCodigoBarra($codigBarra)
+	{
+		$this->db->where('codigoBarra', $codigBarra);
+		$query = $this->db->get('producto');
+		return $query->row();
+	}
+
+	function checkCodigoBarraUpdate($id, $codigBarra)
+	{
+		$this->db->where('id <>', $id);
+		$this->db->where('codigoBarra', $codigBarra);
+		$query = $this->db->get('producto');
+		return $query->row();
+	}
+
+	function checkUpdate($id, $nombre)
+	{
+		$this->db->where('id <>', $id);
+		$this->db->where('nombre', $nombre);
+		$query = $this->db->get('producto');
+		return $query->row();
 	}
 
 	public function productoTop($year)
@@ -177,7 +198,7 @@ class Producto_model extends CI_Model
 		$this->db->select($data);
 		$this->db->where('v.estado', '1');
 		$this->db->where("v.created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
-		$this->db->where('v.empresa', $empresa);
+		$empresa != "0" ? $this->db->where('v.empresa', $empresa) : "";
 		$this->db->from('ventadetalle vd');
 		$this->db->join('venta v', 'v.id = vd.venta');
 		$this->db->where('vd.tipo', "0");
@@ -194,8 +215,9 @@ class Producto_model extends CI_Model
 		$this->db->from('ventadetalle vd');
 		$this->db->join('venta v', 'v.id = vd.venta');
 		$this->db->where('v.estado', '1');
+		$this->db->where('vd.tipo', "0");
 		$this->db->where("v.created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
-		$this->db->where('v.empresa', $empresa);
+		$empresa != "0" ? $this->db->where('v.empresa', $empresa) : "";
 		$query = $this->db->get();
 		return $query->row();
 	}
@@ -228,7 +250,7 @@ class Producto_model extends CI_Model
 	public function valorizado($empresa)
 	{
 		$this->db->select("producto, costopromedio , SUM(cantidad) as totalstock");
-		$this->db->where('empresa', $empresa);
+		$empresa != "0" ? $this->db->where('empresa', $empresa) : "";
 		$this->db->group_by("producto");
 		return $this->db->get('stock')->result();
 	}
@@ -250,7 +272,7 @@ class Producto_model extends CI_Model
 	{
 		$this->db->select_sum("cantidad");
 		$this->db->where("producto", $producto);
-		$this->db->where("empresa", $empresa);
+		$empresa != "0" ? $this->db->where("empresa", $empresa) : "";
 		return $this->db->get("stock")->row();
 	}
 
@@ -282,19 +304,31 @@ class Producto_model extends CI_Model
 	{
 		return $this->db->select_max('numero')->get($tabla)->row();
 	}
-	public function topvendedores($fechainicio, $fechafinal,$perfiles)
+	public function topvendedores($fechainicio, $fechafinal, $perfiles, $empresavendedor)
 	{
-		if($perfiles== "TODOS"){
-		$perfil="";
-		
-		}else{
-		$perfil="WHERE p.nombre ='".$perfiles."'";
+		if ($perfiles == "TODOS") {
+			$perfil = "";
+		} else {
+			$perfil = "WHERE p.nombre ='" . $perfiles . "'";
 		}
-		$query = $this->db->query("select u.id, u.nombre as 'nombrevendedor', p.nombre, 
-		(select sum(montototal) FROM venta where usuario_creador = u.id AND created BETWEEN '".$fechainicio."' AND '".$fechafinal."' ) as 'ventatotal', 
-		(select sum(montototal) FROM venta where usuario_creador = u.id AND created BETWEEN '".$fechainicio."' AND '".$fechafinal."' AND formapago = 'CONTADO' ) as 'contadototal', 
-		(select sum(montototal) FROM venta where usuario_creador = u.id AND created BETWEEN '".$fechainicio."' AND '".$fechafinal."' AND formapago = 'CREDITO') as 'creditototal'
-		from usuario u join perfil p on u.perfil = p.id ".$perfil." ORDER BY ventatotal DESC");
+		$query = $this->db->query("
+			select u.id, u.nombre as 'nombrevendedor', p.nombre, 
+			(select sum(deudatotal) FROM venta where usuario_proceso = u.id AND created BETWEEN '" . $fechainicio . "' AND '" . $fechafinal . "' AND empresa = " . $empresavendedor . " ) as 'ventatotal', 
+			(select sum(deudatotal) FROM venta where usuario_proceso = u.id AND created BETWEEN '" . $fechainicio . "' AND '" . $fechafinal . "' AND formapago = 'CONTADO' AND empresa = " . $empresavendedor . " ) as 'contadototal', 
+			(select sum(deudatotal) FROM venta where usuario_proceso = u.id AND created BETWEEN '" . $fechainicio . "' AND '" . $fechafinal . "' AND formapago = 'CREDITO' AND empresa = " . $empresavendedor . ") as 'creditototal'
+			from usuario u join perfil p on u.perfil = p.id " . $perfil . " ORDER BY ventatotal DESC");
 		return $query->result();
-	} 
+	}
+
+	function gerAlmacenes($empresa)
+	{
+		$empresa != "0" ? $this->db->where("empresa", $empresa) : "";
+		$this->db->order_by("id", "ASC");
+		return $this->db->get("almacen")->result();
+	}
+
+	public function codigosnotaingreso($tabla, $empresa)
+	{
+		return $this->db->select_max('correlativo')->where('empresa', $empresa)->get($tabla)->row();
+	}
 }

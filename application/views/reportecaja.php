@@ -32,11 +32,11 @@
           </div>
           <!-- /.box-body -->
           <div class="panel-footer text-center">
-            <a onclick="general()" class="btn btn-primary" data-toggle="tooltip" title="GENERAL"><i class="fa fa-upload"></i></a>
-            <a onclick="generalpdf()" class="btn btn-info" data-toggle="tooltip" title="IMPRIMIR"><i class="fa fa-print"></i></a>
-            <a onclick="especifico()" class="btn btn-primary" data-toggle="tooltip" title="ESPECIFICA"><i class="fa fa-upload"></i></a>
-            <a onclick="especificopdf()" class="btn btn-info" data-toggle="tooltip" title="IMPRIMIR"><i class="fa fa-print"></i></a>
-            <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+            <!--  <a onclick="general()" class="btn btn-primary" data-toggle="tooltip" title="GENERAL"><i class="fa fa-upload"></i></a>
+            <a onclick="generalpdf()" class="btn btn-info" data-toggle="tooltip" title="IMPRIMIR"><i class="fa fa-print"></i></a> -->
+            <a onclick="especifico()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+            <!--  <a onclick="especificopdf()" class="btn btn-info" data-toggle="tooltip" title="IMPRIMIR"><i class="fa fa-print"></i></a> -->
+            <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
           </div>
         </form>
       </div>
@@ -90,6 +90,52 @@
 </div>
 <!-- /.Modal -->
 
+<!--  modal zona-->
+<div class="modal fade" id="modal_stockcaja" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="overflow: auto;">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title text-center" id="title_stockcaja"></h3>
+      </div>
+      <div class="modal-body form">
+        <div class="text-right">
+          <input type="hidden" id="idcajaseleccionado">
+          <a onclick="DescargarCajaStock()" class="btn btn-danger btn-sm" data-toggle="tooltip" data-placement="top">
+            <i class="fa fa-file-pdf-o"></i>
+            IMPRIMIR A4
+          </a>
+          <input type="hidden" id="idcajaseleccionado">
+          <a onclick="DescargarMiniStock()" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top">
+            <i class="fa fa-print"></i>
+            IMPRIMIR
+          </a>
+        </div>
+        <!-- <div class="text-right">
+          <input type="hidden" id="idcajaseleccionado">
+          <a onclick="DescargarMiniStock()" class="btn btn-success btn-sm" data-toggle="tooltip" data-placement="top">
+            <i class="fa fa-file-print"></i>
+            IMPRIMIR
+          </a>
+        </div> -->
+        <table id="tablastockcaja" class="table table-bordered table-striped">
+          <thead>
+            <tr class="text-title-panel">
+              <th><b>#</b></th>
+              <th><b>Codigo</b></th>
+              <th><b>Producto</b></th>
+              <th><b>categoria</b></th>
+              <th><b>Inicio de Stock</b></th>
+              <th><b>Final de Stock</b></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 <script type="text/javascript">
   const RUTA_API = "http://localhost:8000";
   const $impresoraSeleccionada = document.querySelector("#impresoraSeleccionada");
@@ -99,6 +145,7 @@
         $impresoraSeleccionada.textContent = '';
       });
   };
+  var tablastockcaja;
   $(document).ready(function() {
     $('.restaurar').bind('click', function(e) {
       e.preventDefault();
@@ -400,20 +447,23 @@
             url: "<?= $this->url ?>/restaurar",
             type: "POST",
             data: {
-              idcaja : idcaja,
-              empresa : empresa
+              idcaja: idcaja,
+              empresa: empresa
             },
             dataType: 'JSON',
             success: function(data) {
-              if(data.status){
+              if (data.status) {
                 Lobibox.notify('success', {
-                size: 'mini',
-                position: 'top right',
-                msg: 'Se restablecio la caja correctamente'
-              });
-              especifico();
-              }else{
-                Lobibox.alert('info', {title: 'INFORMACION', msg: 'Tienes una caja abierta'});
+                  size: 'mini',
+                  position: 'top right',
+                  msg: 'Se restablecio la caja correctamente'
+                });
+                especifico();
+              } else {
+                Lobibox.alert('info', {
+                  title: 'INFORMACION',
+                  msg: 'Tienes una caja abierta'
+                });
               }
             },
             error: function(jqXHR, textStatus, errorThrown) {
@@ -427,5 +477,47 @@
         }
       }
     });
+  }
+
+  function stockcaja(idcaja) {
+    $("#idcajaseleccionado").val(idcaja);
+    $("#modal_stockcaja").modal("show");
+    $("#title_stockcaja").text("CONTROL DE STOCK EN CAJA");
+    tablastockcaja = $('#tablastockcaja').DataTable({
+      language: {
+        "decimal": "",
+        "emptyTable": "No hay información",
+        "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+        "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+        "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+        "infoPostFix": "",
+        "thousands": ",",
+        "lengthMenu": "Mostrar _MENU_ Entradas",
+        "loadingRecords": "Cargando...",
+        "processing": "Procesando...",
+        "search": "Buscar:",
+        "zeroRecords": "Sin resultados encontrados",
+        "paginate": {
+          "first": "Primero",
+          "last": "Ultimo",
+          "next": "Siguiente",
+          "previous": "Anterior"
+        }
+      },
+      "destroy": true,
+      "ajax": {
+        "url": "<?= $this->url ?>/ajax_stockcaja/" + idcaja,
+        "type": "GET"
+      },
+    });
+  }
+
+  function DescargarCajaStock() {
+    window.open("<?= $this->url ?>/ajax_descargarStockCaja/" + $("#idcajaseleccionado").val());
+  }
+
+  function DescargarMiniStock() {
+    var Url = '<?= $this->url ?>/ajax_miniStockCaja/' + $("#idcajaseleccionado").val();
+    window.open(Url, 'Pruebas', 'fullscreen=yes, scrollbars=auto');
   }
 </script>

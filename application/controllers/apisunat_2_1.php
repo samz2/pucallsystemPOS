@@ -21,8 +21,8 @@ class Apisunat
         $doc->preserveWhiteSpace = TRUE;
         //$doc->encoding = 'ISO-8859-1';
         $doc->encoding = 'utf-8';
-
-        $xmlCPE = '<?xml version="1.0" encoding="utf-8"?>
+        $xmlCPE = '';
+        $xmlCPE .= '<?xml version="1.0" encoding="utf-8"?>
                     <Invoice xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ccts="urn:un:unece:uncefact:documentation:2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:qdt="urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2" xmlns:udt="urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2" xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2">
                     <ext:UBLExtensions>
                     <ext:UBLExtension>
@@ -39,27 +39,27 @@ class Apisunat
                     <cbc:DueDate>' . $cabecera["FECHA_VTO"] . '</cbc:DueDate>
                     <cbc:InvoiceTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Documento" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01" listID="0101" name="Tipo de Operacion" listSchemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo51">' . $cabecera["COD_TIPO_DOCUMENTO"] . '</cbc:InvoiceTypeCode>';
         if ($cabecera["TOTAL_LETRAS"] <> "") {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cbc:Note languageLocaleID="1000">' . $cabecera["TOTAL_LETRAS"] . '</cbc:Note>';
         }
-        $xmlCPE = $xmlCPE .
+        $xmlCPE .=
             '<cbc:DocumentCurrencyCode listID="ISO 4217 Alpha" listName="Currency" listAgencyName="United Nations Economic Commission for Europe">' . $cabecera["COD_MONEDA"] . '</cbc:DocumentCurrencyCode>
                             <cbc:LineCountNumeric>' . count($detalle) . '</cbc:LineCountNumeric>';
         if ($cabecera["NRO_OTR_COMPROBANTE"] <> "") {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:OrderReference>
                                     <cbc:ID>' . $cabecera["NRO_OTR_COMPROBANTE"] . '</cbc:ID>
                             </cac:OrderReference>';
         }
         if ($cabecera["NRO_GUIA_REMISION"] <> "") {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .= 
                 '<cac:DespatchDocumentReference>
                         <cbc:ID>' . $cabecera["NRO_GUIA_REMISION"] . '</cbc:ID>
                         <cbc:IssueDate>' . $cabecera["FECHA_GUIA_REMISION"] . '</cbc:IssueDate>
                         <cbc:DocumentTypeCode listAgencyName="PE:SUNAT" listName="Tipo de Documento" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01">' . $cabecera["COD_GUIA_REMISION"] . '</cbc:DocumentTypeCode>
                             </cac:DespatchDocumentReference>';
         }
-        $xmlCPE = $xmlCPE .
+        $xmlCPE .= 
             '<cac:Signature>
                         <cbc:ID>' . $cabecera["NRO_COMPROBANTE"] . '</cbc:ID>
                         <cac:SignatoryParty>
@@ -143,14 +143,23 @@ class Apisunat
                                 </cac:RegistrationAddress>
                             </cac:PartyLegalEntity>
                         </cac:Party>
-                    </cac:AccountingCustomerParty>
-                    <cac:AllowanceCharge>
+                    </cac:AccountingCustomerParty>';
+
+                    
+                    /* SE LE QUITO PARA QUE ACEPTE LA SUNAT LAS FACTURAS Y SE AGREGO EL TAG <cac:PaymentTerms> </cac:PaymentTerms>*/
+                    /* <cac:AllowanceCharge>
                         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
                         <cbc:AllowanceChargeReasonCode listName="Cargo/descuento" listAgencyName="PE:SUNAT" listURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo53">02</cbc:AllowanceChargeReasonCode>
                         <cbc:MultiplierFactorNumeric>0.00</cbc:MultiplierFactorNumeric>
                         <cbc:Amount currencyID="' . $cabecera["COD_MONEDA"] . '">0.00</cbc:Amount>
                         <cbc:BaseAmount currencyID="' . $cabecera["COD_MONEDA"] . '">0.00</cbc:BaseAmount>
-                    </cac:AllowanceCharge>
+                    </cac:AllowanceCharge> */
+
+            $xmlCPE .= '<cac:PaymentTerms>
+                        <cbc:ID>FormaPago</cbc:ID>
+                        <cbc:PaymentMeansID>Contado</cbc:PaymentMeansID>
+                    </cac:PaymentTerms>
+
                     <cac:TaxTotal>
                         <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_IGV"] . '</cbc:TaxAmount>
                         <cac:TaxSubtotal>
@@ -166,7 +175,7 @@ class Apisunat
                             </cac:TaxCategory>
                         </cac:TaxSubtotal>';
         if ($cabecera["TOTAL_ISC"] > 0) {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:TaxSubtotal>
                             <cbc:TaxableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_ISC"] . '</cbc:TaxableAmount>
                             <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_ISC"] . '</cbc:TaxAmount>
@@ -182,7 +191,7 @@ class Apisunat
         }
         //CAMPO NUEVO
         if ($cabecera["TOTAL_EXPORTACION"] > 0) {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:TaxSubtotal>
                             <cbc:TaxableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_EXPORTACION"] . '</cbc:TaxableAmount>
                             <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">0.00</cbc:TaxAmount>
@@ -197,7 +206,7 @@ class Apisunat
                         </cac:TaxSubtotal>';
         }
         if ($cabecera["TOTAL_GRATUITAS"] > 0) {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:TaxSubtotal>
                             <cbc:TaxableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_GRATUITAS"] . '</cbc:TaxableAmount>
                             <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">0.00</cbc:TaxAmount>
@@ -212,7 +221,7 @@ class Apisunat
                         </cac:TaxSubtotal>';
         }
         if ($cabecera["TOTAL_EXONERADAS"] > 0) {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:TaxSubtotal>
                             <cbc:TaxableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_EXONERADAS"] . '</cbc:TaxableAmount>
                             <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">0.00</cbc:TaxAmount>
@@ -227,7 +236,7 @@ class Apisunat
                         </cac:TaxSubtotal>';
         }
         if ($cabecera["TOTAL_INAFECTA"] > 0) {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:TaxSubtotal>
                             <cbc:TaxableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_INAFECTA"] . '</cbc:TaxableAmount>
                             <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">0.00</cbc:TaxAmount>
@@ -242,7 +251,7 @@ class Apisunat
                         </cac:TaxSubtotal>';
         }
         if ($cabecera["TOTAL_OTR_IMP"] > 0) {
-            $xmlCPE = $xmlCPE .
+            $xmlCPE .=
                 '<cac:TaxSubtotal>
                             <cbc:TaxableAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_OTR_IMP"] . '</cbc:TaxableAmount>
                             <cbc:TaxAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL_OTR_IMP"] . '</cbc:TaxAmount>
@@ -259,7 +268,7 @@ class Apisunat
         //TOTAL=GRAVADA+IGV+EXONERADA
         //NO ENTRA GRATUITA(INAFECTA) NI DESCUENTO
         //SUB_TOTAL=PRECIO(SIN IGV) * CANTIDAD
-        $xmlCPE = $xmlCPE . '</cac:TaxTotal>
+        $xmlCPE .= '</cac:TaxTotal>
                 <cac:LegalMonetaryTotal>
                 <cbc:LineExtensionAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["SUB_TOTAL"] . '</cbc:LineExtensionAmount>
                 <cbc:TaxInclusiveAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $cabecera["TOTAL"] . '</cbc:TaxInclusiveAmount>
@@ -273,8 +282,15 @@ class Apisunat
             $txtPRECIO_TIPO_CODIGO = '01';
             $igv = 0;
             $txtCOD_TIPO_OPERACION = '20';
-            $producto = $this->get($value->producto);
-            $xmlCPE = $xmlCPE . '<cac:InvoiceLine>
+            if($value->tipo == '0'){
+                $producto = $this->get($value->producto);
+                $nombreProducto = $producto->nombre;
+                $codigoProducto = $producto->codigo;
+            }else{
+                $nombreProducto = $value->nombre;
+                $codigoProducto = "";
+            }
+            $xmlCPE .= '<cac:InvoiceLine>
                     <cbc:ID>' . $i . '</cbc:ID>
                     <cbc:InvoicedQuantity unitCode="NIU" unitCodeListID="UN/ECE rec 20" unitCodeListAgencyName="United Nations Economic Commission for Europe">' . $value->cantidad . '</cbc:InvoicedQuantity>
                     <cbc:LineExtensionAmount currencyID="' . $cabecera["COD_MONEDA"] . '">' . $value->subtotal . '</cbc:LineExtensionAmount>
@@ -302,9 +318,9 @@ class Apisunat
                 </cac:TaxSubtotal>
                 </cac:TaxTotal>
                 <cac:Item>
-                <cbc:Description><![CDATA[' . $validacion->replace_invalid_caracters((isset($value->producto)) ? $producto->nombre : "") . ']]></cbc:Description>
+                <cbc:Description><![CDATA[' . $validacion->replace_invalid_caracters($nombreProducto) . ']]></cbc:Description>
                 <cac:SellersItemIdentification>
-                    <cbc:ID><![CDATA[' . $validacion->replace_invalid_caracters((isset($value->producto)) ? $producto->codigo : "") . ']]></cbc:ID>
+                    <cbc:ID><![CDATA[' . $validacion->replace_invalid_caracters($codigoProducto) . ']]></cbc:ID>
                 </cac:SellersItemIdentification>
                 </cac:Item>
                 <cac:Price>
@@ -312,7 +328,7 @@ class Apisunat
                 </cac:Price>
                 </cac:InvoiceLine>';
         }
-        $xmlCPE = $xmlCPE . '</Invoice>';
+        $xmlCPE .= '</Invoice>';
         $doc->loadXML($xmlCPE);
         $doc->save($ruta . '.XML');
         $resp['respuesta'] = 'ok';

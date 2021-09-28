@@ -140,6 +140,10 @@ class Empresa extends CI_Controller
     if (!is_null($this->input->post('pasos'))) {
       $pasos = $this->input->post('pasos');
     }
+    $estado_motivodescuento = "0";
+    if (!is_null($this->input->post('estado_motivodescuento'))) {
+      $estado_motivodescuento = $this->input->post('estado_motivodescuento');
+    }
     $config['upload_path'] = './files/Setting/';
     $config['encrypt_name'] = TRUE;
     $config['allowed_types'] = 'gif|jpg|jpeg|png';
@@ -153,6 +157,7 @@ class Empresa extends CI_Controller
       $image = '5dda8da7287e07792b4ce7094f1270c6.png';
     }
     $data['pasos'] = $pasos;
+    $data['estado_motivodescuento'] = $estado_motivodescuento;
     $data['ruc'] = $this->input->post('ruc');
     $data['razonsocial'] = $this->input->post('razonsocial');
     $data['nombre'] = $this->input->post('nombre');
@@ -172,9 +177,12 @@ class Empresa extends CI_Controller
     $data['almacen'] = $this->input->post('almacen');
     $data['tipoimpresora'] = $this->input->post('tipoimpresora');
     $data['nombreimpresora'] = $this->input->post('nombreimpresora');
+    $data['fecha_aviso'] = $this->input->post('fecha_aviso');
     $data['color_menu'] = $this->input->post('color_menu');
-    if ($this->Controlador_model->save($this->controlador, $data)) {
-      echo json_encode(array("status" => TRUE));
+    $insert = $this->Controlador_model->save($this->controlador, $data);
+    if ($insert) {
+      $dataEmpresa = $this->Controlador_model->get($insert, "empresa");
+      echo json_encode(array("status" => TRUE, "dataEmpresa" => $dataEmpresa));
     }
   }
 
@@ -191,6 +199,10 @@ class Empresa extends CI_Controller
     $pasos = 0;
     if (!is_null($this->input->post('pasos'))) {
       $pasos = $this->input->post('pasos');
+    }
+    $estado_motivodescuento = "0";
+    if (!is_null($this->input->post('estado_motivodescuento'))) {
+      $estado_motivodescuento = $this->input->post('estado_motivodescuento');
     }
     $config['upload_path'] = './files/Setting/';
     $config['encrypt_name'] = TRUE;
@@ -209,6 +221,7 @@ class Empresa extends CI_Controller
       $image = $usuario->logo;
     }
     $data['pasos'] = $pasos;
+    $data['estado_motivodescuento'] = $estado_motivodescuento;
     $data['ruc'] = $this->input->post('ruc');
     $data['razonsocial'] = $this->input->post('razonsocial');
     $data['nombre'] = $this->input->post('nombre');
@@ -228,6 +241,7 @@ class Empresa extends CI_Controller
     $data['tipoimpresora'] = $this->input->post('tipoimpresora'); //adc
     $data['tipoventa'] = $this->input->post('tipoventa');
     $data['nombreimpresora'] = $this->input->post('nombreimpresora');
+    $data['fecha_aviso'] = $this->input->post('fecha_aviso');
     $data['color_menu'] = $this->input->post('color_menu');
     $this->Controlador_model->update(array('id' => $this->input->post('id')), $data, $this->controlador);
     $dataEmpresa = $this->Controlador_model->get($this->empresa, "empresa");

@@ -88,7 +88,7 @@ class Notaingreso extends CI_Controller
     $data = [];
     foreach ($query as $key => $value) {
       $usuario = $this->Controlador_model->get($value->usuario, 'usuario');
-      $empresa = $this->Controlador_model->get($value->usuario, 'empresa');
+      $empresa = $this->Controlador_model->get($value->empresa, 'empresa');
       //add variables for action
       $boton = '';
       //add html fodr action
@@ -97,7 +97,7 @@ class Notaingreso extends CI_Controller
       $data[] = array(
         $key + 1,
         $value->codigo,
-        $empresa->ruc." | ".$empresa->serie." | ".$empresa->nombre,
+        $empresa ? $empresa->ruc." | ".$empresa->serie." | ".$empresa->nombre : "SIN DATOS",
         $value->tipoingreso,
         $usuario ? $usuario->nombre : '',
         '<span class="label label-warning" style="background:#ffc107; color:#212529">PENDIENTE</span>',
@@ -157,8 +157,8 @@ class Notaingreso extends CI_Controller
       if ($data->estado == '0') {
         $row .= '<a onclick="grabar(' . $data->id . ')" class="btn btn-success" data-toggle="tooltip">GENERAR</a> ';
       } else {
-        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><span class="hidden-xs">IMPRIMIR</span> <i class="fa fa-print"></i></a> ';
-        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a> ';
+        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><i class="fa fa-print"></i>  <span class="hidden-xs">IMPRIMIR</span> </a> ';
+        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip"><i class="fa fa-plus"></i>  <span class="hidden-xs">NUEVO</span></a> ';
       }
     }
     echo $row;
@@ -210,11 +210,12 @@ class Notaingreso extends CI_Controller
     <div class="row">
     <div class="col-md-12">
     <div class="table-responsive">
-    <table class="table table-bordered table-condensed">
+    <table id="tabla-ingreso" class="table table-bordered table-striped">
     <thead>
     <tr>
     <th>#</th>
     <th>Codigo</th>
+    <th>Destino</th>
     <th>Producto</th>
     <th>Precio</th>
     <th>Total items</th>
@@ -226,13 +227,15 @@ class Notaingreso extends CI_Controller
     $i = 0;
     foreach ($notasalidadetalle as $value) {
       $i++;
-      $producto = $this->Controlador_model->get($value->producto, 'producto');
+      $producto  = $this->Controlador_model->get($value->producto, 'producto');
       $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria');
+      $destino   = $this->Controlador_model->get($value->almacen, 'almacen');
       $total += $value->subtotal;
       $ticket .= '
       <tr>
         <td>' . $i . '</td>
         <td>' . $producto->codigo . '</td>
+        <td>' . $destino->nombre . '</td>
         <td>' . $producto->nombre . ' ' . ($categoria ? $categoria->nombre : '') . '</td>
         <td>' . $value->precio . '</td>
         <td>' . $value->cantidaditem . '</td>
@@ -240,14 +243,16 @@ class Notaingreso extends CI_Controller
       </tr>';
     }
     $ticket .= '
-    <tr>
-    <td colspan="5" align="right">
-    <strong>Total:</strong>
-    </td>
-    <td align="right">
-    <strong>' . number_format($total, 2) . '</strong>
-    </td>
-    </tr>
+    <tfoot>
+      <tr>
+        <td colspan="6" align="right">
+          <strong>Total:</strong>
+          </td>
+          <td align="right">
+          <strong>' . number_format($total, 2) . '</strong>
+        </td>
+      </tr>
+    </tfoot>
     </tbody>
     </table>
     </div>
@@ -566,11 +571,14 @@ class Notaingreso extends CI_Controller
     $this->_validatprocesar();
     $notaingreso = $this->Controlador_model->get($this->notaingreso, 'notaingreso');
     $productos = $this->Controlador_model->getDetalle($this->notaingreso, 'notaingresodetalle');
+    $hora = date('H:i:s');
+    $creado = date('Y-m-d');
     foreach ($productos as $value) {
       $cantidad = $this->Controlador_model->getStock($value->producto, $value->almacen, $value->lote, $notaingreso->empresa);
       $producto = $this->Controlador_model->get($value->producto, 'producto');
       $movimiento['empresa'] = $notaingreso->empresa;
       $movimiento['usuario'] = $this->usuario;
+      $movimiento['modalidad'] = "ENTRADA";
       $movimiento['tipooperacion'] = "NI";
       $movimiento['notaingreso'] = $this->notaingreso;
       $movimiento['tipo'] = 'ENTRADA';
@@ -586,8 +594,8 @@ class Notaingreso extends CI_Controller
       $movimiento['stockanterior'] = $cantidad ? $cantidad->cantidad : 0;
       $movimiento['stockactual'] = ($cantidad ? $cantidad->cantidad : 0) + $value->totalitem;
       //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
-      $movimiento['created'] = date('Y-m-d');
-      $movimiento['hora'] = date('H:i:s');
+      $movimiento['created'] = $creado;
+      $movimiento['hora'] = $hora;
       $this->Controlador_model->save('movimiento', $movimiento);
       
       if ($cantidad) {
@@ -604,7 +612,8 @@ class Notaingreso extends CI_Controller
       }
 
     }
-    $data['created'] = date('Y-m-d');
+    $data['created'] = $creado;
+    $data['hora'] = $hora;
     $data['estado'] = '1';
     if ($this->db->where('id', $this->notaingreso)->update($this->controlador, $data)) {
       echo json_encode(array("status" => TRUE));

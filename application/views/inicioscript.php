@@ -5,11 +5,7 @@
     var tabledatosPedidosEnviados;
     <?php if ($this->caja) { ?>
       $('#metodopago').change(() => {
-        if ($('#metodopago').val() == 'EFECTIVO') {
-          $('#tipocard').hide("fast");
-        } else {
-          $('#tipocard').show("fast");
-        }
+        metodopagooperacion();
       })
       datosProductosVenta();
       categoriaSeleccionar(); //todo: trae todas las categorias
@@ -44,6 +40,7 @@
     $(".limpiar").addClear();
     $('.money').number(true, 2);
 
+
     $("#clientes").autocomplete({
       source: "<?= $this->url ?>/autocompletar",
       minLength: 2,
@@ -60,20 +57,6 @@
 
     $("#codigodebarra").focus();
 
-    /*
-    $("#codigodebarra").autocomplete({
-      source: "<?= $this->url ?>/autocompleteCodigoBarra",
-      minLength: 2,
-      select: function(event, ui) {
-        if (ui.item.status) {
-          $("#busquedacodigobarra").html(`<i class="fa fa-spin fa-spinner"></i>`);
-          agregaarventa(ui.item.idproducto, ui.item.idcategoria, ui.item.precioproducto)
-        } else {}
-
-      }
-    });
-    */
-
     $("#codigodebarra").keypress(function() {
 
       let datacodigobarra = $("#codigodebarra").val();
@@ -89,6 +72,7 @@
           dataType: "JSON",
           success: function(data) {
             if (data.consulta.status) {
+              console.log("Consulta verdadera");
               if (data.lote.status == "1") {
                 console.log("ingreso por lote");
                 if (data.lote.totalotes > 1) {
@@ -99,15 +83,25 @@
                   agregaarventa(data.consulta.idproducto, data.consulta.precioproducto, {
                     statusvariante: false,
                     lote: data.lote.lote,
-                    statuslote: true
+                    statuslote: true,
+                    cantidad: 1,
+                    tipoproducto: "NORMAL",
+                    tipoprecio: "NORMAL",
+                    codigoBarra: true,
+                    nombreProductoCodigoBarra: data.consulta.nombreproducto
                   }, "");
                 }
               } else {
                 console.log("ingreso sin lote");
                 agregaarventa(data.consulta.idproducto, data.consulta.precioproducto, {
                   statusvariante: false,
-                  lote: false,
-                  statuslote: false
+                  lote: null,
+                  statuslote: false,
+                  cantidad: 1,
+                  tipoproducto: "NORMAL",
+                  tipoprecio: "NORMAL",
+                  codigoBarra: true,
+                  nombreProductoCodigoBarra: data.consulta.nombreproducto
                 }, "");
               }
             } else {
@@ -135,17 +129,7 @@
     });
 
     $("#formapago").change(() => {
-      if ($('#formapago').val() == 'CONTADO') {
-        $('#metodo').show();
-        $('#pagado').show();
-        $("#vencimiento").hide();
-        $('.ReturnChange').show();
-      } else {
-        $('#metodo').hide();
-        $('#pagado').hide();
-        $("#vencimiento").show();
-        $('.ReturnChange').hide();
-      }
+      formapagooperacion();
     })
 
     $("input").keyup(function() {
@@ -243,10 +227,11 @@
         type: "POST",
         data: {
           saldoinicial: $('#saldoinicial').val(),
-          empresa: $("#empresaIH").val()
+          cajaprincipal: $("#cajaprincipal").val()
         },
+        dataType : "JSON",
         success: function(data) {
-          window.location.href = "<?= $this->url ?>/aperturar/" + $("#empresaIH").val();
+          window.location.reload();
         },
         error: function(jqXHR, textStatus, errorThrown) {
           $('#aperturar').button('reset');
@@ -303,49 +288,68 @@
 
     });
 
-    $('#botoncito2').on('click', function() {
-      $(this).button('loading');
-      $.ajax({
-        method: 'post',
-        url: "<?= $this->url ?>/consulta_reniec",
-        data: {
-          tipo: $('#tipo2').val(),
-          documento: $('#documento2').val()
-        },
-        beforeSend: function() {
-          $('[name="nombre2"]').val("");
-          $('[name="apellido2"]').val("");
-          $('[name="direccion2"]').val("");
-        },
-        success: function(data) {
-          $('#botoncito2').button('reset');
-          nombre = data.nombre;
-          apellido = data.apellido;
-          direccion = data.direccion;
-          $('[name="nombre2"]').val(nombre);
-          $('[name="apellido2"]').val(apellido);
-          $('[name="direccion2"]').val(direccion);
-        },
-        error: function(data) {
-          $('#botoncito2').button('reset');
-          //toast.error("Algo inesperado ha sucedido");
-          Lobibox.notify('warning', {
-            size: 'mini',
-            position: "top right",
-            msg: 'Nuestros servidores estan en mantenimiento.'
-          });
-        }
-      });
-    });
-
   });
 
-  function OpenRegister(estado, tienda) {
+  function formapagooperacion() {
+    if ($('#formapago').val() == 'CONTADO') {
+      $('#metodo').show("fast");
+      $('#pagado').show("fast");
+      $("#vencimiento").hide("fast");
+      $('.ReturnChange').show("fast");
+      $("#content-creditos-disponibles").hide("fast")
+      $("#descontado").show("fast");
+      metodopagooperacion();
+    } else {
+      $("#tipocard").hide("fast");
+      $('#metodo').hide("fast");
+      $('#pagado').hide("fast");
+      $('.ReturnChange').hide("fast");
+
+      if ($('#formapago').val() == 'CREDITOCLIENTE') {
+        $("#vencimiento").hide("fast");
+        $("#descontado").hide("fast");
+        $.ajax({
+          url: '<?= $this->url ?>/ajax_creditos_cliente',
+          type: "POST",
+          data: {
+            "cliente": $("#cliente").val()
+          },
+          dataType: "JSON",
+          success: function(data) {
+            $("#creditosdisponibles").empty();
+            if (data.length > 0) {
+              for (value of data) {
+                $("#creditosdisponibles").append(`<option value="${value.id}">${value.codigo}</option>`);
+              }
+            } else {
+              $("#creditosdisponibles").append(`<option value="0">CREAR CREDITO AUTOMATICO</option>`);
+            }
+            $("#content-creditos-disponibles").show("fast");
+          },
+          error: function(jqXHR, textStatus, errorThrown) {}
+        });
+      } else {
+        $("#descontado").show("fast");
+        $("#vencimiento").show("fast");
+        $("#content-creditos-disponibles").hide("fast")
+      }
+    }
+  }
+
+  function metodopagooperacion() {
+    if ($('#metodopago').val() == 'EFECTIVO') {
+      $('#tipocard').hide("fast");
+    } else {
+      $('#tipocard').show("fast");
+    }
+  }
+
+  function OpenRegister(estado, cajaprincipal) {
     if (estado == 1) {
-      $("#empresaIH").val(tienda);
+      $("#cajaprincipal").val(cajaprincipal);
       $('#CashinHand').modal('show');
     } else {
-      window.location.href = "<?= $this->url ?>/aperturar/" + tienda;
+      window.location.href = "<?= $this->url ?>/aperturar/" + cajaprincipal;
     }
   };
 
@@ -361,7 +365,7 @@
     $('#btnSavecliente').attr('disabled', true); //set button disable
     // ajax adding data to database
     $.ajax({
-      url: '<?= $this->url ?>/ajax_addcliente',
+      url: '<?= $this->url ?>/ajax_addcliente/' + $("#ventaseleccionada").val(),
       type: "POST",
       data: $('#form_cliente').serialize(),
       dataType: "JSON",
@@ -408,197 +412,10 @@
 
   }
 
-
-  function savecliente2(identificador, idventa) {
-    $('#btnSavecliente2').text('guardando...'); //change button text
-    $('#btnSavecliente2').attr('disabled', true); //set button disable
-    // ajax adding data to database
-    $.ajax({
-      url: '<?= $this->url ?>/ajax_addcliente2',
-      type: "POST",
-      data: $('#form_cliente2').serialize(),
-      dataType: "JSON",
-      success: function(data) {
-        //if success close modal and reload ajax table
-        if (data.status) {
-          $('#cliente_form2').modal('hide');
-          $('#form_cliente2')[0].reset();
-          $(`#cliente${identificador}`).val(data.cliente);
-          $(`#clientes${identificador}`).val(data.clientes);
-          //TODO: Insertando al localStorage
-          let clientesCD = JSON.parse(localStorage.getItem(`cuentadividida_${idventa}`));
-          let dataselect = document.querySelector(`#tipoventa${identificador}`);
-          clientesCD.forEach(function(value, index) {
-            if (value.indice == identificador) {
-              value.cliente = data.cliente;
-              value.textocliente = data.clientes
-            }
-          });
-          localStorage.setItem(`cuentadividida_${idventa}`, JSON.stringify(clientesCD));
-          //TODO: ------END-----
-          //toast.success("El registro fue creado exitosamente");
-          Lobibox.notify('success', {
-            size: 'mini',
-            position: 'top right',
-            msg: 'El registro fue creado exitosamente.'
-          });
-        } else {
-          for (var i = 0; i < data.inputerror.length; i++) {
-            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-            $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
-          }
-        }
-        $('#btnSavecliente2').text('GRABAR'); //change button text
-        $('#btnSavecliente2').attr('disabled', false); //set button enable
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        toast.error("Algo inesperado ha sucedido");
-        // Lobibox.notify('error', {
-        //   size: 'mini',
-        //   msg: 'El registro no se pudo crear verifique las validaciones.'
-        // });
-        $('#btnSavecliente2').text('GRABAR'); //change button text
-        $('#btnSavecliente2').attr('disabled', false); //set button enable
-      }
-    });
-  };
-
-  function inicio() {
-    $.ajax({
-      url: "<?= $this->url ?>/ajax_inicio",
-      type: "POST",
-      success: function(data) {
-        if (data.status) {
-
-        }
-        location.reload(true);
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        Lobibox.notify('error', {
-          size: 'mini',
-          position: 'top right',
-          msg: 'Error al obtener datos de ajax.'
-        });
-      }
-    });
-  }
-
-  function comandar() {
-    $.ajax({
-      url: "<?= $this->url ?>/GenerarPedido",
-      type: "POST",
-      success: function(data) {
-        $('#listaproducto').load("<?= $this->url ?>/listaproducto");
-        $('#generarpedido').button('reset');
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        toast.error("Algo inesperado ha sucedido");
-        // Lobibox.notify('error', {
-        //   size: 'mini',
-        //   msg: 'Error al obtener datos de ajax.'
-        // });
-        $('#generarpedido').button('reset');
-      }
-    });
-  };
-
-  function delete_posale(id) {
-    // ajax delete data to database
-    $.ajax({
-      url: "<?= $this->url ?>/delete/" + id,
-      type: "POST",
-      dataType: "JSON",
-      success: function(data) {},
-      error: function(jqXHR, textStatus, errorThrown) {
-        toast.error("Algo inesperado ha sucedido");
-        // Lobibox.notify('error', {
-        //   size: 'mini',
-        //   msg: 'Error al obtener datos de ajax.'
-        // });
-      }
-    });
-  };
-
   //TODO -----------------------------------------------------------------------------------------------------------
   //!                  RECORDAR EN LOCALSTORAGE SE GUARDA LA SIGUIENTE IFORMACION EN EL SIGUIENTE ORDEN           -
   //!                   [IDRODUCTO, CANDTIDA DEL PRODUCTO A LLEVADR, OBSERVACION DEL PRODUCTO/OPCION ]            -
   //TODO -----------------------------------------------------------------------------------------------------------
-  function addoptions(producto, venta, correlativo) {
-    let dataStorage = JSON.parse(localStorage.getItem(`${venta}_${correlativo}`));
-    $('#form_options')[0].reset(); // reset form on modals
-    $('[name="detalle"]').val(producto);
-    $(`[name="CorrelativoIdentif"]`).val(correlativo);
-    $(`[name="VentaModalOpcion"]`).val(venta);
-    $('[name="CantidadModalOpcion"]').val(dataStorage[1]);
-    $('[name="precioModalOpcion"]').val(dataStorage[3]);
-    $('[name="opcion"]').val(dataStorage[2]);
-    $('#options').modal('show');
-    $('.modal-title').text('AGREGAR OPCION');
-  };
-
-
-
-  function CantidadProductokeyup(event, key_primary) {
-
-    let TeclaPresionado = event.keyCode || event.which;
-
-    if (TeclaPresionado === 8) {
-      let StockRestablecer = $(`#CantidadProductoAnterior-${key_primary}`).val() - ($(`#CantidadProductoActual-${key_primary}`).val() == "" ? 0 : $(`#CantidadProductoActual-${key_primary}`).val());
-
-      console.log("restablecer " + StockRestablecer);
-
-    } else if ((TeclaPresionado >= 48 && TeclaPresionado <= 57) || (TeclaPresionado >= 96 && TeclaPresionado <= 105)) {
-
-      let StockDescontar = $(`#CantidadProductoActual-${key_primary}`).val() - $(`#CantidadProductoAnterior-${key_primary}`).val();
-      console.log("Descontar Stock " + StockDescontar)
-
-    } else {
-
-    }
-
-
-  }
-
-  function CantidadProductoDown(event, key_primary) {
-
-    let TeclaPresionado = event.keyCode || event.which;
-    if ((TeclaPresionado >= 48 && TeclaPresionado <= 57) || (TeclaPresionado >= 96 && TeclaPresionado <= 105)) {
-
-      //? guardamos la cantidad en cantidadanteriror antes que sea modificado
-      let cantidadactual = $(`#CantidadProductoActual-${key_primary}`).val() == "" ? 0 : $(`#CantidadProductoActual-${key_primary}`).val();
-      $(`#CantidadProductoAnterior-${key_primary}`).val(cantidadactual);
-
-    } else if (TeclaPresionado === 8) {
-      //? guardamos la cantidad en cantidadanteriror antes que sea eliminado
-      let cantidadactual = $(`#CantidadProductoActual-${key_primary}`).val();
-      $(`#CantidadProductoAnterior-${key_primary}`).val(cantidadactual);
-
-    }
-
-
-  }
-
-  function CantidadProductoPress(event, key_primary) {
-
-  }
-
-
-  function addPoptions() {
-    //TODO: En el eleemnto "detalle" va el id del producto
-    let opcion = $("#opcion").val();
-    let idproducto = $("#detalle").val();
-    let idventa = $("#VentaModalOpcion").val();
-    let cantidadProducto = $("#CantidadModalOpcion").val();
-    let precioModalOpcion = $("#precioModalOpcion").val();
-    let correlativo = $("#CorrelativoIdentif").val();
-    let DatasStorage = JSON.parse(localStorage.getItem(`${idventa}_${correlativo}`));
-    let DataAddStorage = JSON.stringify([idproducto, cantidadProducto, opcion, precioModalOpcion]);
-    localStorage.setItem(`${idventa}_${correlativo}`, DataAddStorage);
-    let DatasStorageUpdate = JSON.parse(localStorage.getItem(`${idventa}_${correlativo}`));
-    $(`#pooptions${idproducto}`).text(DatasStorageUpdate[2]);
-    $('#options').modal('hide');
-    $('#form_options')[0].reset();
-  };
 
   function saleBtn() {
     let idventa = $("#ventaseleccionada").val();
@@ -652,6 +469,7 @@
           'operacion': $(`[name="operacion"]`).val(),
           'vence': $(`[name="vence"]`).val(),
           'fecha': $(`[name="fecha"]`).val(),
+          'creditosdisponibles': $(`[name="creditosdisponibles"]`).val(),
           'deuda': parseFloat($("#MontoPagar2 span").text())
         },
         dataType: "JSON",
@@ -667,6 +485,12 @@
                   position: "top right",
                   msg: 'El credito fue creado correctamente.'
                 });
+              } else if ($(`#formapago`).val() == "CREDITOCLIENTE") {
+                Lobibox.notify('success', {
+                  size: 'mini',
+                  position: "top right",
+                  msg: 'El credito fue acumulado en el cliente correctamente.'
+                });
               } else {
                 $('#comprobante').modal('show');
                 $('.modal-title').text('COMPROBANTE');
@@ -675,6 +499,7 @@
               }
 
               if ($("#cobradorCaja").val() == '1') {
+                //? si el usuario esta con un perfil que este activado el cobrador de caja
                 datosPedidosEnviados();
                 $("#opcionmenu").show();
                 $("#contenedorPedidosVenta").show();
@@ -738,10 +563,8 @@
 
 
   function printfcomprobante(idventas) {
-
     $('#comprobante').modal('show');
     $('.modal-title').text('COMPROBANTE');
-
     $.ajax({
       url: "<?= $this->url ?>/printfcomprobante",
       data: {
@@ -771,7 +594,7 @@
     $("#enviarcorreo").attr("disabled", true);
     $("#enviarcorreo").html("<i class='fa fa-spinner fa-spin'></i>");
     $.ajax({
-      url: "<?= $this->url ?>/sendemail",
+      url: "<?= $this->url ?>/ajax_sendemail",
       data: {
         "idventa": idventas,
         "correo": correo
@@ -808,7 +631,7 @@
   function imprimircomprobante(tipoimpresora, venta) {
     if (tipoimpresora === 0) {
       $.ajax({
-        url: '<?= $this->url ?>/imprimircomprobante',
+        url: '<?= $this->url ?>/ajax_imprimircomprobante',
         type: 'POST',
         data: {
           'venta': venta
@@ -816,14 +639,14 @@
       });
     }
     if (tipoimpresora === 1) {
-      var Url = '<?= $this->url ?>/showcomprobante/' + venta;
+      var Url = '<?= $this->url ?>/ajax_showcomprobante/' + venta;
       window.open(Url, 'Pruebas', 'fullscreen=yes, scrollbars=auto');
     }
   };
 
   function opcionesmenu() {
     $.ajax({
-      url: "<?= $this->url ?>/opcionmenu",
+      url: "<?= $this->url ?>/ajax_opcionmenu",
       type: "POST",
       dataType: "json",
       success: function(data) {
@@ -866,9 +689,8 @@
     if (totalventa == 0) {
       $("#boton-CloseRegister").attr("disabled", true);
       $("#boton-CloseRegister").html(`<i class="fa fa-spin fa-spinner" style="font-size:30px"></i>`);
-
       $.ajax({
-        url: "<?= $this->url ?>/CloseRegister",
+        url: "<?= $this->url ?>/ajax_CloseRegister",
         type: "POST",
         dataType: "json",
         success: function(data) {
@@ -892,7 +714,6 @@
           });
         }
       });
-
     } else {
       Lobibox.alert("info", {
         title: "Informacion",
@@ -923,14 +744,13 @@
         callback: function($this, type) {
           if (type == 'ok') {
             $.ajax({
-              url: "<?= $this->url ?>/SubmitRegister",
+              url: "<?= $this->url ?>/ajax_SubmitRegister",
               type: "POST",
               data: $('#form_cierre').serialize(),
               dataType: "JSON",
               success: function(data) {
                 if (data.status) {
-                  //? El perfil de 3 es caja
-                  if (data.usuarioperfil == 1 || data.usuarioperfil == 2) {
+                  if (data.estado_reportecajacierre == "1") {
                     printfcierre(data.tipoimpresora, data.idcaja); //? le muestra el reporte al cerrar caja
                   }
                   location.reload();
@@ -961,12 +781,12 @@
   function printfcierre(tipoimpresora, idcaja) {
     if (tipoimpresora === '0') {
       $.ajax({
-        url: '<?= $this->url ?>/imprimircierre/' + idcaja,
+        url: '<?= $this->url ?>/ajax_imprimircierre/' + idcaja,
         type: 'POST',
       });
     }
     if (tipoimpresora === '1') {
-      var Url = '<?= $this->url ?>/showcierre/' + idcaja;
+      var Url = '<?= $this->url ?>/ajax_showcierre/' + idcaja;
       window.open(Url, 'Pruebas', 'fullscreen=yes, scrollbars=auto');
     }
   };
@@ -976,7 +796,6 @@
     $("#agregarnewventa").attr("disabled", true);
     $("#ProcesarVenta").attr("disabled", true);
     $("#agregarnewventa").html("<i class='fa fa-spinner fa-spin'></i>");
-    QuitarResalteDeVentaOld();
     $.ajax({
       url: "<?= $this->url ?>/ajax_newventa",
       type: "POST",
@@ -987,10 +806,9 @@
         $("#ventaspendientes").append(drawNewVenta(data.idventa, data.totalventa));
         $("#ventaseleccionada").val(data.idventa);
         drawDataProductoLS(null);
-        DatosVenta();
+        DatosVentaSeleccionada();
         $("#agregarnewventa").attr("disabled", false);
         $("#agregarnewventa").html("<i class='fa fa-plus'></i>");
-        resaltar();
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
@@ -1016,25 +834,16 @@
 
   }
 
-  function resaltar() {
-    $('.help-block').empty(); // clear error string
-    $("#tipoventa").closest('div').removeClass("has-error"); //clear error 
-
-  }
-
   function traerpedidosventa(idventa) {
-    QuitarResalteDeVentaOld(); //Antese que se cambie el id de la venta Demarcamos los productos de esa venta
     $("#ventaspendientes").children().removeClass("selectedGat");
     $("#ventaseleccionada").val(idventa);
     $(`#venta_${idventa}`).addClass("selectedGat");
-    DatosVenta(); //traemos los datos de laventa
-    ResalteSeleccionados(); // marcamos los productos de la venta actual seleccionada
+    DatosVentaSeleccionada(); //traemos los datos de laventa
     DatosSecundariosPedido();
     drawDataProductoLS(null);
-    resaltar();
   }
 
-  function DatosVenta() {
+  function DatosVentaSeleccionada() {
     let idventa = $("#ventaseleccionada").val();
     if (idventa != "") {
       $.ajax({
@@ -1061,22 +870,10 @@
 
   }
 
-  function QuitarResalteDeVentaOld() {
-    let idventa = $("#ventaseleccionada").val();
-    let dataPLS = localStorage.getItem(`productos_${idventa}`);
-    if (dataPLS != null) {
-      let array = JSON.parse(dataPLS);
-      for (value of array) {
-        $(`#ProductoLista${value.id_producto}`).removeClass("productoIsSelected");
-      }
-    }
-  }
-
-
   //? traemos todas las ventas
   function ventasReload() {
     $("#ventaspendientes").empty();
-    // $("#ventaspendientes").html(`<button id="agregarnewventa" style="border-top:0px; border-left:0px" class="categories" onclick="agregarnewventa()"><i class="fa fa-plus"></i></button>`);
+    //$("#ventaspendientes").html(`<button id="agregarnewventa" style="border-top:0px; border-left:0px" class="categories" onclick="agregarnewventa()"><i class="fa fa-plus"></i></button>`);
     $("#ventaspendientes").children().removeClass("selectedGat");
     $.ajax({
       url: "<?= $this->url ?>/ajax_ventasReload",
@@ -1086,7 +883,7 @@
         $("#ventaspendientes").append(data.datahtml);
         $("#ventaseleccionada").val(data.idselect); //insertamos el id de la venta para saber de quien sera el producto
         drawDataProductoLS(null);
-        DatosVenta(); //traemos los datos de laventa
+        DatosVentaSeleccionada(); //traemos los datos de laventa
         DatosSecundariosPedido();
       },
       error: function(jqXHR, textStatus, errorThrown) {
@@ -1144,21 +941,15 @@
       },
       dataType: "JSON",
       success: function(data) {
-
         $(`#venta_${idventa}`).removeClass("selectedGat");
         $(`#venta_${idventa}`).prev().addClass("selectedGat");
-
         if (localStorage.getItem(`productos_${idventa}`) != null) {
           localStorage.removeItem(`productos_${idventa}`);
         }
-
-
         let idventaPREV = $(`.selectedGat`).children().val();
         $("ventaseleccionada").val(idventaPREV);
-
         $(`#venta_${idventa}`).remove();
         traerpedidosventa(idventaPREV);
-
         $("#eliminarventa").attr("disabled", false);
         $("#eliminarventa").html("<i class='fa fa-minus'></i>");
 
@@ -1168,7 +959,7 @@
         Lobibox.notify('error', {
           size: 'mini',
           position: "top right",
-          msg: 'Error al obtener datos de ajax.'
+          msg: 'Error al obtener datos de ajax. ajax_ProcesoELiminarVenta'
         });
       }
     });
@@ -1219,7 +1010,6 @@
   function categoriaSeleccionar() {
     $("#retrocederFila").hide();
     $("#Categoriaproducto").hide();
-    $("#CategriaSeleccionar").load('<?= $this->url ?>/load_CategriaSeleccionar');
   }
 
 
@@ -1261,42 +1051,9 @@
   }
 
 
-
-
-  function categoria(categoria) {
-    $.ajax({
-      url: "<?= $this->url ?>/ajax_productos_categoria",
-      type: "POST",
-      data: {
-        'categoria': categoria
-      },
-      success: function(data) {
-        $("#CategriaSeleccionar").hide();
-        $("#retrocederFila").show();
-        $("#Categoriaproducto").show();
-        $("#CategoriaproductoTodos").hide();
-        $("#Categoriaproducto").html(data);
-        ResalteSeleccionados();
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        alert("error");
-      }
-    });
-  }
-
-  function ResalteSeleccionados() {
-    let idventa = $("#ventaseleccionada").val();
-    let dataPLS = localStorage.getItem(`productos_${idventa}`);
-    if (dataPLS != null) {
-      let array = JSON.parse(dataPLS);
-      for (value of array) {
-        $(`#ProductoLista${value.id_producto}`).addClass("productoIsSelected");
-      }
-    }
-  }
-
-  function productolibre() {
+  function agregarproductolibre() {
     $("#addproductolibre").modal('show');
+    $("#nombreproductolibre").focus();
   }
 
   function saveLibre() {
@@ -1312,15 +1069,22 @@
         success: function(data) {
           if (data.status) {
             $('#addproductolibre').modal('hide');
-            $('#form_libre')[0].reset();
-            agregaarventa(data.producto, data.precio, {
-              statusvariantes: false
-            }, data.nombre_producto);
+            agregaarventa(null, $("#precioventa").val(), {
+              statusvariante: false,
+              statuslote: false,
+              lote: null,
+              codigoBarra : false,
+              cantidad: 1,
+              tipoproducto: "LIBRE",
+              tipoprecio: "NORMAL",
+            }, $("#nombreproductolibre").val());
+            console.log("nombre a enviar" + $("#nombreproductolibre").val())
             DatosSecundariosPedido();
+            $('#form_libre')[0].reset();
           } else {
             for (var i = 0; i < data.inputerror.length; i++) {
-              $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
-              $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
+              $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error');
+              $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]);
             }
           }
           $('#btnSaveLibre').text('GRABAR'); //change button text
@@ -1340,6 +1104,8 @@
         msg: 'Tiene que haber una venta selecionada'
       });
     }
+
+
 
   };
 
@@ -1391,21 +1157,25 @@
 
   }
 
-  function datainsert(idproducto, precioproducto, idventa, nameproducto, cantidad_variante, idvariante, objectParametros) {
+  function datainsert(idproducto, precioproducto, idventa, nameproducto, idvariante, objectParametros) {
     let key = asignarindicePro(idventa);
+    let operaciontotalpagar = parseFloat(precioproducto * objectParametros.cantidad);
+    let cantidadVarianteTotal = parseInt(objectParametros.cantidadvariante * objectParametros.cantidad);
     let data = {
       key_primary: key,
       id_producto: idproducto,
       text_proudcto: nameproducto,
       id_variante: idvariante,
       statusvariante: objectParametros.statusvariante,
-      total_pagar: precioproducto,
+      total_pagar: operaciontotalpagar,
       precio_producto: precioproducto,
-      cantidad: 1,
-      cantidad_variante: cantidad_variante,
-      cantidad_variante_total: cantidad_variante,
+      cantidad: objectParametros.cantidad,
+      cantidad_variante: objectParametros.cantidadvariante,
+      cantidad_variante_total: cantidadVarianteTotal,
       lote: objectParametros.lote,
       statuslote: objectParametros.statuslote,
+      tipoproducto: objectParametros.tipoproducto,
+      tipoprecio: objectParametros.tipoprecio,
       EstadoMas: false,
       EstadoMenos: true,
     };
@@ -1428,7 +1198,6 @@
     $(`#boton-product-${idproducto}`).attr("disabled", false);
     $("#addProcesoVE").modal("hide");
     $("#btnAgregarVenta").attr("disabled", false);
-
     let idventa = $("#ventaseleccionada").val();
     if (idventa != "") {
       ProductosArr = JSON.parse(localStorage.getItem(`productos_${idventa}`));
@@ -1520,20 +1289,14 @@
 
 
   function TotalPagarServicio(datakey_primary) {
-
     let ventaseleccionada = $(`#ventaseleccionada`).val();
-
     let costoproducto = parseFloat($(`#CostoProducto-${datakey_primary}`).text());
     let TotalPagar = parseFloat($(`#TotalPagar-${datakey_primary}`).val());
-
     let ResultCantidad = isNaN(parseFloat(TotalPagar / costoproducto)) ? 0.00 : parseFloat(TotalPagar / costoproducto);
-
     $(`#CantidadProducto-${datakey_primary}`).val(ResultCantidad.toFixed(2));
-
     for (value of ProductosArr) {
       if (value.key_primary == datakey_primary) {
         value.cantidad = ResultCantidad.toFixed(2);
-
         value.total_pagar = isNaN(TotalPagar.toFixed(2)) ? 0 : TotalPagar.toFixed(2);
         let cantidad_variante_total = parseFloat(value.cantidad_variante * ResultCantidad);
         value.cantidad_variante_total = cantidad_variante_total;
@@ -1640,7 +1403,9 @@
     let CantidadTotal;
     let totalcantidad;
     if (estadoBTN) {
-      totalcantidad = parseInt(ProductosArr[indexBusqueda].cantidad + cantidadaproducto);
+      let cantidadproducto1 = parseInt(ProductosArr[indexBusqueda].cantidad);
+      let cantidadproducto2 = parseInt(cantidadaproducto);
+      totalcantidad = cantidadproducto1 + cantidadproducto2;
       if (ProductosArr[indexBusqueda].statusvariante) {
         //? aumentamos variante
         ProductosArr[indexBusqueda].cantidad_variante_total = parseInt(ProductosArr[indexBusqueda].cantidad_variante * totalcantidad);
@@ -1732,7 +1497,7 @@
         dataType: "JSON",
         success: function(data) {
           $(`#boton-producto-${idproducto}`).attr("disabled", false);
-          $(`#boton-producto-${idproducto}`).html("<i class='fa fa-shopping-cart'></i>");
+          $(`#boton-producto-${idproducto}`).html("<i class='fa fa-cart-plus' style='font-size: 16px;'></i>");
           document.getElementById("ColumnaVariante").className = '';
           document.getElementById("ColumnaExtra").className = '';
           document.getElementById("ColumnaLotes").className = '';
@@ -1752,7 +1517,7 @@
         error: function(jqXHR, textStatus, errorThrown) {
           alert("Codigo de error de ajax: agregarAdicionales")
           $(`#boton-producto-${idproducto}`).attr("disabled", false);
-          $(`#boton-producto-${idproducto}`).html("<i class='fa fa-shopping-cart'></i>");
+          $(`#boton-producto-${idproducto}`).html("<i class='fa fa-cart-plus' style='font-size: 16px;'></i>");
         }
       });
     }
@@ -1819,7 +1584,12 @@
       statuslote: dataObject.statuslote,
       lote: dataObject.statuslote ? $("#loteseleccionado").val() : null,
       variante: idvariante,
-      data: textProductoAdicional
+      data: textProductoAdicional,
+      cantidad: 1,
+      tipoproducto: "NORMAL",
+      tipoprecio: "NORMAL",
+      codigoBarra : false,
+      cantidadvariante: $(`#variante-cantidad-${idvariante}`).length > 0 ? parseInt($(`#variante-cantidad-${idvariante}`).val()) : 1,
     };
     if (dataObject.statusvariante == 1) {
       let variante = $(`#varianteseleccionada`).val();
@@ -1866,16 +1636,22 @@
 
   function agregaarventa(idproducto, precioproducto, VariExtrData, nombreproducto) {
     let idventaseleccionada = $("#ventaseleccionada").val();
-    let idvariante, tipomedida, cantidad_variante, precioinsert, nombreinsert;
+    let idvariante, tipomedida, cantidad_variante, precioinsert;
+    let nombreinsert = "ERROR";
     precioinsert = precioproducto;
     if (VariExtrData.statusvariante) {
       idvariante = VariExtrData.variante;
-      cantidad_variante = $(`#variante-cantidad-${idvariante}`).length > 0 ? $(`#variante-cantidad-${idvariante}`).val() : 1;
       nombreinsert = $(`#nombre-producto-${idproducto}`).val() + VariExtrData.data;
     } else {
       idvariante = false;
-      cantidad_variante = 1;
-      nombreinsert = $(`#nombre-producto-${idproducto}`).val();
+      if (VariExtrData.tipoproducto == "NORMAL") {
+        console.log(`NORMAL`);
+        nombreinsert = VariExtrData.codigoBarra == true ? VariExtrData.nombreProductoCodigoBarra : $(`#nombre-producto-${idproducto}`).val();
+      } else {
+        nombreinsert = nombreproducto;
+        console.log(`LIBRE`)
+        console.log(`NOMBRE PRODUCTO ${nombreproducto}`)
+      }
     }
     $(`#boton-product-${idproducto}`).attr("disabled", true);
     if (idventaseleccionada != "") {
@@ -1883,6 +1659,7 @@
       let textoproducto = nombreinsert;
       if (nombreproducto != "") {
         textoproducto = nombreproducto;
+        console.log(`LIBRE ${textoproducto}`);
       }
       let EstadoBusqueda = false;
       let verifi = localStorage.getItem(`productos_${idventa}`);
@@ -1908,31 +1685,33 @@
             }
           } else {
             //? buscara el producto y lo aumentara
-            if (value.id_producto == idproducto) {
-
-              EstadoBusqueda = true;
-              let cantidad = parseInt(value.cantidad + 1); //?cantidad de seleccion
-
-              let total = parseFloat(value.precio_producto * cantidad);
-
-              value.cantidad_variante_total = parseInt(value.cantidad_variante * cantidad);
-              value.cantidad = cantidad;
-              value.total_pagar = total;
-
-              if (value.cantidad == 1) {
-                value.EstadoMenos = true;
+            if (VariExtrData.tipoproducto == "NORMAL") {
+              if (value.id_producto == idproducto && value.tipoprecio == VariExtrData.tipoprecio) {
+                EstadoBusqueda = true;
+                let cantidad = parseInt(value.cantidad + 1); //?cantidad de seleccion
+                let total = parseFloat(value.precio_producto * cantidad);
+                value.cantidad_variante_total = parseInt(value.cantidad_variante * cantidad);
+                value.cantidad = cantidad;
+                value.total_pagar = total;
+                if (value.cantidad == 1) {
+                  value.EstadoMenos = true;
+                } else {
+                  value.EstadoMenos = false;
+                }
+                break;
               } else {
-                value.EstadoMenos = false;
+                continue;
               }
-              break;
             } else {
-              continue;
+              EstadoBusqueda = false;
+              break;
             }
+
           }
         }
       }
       if (EstadoBusqueda == false) {
-        datainsert(idproducto, precioinsert, idventa, textoproducto, cantidad_variante, idvariante, VariExtrData);
+        datainsert(idproducto, precioinsert, idventa, textoproducto, idvariante, VariExtrData);
       }
       guardarProductoLS(idventa, idproducto); //? en este metodo agregarmos "productoIsSelected" 
       drawDataProductoLS(idproducto); //? le ponesmo esto al segundo por que recargargar llamamos a este metodo
@@ -2121,24 +1900,7 @@
                 $("#numberoperacion").hide();
                 $('#operacion').attr('minLength', 4);
                 $('#operacion').attr('maxlength', 4);
-                if ($('#formapago').val() == 'CONTADO') {
-                  $('#metodo').show();
-                  $('#pagado').show();
-                  $("#descontado").show();
-                  $("#vencimiento").hide();
-                  $('.ReturnChange').show();
-                } else {
-                  $('#metodo').hide();
-                  $('#pagado').hide();
-                  $("#descontado").hide();
-                  $("#vencimiento").show();
-                  $('.ReturnChange').hide();
-                }
-                if ($('#metodopago').val() == 'EFECTIVO') {
-                  $('#tipocard').hide();
-                } else {
-                  $('#tipocard').show();
-                }
+                formapagooperacion();
               }
             }
           } else {
@@ -2182,17 +1944,6 @@
     $("#pago").val($(`#SubtotVenta`).text());
 
   }
-
-  function grabarcliente2(identificador, idventa) {
-    $("#form_cliente2")[0].reset();
-    let footer = document.querySelector("#divfooter");
-    footer.innerHTML = `
-    <button type="button" id="btnSavecliente2" onclick="savecliente2(${identificador}, ${idventa})" class="btn btn-primary">GRABAR</button>
-    <button type="button" class="btn btn-danger" data-dismiss="modal" >CERRAR</button>`;
-    $('#cliente_form2').modal('show');
-    $('.modal-title').text('CREAR CLIENTE 2');
-  }
-
 
   function verstockactual(id, boton) {
     $(`#verStock-${id}-${boton}`).attr("disabled", true);
@@ -2289,17 +2040,21 @@
       type: "POST",
       dataType: "JSON",
       success: function(data) {
-
         $("#ventaseleccionada").val(data.dataVenta.id)
         for (value of data.dataVentaDetalle) {
           let VarianExtrData = {
-            statusvariante: value.variante ? true : false,
-            statuslote: value.lote ? true : false,
-            lote: value.lote ? value.lote : false,
+            statusvariante: value.variante != null ? true : false,
+            statuslote: value.lote != null ? true : false,
+            lote: value.lote != null ? value.lote : false,
             variante: value.variante,
-            data: ""
+            data: "",
+            codigoBarra : false,
+            cantidad: value.cantidad,
+            tipoprecio: value.tipoprecio,
+            tipoproducto: (value.tipo == "0" ? "NORMAL" : "LIBRE"),
+            cantidadvariante: value.variante != null ? value.cantidadvariante : null
           };
-          agregaarventa(value.producto, value.subtotal, VarianExtrData, value.nombre)
+          agregaarventa(value.producto, value.precio, VarianExtrData, value.nombre);
         }
         $(`#cobrar-${idventa}`).attr("disabled", false);
         $(`#cobrar-${idventa}`).html("<i class='fa fa fa-money'></i>");

@@ -47,16 +47,14 @@
   <?php
   $fechahoraApertura =  explode(" ", $caja->apertura, 2);
   $fechahoraCierre = explode(" ", $caja->cierre, 2);
+  $usuariCierre = $this->Controlador_model->get($caja->usuario_cierre, "usuario");
   ?>
   <table>
     <tr>
-      <td align="center"><b>ENCARGADO:</b> <?= $usuario->nombre . ' ' . $usuario->apellido ?></td>
+      <td align="center"><b>ENCARGADO AL APERTUR:</b> <?=($usuario->nombre . ' ' . $usuario->apellido)?> |<?= $fechahoraApertura[0] . " / " . $fechahoraApertura[1] ?></td>
     </tr>
     <tr>
-      <td align="center"><b>APERTURADO:</b> <?= $fechahoraApertura[0] . " / " . $fechahoraApertura[1] ?></td>
-    </tr>
-    <tr>
-      <td align="center"><b>CERRADO:</b> <?= $fechahoraCierre[0] . " / " . $fechahoraCierre[1] ?></td>
+      <td align="center"><b>ENCARGADO AL CERRAR:</b><?=( $usuariCierre ? $usuariCierre->nombre . ' ' . $usuariCierre->apellido : "SIN DATOS")?> | <?= (is_null($caja->cierre) ? "" : $fechahoraCierre[0] . " / " . $fechahoraCierre[1] )?></td>
     </tr>
   </table>
 
@@ -197,17 +195,17 @@
         <td>MOTIVO</td>
       </tr>
       <?php
-        $ventasAnuladas = $this->db->where("caja", $caja->id)->where("estado", "3")->get("venta")->result();
+      $ventasAnuladas = $this->db->where("caja", $caja->id)->where("estado", "3")->get("venta")->result();
       ?>
-      <?php foreach($ventasAnuladas as $key => $anuladas){ 
+      <?php foreach ($ventasAnuladas as $key => $anuladas) {
         $dataUsuario = $this->Controlador_model->get($anuladas->usuario_anulado, "usuario");
       ?>
-      <tr>
-        <td><?= $key + 1 ?></td>
-        <td><?= $dataUsuario ? $dataUsuario->nombre." ".$dataUsuario->apellido : "SIN DATOS" ?></td>
-        <td><?= $anuladas->serie."-".$anuladas->numero ?></td>
-        <td><?= $anuladas->anular_motivo ?></td>
-      </tr>
+        <tr>
+          <td><?= $key + 1 ?></td>
+          <td><?= $dataUsuario ? $dataUsuario->nombre . " " . $dataUsuario->apellido : "SIN DATOS" ?></td>
+          <td><?= $anuladas->serie . "-" . $anuladas->numero ?></td>
+          <td><?= $anuladas->anular_motivo ?></td>
+        </tr>
       <?php } ?>
     </tbody>
   </table>
@@ -215,18 +213,23 @@
   <table class="tabla-contado" style="text-align:center">
     <thead>
       <tr>
-        <th colspan="4" style="border: 0.5px solid #000">ABONOS EN CAJA</th>
+        <th colspan="5" style="border: 0.5px solid #000">ADICIONALES EN CAJA</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>N°</td>
+        <td>TIPO</td>
         <td>CONCEPTO</td>
         <td>DETALLE</td>
         <td>ACUMULADO</td>
       </tr>
       <?php
-      $dataAbono = $this->db->where("caja", $caja->id)->where("tipo", "OPERACION")->get("ingreso")->result();
+      $this->db->where("caja", $caja->id);
+      $this->db->where("tipo", "CAJA");
+      $this->db->where("modalidad !=", "VENTA");
+      $this->db->where("metodopago", "EFECTIVO");
+      $dataAbono = $this->db->get("ingreso")->result();
       $totalAcumuladoAbono = 0;
       foreach ($dataAbono as $indice => $data) {
         $dataConcepto = $this->Controlador_model->get($data->concepto, "concepto");
@@ -234,6 +237,7 @@
       ?>
         <tr>
           <td><?= $indice + 1 ?></td>
+          <td><?= $data->modalidad ?></td>
           <td><?= $dataConcepto->concepto ?></td>
           <td><?= $data->observacion ?></td>
           <td>S/. <?= number_format($data->monto, 2) ?></td>
@@ -242,7 +246,7 @@
     </tbody>
     <tfoot>
       <tr>
-        <td colspan="3">TOTAL</td>
+        <td colspan="4">TOTAL</td>
         <td>S/. <?= number_format($totalAcumuladoAbono, 2) ?></td>
       </tr>
     </tfoot>
@@ -251,18 +255,19 @@
   <table class="tabla-contado" style="text-align:center">
     <thead>
       <tr>
-        <th colspan="4" style="border: 0.5px solid #000">GASTOS EN CAJA</th>
+        <th colspan="5" style="border: 0.5px solid #000">GASTOS EN CAJA</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>N°</td>
+        <td>TIPO</td>
         <td>CONCEPTO</td>
         <td>DETALLE</td>
         <td>ACUMULADO</td>
       </tr>
       <?php
-      $dataEgreso = $this->db->where("caja", $caja->id)->get("egreso")->result();
+      $dataEgreso = $this->db->where("caja", $caja->id)->where("tipo", "CAJA")->where("tipopago", "EFECTIVO")->get("egreso")->result();
       $totalAcumuladoEgreso = 0;
       foreach ($dataEgreso as $indiceEgreso => $valueEgreso) {
         $dataConceptoEgreso = $this->Controlador_model->get($valueEgreso->concepto, "concepto");
@@ -270,6 +275,7 @@
       ?>
         <tr>
           <td><?= $indiceEgreso + 1 ?></td>
+          <td><?= $valueEgreso->tipo ?></td>
           <td><?= $dataConceptoEgreso->concepto ?></td>
           <td><?= $valueEgreso->observacion ?></td>
           <td>S/. <?= number_format($valueEgreso->montototal, 2) ?></td>
@@ -278,7 +284,7 @@
     </tbody>
     <tfoot>
       <tr>
-        <td colspan="3">TOTAL</td>
+        <td colspan="4">TOTAL</td>
         <td>S/. <?= number_format($totalAcumuladoEgreso, 2) ?></td>
       </tr>
     </tfoot>
@@ -304,7 +310,7 @@
         <td>S/. + <?= number_format($caja->efectivocontado, 2) ?></td>
       </tr>
       <tr>
-        <th>+ ABONOS EN CAJA</th>
+        <th>+ ADICIONALES EN CAJA</th>
         <td>S/. + <?= number_format($totalAcumuladoAbono, 2) ?></td>
       </tr>
       <tr>
@@ -345,11 +351,11 @@
         <td><?= $montoCerrarCaja ?></td>
       </tr>
       <tr>
-        <?php $diferencia =  $resultCuadre == 0 ? "" : ": S/. ".number_format($resultCuadre,2); ?>
-        <td colspan="2" style="font-size:12px"><b><?=$estadocaja.$diferencia?></b></td>
+        <?php $diferencia =  $resultCuadre == 0 ? "" : ": S/. " . number_format($resultCuadre, 2); ?>
+        <td colspan="2" style="font-size:12px"><b><?= $estadocaja . $diferencia ?></b></td>
       </tr>
       <tr>
-        <td colspan="2" style="font-size:40px"><?=$emoji?></td>
+        <td colspan="2" style="font-size:40px"><?= $emoji ?></td>
       </tr>
     </tbody>
   </table>

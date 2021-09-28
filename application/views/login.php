@@ -312,7 +312,7 @@
             $img = base_url() . RECURSOS . 'img/Avatar.png';
           }
           $html .= '<div class="ui-user" onclick="ingresar(' . $usuario->id . ')"><a><img src="' . $img . '" alt="" class="img-circle" width="100px" height="100px"></a>';
-          $html .= '<br><span class="nombre_completo" id="nombre_completo' . $usuario->id . '">' . $usuario->nombre . '</span>';
+          $html .= '<br><span class="nombre_completo" id="nombre_completo' . $usuario->id . '">' . $usuario->usuario . '</span>';
           $html .= '</div>';
         }
         echo $html;
@@ -348,7 +348,7 @@
         <div class="mhn-lock-wrap">
           <div class="user-lock-p" id="user-lock" style="color: white;"></div>
           <br>
-          <input type="password" name="password" id="password" value="" placeholder="Ingrese contraseña" onkeydown="if(event.keyCode==13){login()}">
+          <input type="password" name="password" id="password" class="inputentrada" value="" placeholder="Ingrese contraseña" onkeydown="if(event.keyCode==13){login()}">
           <button type="button" class="btn btn-info btn-block" id="btn-ingresar" onclick="login()">Ingresar</button>
         </div>
       </div>

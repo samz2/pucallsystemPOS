@@ -111,12 +111,12 @@
             <h3 class="panel-title pull-left">DATOS DE <?= $this->titulo_controlador ?></h3>
             <div class="pull-right">
               <a onclick="location.reload()" class="btn btn-openid" data-toggle="tooltip">
-                <span class="hidden-xs">Recargar</span>
                 <i class="fa fa-repeat"></i>
+                <span class="hidden-xs">Recargar</span>
               </a>
               <a href="<?= $this->url ?>/volver" class="btn btn-default" data-toggle="tooltip">
-                <span class="hidden-xs">Volver</span>
                 <i class="fa fa-arrow-left"></i>
+                <span class="hidden-xs">Volver</span>
               </a>
             </div>
           </div>
@@ -126,39 +126,39 @@
             <div class="panel-body">
               <div class="row">
                 <div class="col-lg-6">
-                <div class="form-group">
-                <label>Empresa<span class="required">*</span></label>
-                  <select class="form-control" name="empresa" id="empresa" onchange="empresaalmacen()">
-                    <?php foreach ($empresas as $empresa) { ?>
-                      <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie ?></option>
-                    <?php } ?>
-                  </select>
-                  <span class="help-block"></span>
-              </div>
+                  <div class="form-group">
+                    <label>Empresa<span class="required">*</span></label>
+                    <select class="form-control" name="empresa" id="empresa" onchange="empresaalmacen()">
+                      <?php foreach ($empresas as $empresa) { ?>
+                        <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " | " . $empresa->nombre . " | " . $empresa->serie ?></option>
+                      <?php } ?>
+                    </select>
+                    <span class="help-block"></span>
+                  </div>
                 </div>
                 <div class="col-lg-6">
-                <div class="form-group">
-                <label>Usuario<span class="required">*</span></label>
-                  <input type="hidden" class="form-control" name="usuario" id="usuario">
-                  <input type="text" class="form-control limpiar" name="usuarios" id="usuarios">
-                  <span class="help-block"></span>
-              </div>
+                  <div class="form-group">
+                    <label>Usuario<span class="required">*</span></label>
+                    <input type="hidden" class="form-control" name="usuario" id="usuario">
+                    <input type="text" class="form-control" name="usuarios" id="usuarios" readonly>
+                    <span class="help-block"></span>
+                  </div>
                 </div>
               </div>
               <div class="row">
                 <div class="col-lg-12">
-                <div class="form-group">
-                <label>Nota Ingreso</label>
-                  <input type="text" class="form-control" name="codigo" id="codigo" readonly>
-              </div>
+                  <div class="form-group">
+                    <label>Nota Ingreso</label>
+                    <input type="text" class="form-control" name="codigo" id="codigo" readonly>
+                  </div>
                 </div>
               </div>
               <div class="row">
                 <div class="col-lg-12">
-                <div class="form-group">
-                <label>Monto</label>
-                  <input type="text" class="form-control" id="montototal" name="montototal" readonly>
-              </div>
+                  <div class="form-group">
+                    <label>Monto</label>
+                    <input type="text" class="form-control" id="montototal" name="montototal" readonly>
+                  </div>
                 </div>
               </div>
             </div>
@@ -178,17 +178,17 @@
               <table id="tabla_detalle" class="table table-bordered table-striped">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Destino</th>
-                    <th>Codigo</th>
-                    <th>Producto</th>
-                    <th>Lote</th>
-                    <th>T. Medida</th>
-                    <th>PU</th>
-                    <th>Cant</th>
-                    <th>C. Item</th>
-                    <th>Total</th>
-                    <th>Accion</th>
+                    <th><b>#</b></th>
+                    <th><b>Destino</b></th>
+                    <th><b>Código</b></th>
+                    <th><b>Producto</b></th>
+                    <th><b>Lote</b></th>
+                    <th><b>T. Medida</b></th>
+                    <th><b>PU</b></th>
+                    <th><b>Cant</b></th>
+                    <th><b>C. Item</b></th>
+                    <th><b>Total</b></th>
+                    <th><b>Acción</b></th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -231,11 +231,9 @@
               </div>
             </div>
             <div class="panel-footer text-center">
-              <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip" title="GENERAR"><i class="fa fa-list"></i></a>
-              <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip" title="PENDIENTE"><i class="fa fa-search"></i></a>
+              <a onclick="generar()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+              <a onclick="pendiente()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-clipboard"></i> PENDIENTES</a>
               <!--<a onclick="exportar()" class="btn btn-success" data-toggle="tooltip" title="EXPORTAR"><i class="fa fa-download"></i></a>-->
-              <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip" title="NUEVO"><i class="fa fa-plus"></i></a>
-              <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
             </div>
           </form>
         </div>
@@ -244,22 +242,30 @@
       <div class="col-xs-12">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">Lista de <?= $this->titulo_controlador ?></h3>
+            <h3 class="panel-title clearfix">
+              <div class="pull-left">
+                Lista de <?= $this->titulo_controlador ?>
+              </div>
+              <div class="pull-right">
+                <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+                <a href="<?= $this->url ?>/crear" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
+              </div>
+            </h3>
           </div>
           <!-- /.box-header -->
           <div class="panel-body table-responsive">
             <table id="tabla" class="table table-bordered table-striped">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Codigo</th>
-                  <th>Empresa</th>
-                  <th>Tipo</th>
-                  <th>Colaborador</th>
-                  <th>Estado</th>
-                  <th>Monto</th>
-                  <th>Fecha</th>
-                  <th>Accion</th>
+                  <th><b>#</b></th>
+                  <th><b>Código</b></th>
+                  <th><b>Empresa</b></th>
+                  <th><b>Tipo</b></th>
+                  <th><b>Colaborador</b></th>
+                  <th><b>Estado</b></th>
+                  <th><b>Monto</b></th>
+                  <th><b>Fecha</b></th>
+                  <th><b>Acción</b></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -499,14 +505,14 @@
       }
     })
 
-    $("#usuarios").autocomplete({
-      source: "<?= $this->url ?>/completarusuario",
-      minLength: 2,
-      select: function(event, ui) {
-        $("#usuario").val(ui.item.usuario);
-        save();
-      }
-    });
+    /*  $("#usuarios").autocomplete({
+       source: "<?= $this->url ?>/completarusuario",
+       minLength: 2,
+       select: function(event, ui) {
+         $("#usuario").val(ui.item.usuario);
+         save();
+       }
+     }); */
 
     $("#cantidadpaquete").keyup(function() {
       let preciopaquete = parseFloat($("#pc_paquete").val());
@@ -1023,10 +1029,33 @@
     $.ajax({
       url: "<?= $this->url ?>/visualizar/" + id,
       type: "POST",
+      
       success: function(data) {
         $('#printSection').html(data);
+        $('#tabla-ingreso').dataTable({
+          language: {
+            "decimal": "",
+            "emptyTable": "No hay información",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+            "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+            "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ Entradas",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "Sin resultados encontrados",
+            "paginate": {
+              "first": "Primero",
+              "last": "Ultimo",
+              "next": "Siguiente",
+              "previous": "Anterior"
+            }
+          },
+        });
         $('#ticket').modal('show');
-        $('.modal-title').text('NOTA DE INGRESO DETALLE');
+        $('.modal-title').text('DETALLES DEL INGRESO');
       },
       error: function(jqXHR, textStatus, errorThrown) {
         Lobibox.notify('error', {
@@ -1035,6 +1064,7 @@
           msg: 'Error al obtener datos de ajax.'
         });
       }
+
     });
   };
 
@@ -1175,5 +1205,21 @@
       });
     }
   };
+
+  ///////////////////////////////////////////////////
+  function el(el) {
+    return document.getElementById(el);
+  }
+
+  el('cantidad').addEventListener('input', function() {
+    var val = this.value;
+    this.value = val.replace(/\D|\-/, '');
+  });
+
+  el('cantidadpaquete').addEventListener('input', function() {
+    var val = this.value;
+    this.value = val.replace(/\D|\-/, '');
+  });
+
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

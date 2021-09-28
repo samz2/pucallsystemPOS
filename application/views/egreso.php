@@ -29,8 +29,8 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generado()" class="btn btn-warning btn-sm" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
-            <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
+            <a onclick="generado()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+
           </div>
         </form>
       </div>
@@ -39,23 +39,28 @@
     <div class="col-xs-12">
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title text-dark" style="display:flex; align-items: center;justify-content: space-between;">
-            <span>Lista de <?= $this->titulo_controlador ?></span>
-            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO EGRESO <i class="fa fa-plus"></i></a>
+          <h3 class="panel-title text-dark clearfix">
+            <div class="pull-left">
+              <span>Lista de <?= $this->titulo_controlador . "S" ?></span>
+            </div>
+            <div class="pull-right">
+              <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+              <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO EGRESO</a>
+            </div>
           </h3>
         </div>
         <div class="panel-body table-responsive" id="content-tablaCaja">
           <table id="tablaCaja" class="table table-striped table-bordered">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Empresa</th>
-                <th>Usuario</th>
-                <th>Caja</th>
-                <th>Concepto</th>
-                <th>Observacion</th>
-                <th>Monto</th>
-                <th>Fecha</th>
+                <th><b>#</b></th>
+                <th><b>Empresa</b></th>
+                <th><b>Usuario</b></th>
+                <th><b>Caja</b></th>
+                <th><b>Concepto</b></th>
+                <th><b>Observación</b></th>
+                <th><b>Monto</b></th>
+                <th><b>Fecha</b></th>
                 <th></th>
               </tr>
             </thead>
@@ -99,14 +104,71 @@
           <input type="hidden" class="form-control" id="id" name="id">
           <div class="form-body">
             <div class="form-group">
-              <label class="control-label col-md-3">Caja<span class="required">*</span></label>
+              <label class="control-label col-md-3">Tipo de Egreso<span class="required">*</span></label>
               <div class="col-md-9">
-                <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
-                  <?= $caja ?>
+                <select class="form-control" name="tipoegresoproceso" id="tipoegresoproceso" onchange="tipoegresoprocesoselect()" class="form-control">
+                  <option value="EMPRESA">EGRESOS DE LA TIENDA</option>
+                  <option value="CAJA">CAJA</option>
                 </select>
                 <span class="help-block"></span>
               </div>
             </div>
+            <div class="form-group" id="content-tienda">
+              <label class="control-label col-md-3">Tienda <span class="required">*</span></label>
+              <div class="col-md-9">
+                <select class="form-control" name="tienda" id="tienda" class="form-control" style="width:100%" onchange="operaciontienda()">
+                  <?php foreach ($empresas as $empresa) { ?>
+                    <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " SERIE " . $empresa->serie . " | " . $empresa->nombre ?></option>
+                  <?php } ?>
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group" id="content-caja">
+              <label class="control-label col-md-3">Caja<span class="required">*</span></label>
+              <div class="col-md-9">
+                <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group" id="content-metodo-pago">
+              <label class="col-sm-3 control-label" for="metodopago">Metodo de Pago*</label>
+              <div class="col-sm-9">
+                <select id="metodopago" name="metodopago" class="form-control" onchange="metodopagooperacion()">
+                  <option value="EFECTIVO">EFECTIVO</option>
+                  <option value="TARJETA">TARJETA</option>
+                  <option value="DEPOSITO">DEPOSITO</option>
+                  <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                  <!-- <option value="PAGO ANTERIOR">PAGO ANTERIOR</option> -->
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group" id="tipocard">
+              <label class="col-sm-3 control-label" for="ztipotarjeta">Tipo Tarjeta</label>
+              <div class="col-sm-9">
+                <i class="fa fa-cc-visa fa-2x" id="visa" aria-hidden="true"></i>
+                <i class="fa fa-cc-mastercard fa-2x" id="mastercard" aria-hidden="true"></i>
+                <i class="fa fa-cc-amex fa-2x" id="amex" aria-hidden="true"></i>
+                <i class="fa fa-cc-discover fa-2x" id="discover" aria-hidden="true"></i>
+                <select class="form-control" name="ztipotarjeta" id="ztipotarjeta">
+                  <option value="VISA">VISA</option>
+                  <option value="DISCOVER">DISCOVER</option>
+                  <option value="MASTERCARD">MASTERCARD</option>
+                  <option value="DINERS CLUB">DINERS CLUB</option>
+                  <option value="AMERICAN EXPRESS">AMERICAN EXPRESS</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" id="numberoperacion">
+              <label class="col-sm-3 control-label">Numero de operacion</label>
+              <div class="col-sm-9">
+                <input type="text" name="operacion" class="form-control enteros" id="operacion">
+                <span class="help-block"></span>
+              </div>
+            </div>
+
             <div class="form-group">
               <label class="control-label col-md-3">Concepto<span class="required">*</span></label>
               <div class="col-md-9">
@@ -155,7 +217,7 @@
 <script type="text/javascript">
   var table;
   $(document).ready(function() {
-
+    operaciontienda();
     $("#concepto").select2({
       dropdownParent: $("#modal_form"),
       theme: "classic",
@@ -191,8 +253,30 @@
     $('.money').number(true, 2);
     $("#observacion").mayusculassintildes();
     $('#operacion').numeric();
-
+    tipoegresoprocesoselect();
+    metodopagooperacion();
   });
+
+  function operaciontienda() {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_operaciontienda/" + $("#tienda").val(),
+      type: "POST",
+      dataType: "JSON",
+      success: function(data) {
+        $("#caja").empty();
+        for(value of data){
+          $("#caja").append(`<option value="${value.id}">${value.nombre}</option>`);
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: "El registro no se pudo crear verifique las validaciones."
+        });
+      }
+    });
+  }
 
   function generado() {
     let tablaDataTable;
@@ -236,11 +320,12 @@
   };
 
   function add() {
-    $('#form')[0].reset(); // reset form on modals
-    $('.form-group').removeClass('has-error'); // clear error class
-    $('.help-block').empty(); // clear error string
-    $('#modal_form').modal('show'); // show bootstrap modal
-    $('.modal-title').text('Crear <?= $this->titulo_controlador ?>'); // Set Title to Bootstrap modal title
+    $('#form')[0].reset();
+    $('.form-group').removeClass('has-error');
+    $('.help-block').empty();
+    tipoegresoprocesoselect()
+    $('#modal_form').modal('show');
+    $('.modal-title').text('Crear <?= $this->titulo_controlador ?>');
   };
 
   function save() {
@@ -323,7 +408,32 @@
     });
   };
 
+  function tipoegresoprocesoselect() {
+    if ($("#tipoegresoproceso").val() == "EMPRESA") {
+      $("#content-caja").hide("fast");
+      $("#content-metodo-pago").show("fast");
+    } else {
+      $("#content-caja").show("fast");
+      $("#content-metodo-pago").hide("fast");
+    }
+    operaciontienda();
+  }
+
   function reload_table() {
     table.ajax.reload(null, false); //reload datatable ajax
   };
+
+  function metodopagooperacion() {
+    if ($('#metodopago').val() == 'EFECTIVO') {
+      $('#tipocard').hide("fast");
+      $('#numberoperacion').hide("fast");
+    } else {
+      if ($('#metodopago').val() == 'TARJETA') {
+        $('#tipocard').show("fast");
+      } else {
+        $('#tipocard').hide("fast");
+      }
+      $('#numberoperacion').show("fast");
+    }
+  }
 </script>

@@ -24,7 +24,6 @@ class Ingreso extends CI_Controller
       'contenido' => $this->vista,
       'conceptos' => $this->Controlador_model->getConcepto(),
       'empresas' => $this->Controlador_model->getAll('empresa'),
-      'caja' => $this->Controlador_model->getcaja(),
       'breads' => array(array('ruta' => 'javascript:;', 'titulo' => $this->titulo_controlador))
     );
     $this->load->view(THEME . TEMPLATE, $data);
@@ -42,24 +41,25 @@ class Ingreso extends CI_Controller
       $usuario = $this->Controlador_model->get($value->usuario, 'usuario');
       $venta = $this->Controlador_model->get($value->venta, 'venta');
       $caja = $this->Controlador_model->get($value->caja, 'caja');
+      $dataCajaPrincipal = $this->Controlador_model->get($caja->cajaprincipal, 'cajaprincipal');
+      $tienda = $this->Controlador_model->get($value->empresa, 'empresa');
       $concepto = $this->Controlador_model->get($value->concepto, 'concepto');
-      //add variables for action
       $boton = '';
-      //add html fodr action
-      if ($this->perfil == 1 || $this->perfil == 2 and $value->tipo == "OPERACION") {
+      if ($value->modalidad == "ABONO") {
         $boton .= '<a class="btn btn-sm btn-danger" title="Borrar" onclick="borrar(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
       }
       $data[] = array(
         $key + 1,
-        $caja ? $caja->descripcion : "SIN DATOS",
+        $tienda ? $tienda->ruc . " SERIE: " . $tienda->serie . " " . $tienda->nombre : "SIN DATOS",
+        $dataCajaPrincipal ? $dataCajaPrincipal->nombre : "SIN DATOS",
         $value->metodopago,
-        $usuario ? $usuario->nombre." ".$usuario->apellido : "SIN DATOS DEL USUARIO",
-        $value->tipo,
+        $usuario ? $usuario->nombre . " " . $usuario->apellido : "SIN DATOS DEL USUARIO",
+        $value->modalidad,
         $venta ? $venta->serie . '-' . $venta->numero : 'SIN DATOS',
         $concepto->concepto,
         $value->observacion,
         $value->monto,
-        $value->created." ". $value->hora,
+        $value->created . " " . $value->hora,
         $boton
       );
     }
@@ -83,6 +83,13 @@ class Ingreso extends CI_Controller
     if ($this->input->post('caja') == '') {
       $data['inputerror'][] = 'caja';
       $data['error_string'][] = 'Este campo es obligatorio.';
+      $data['status'] = FALSE;
+    }
+
+    $dataCaja = $this->Controlador_model->getCaja($this->input->post('caja'));
+    if ($dataCaja->num_rows() == 0) {
+      $data['inputerror'][] = 'caja';
+      $data['error_string'][] = 'La caja esta cerrada ಠ_ಠ';
       $data['status'] = FALSE;
     }
 
@@ -113,9 +120,10 @@ class Ingreso extends CI_Controller
   public function ajax_add()
   {
     $this->_validate();
-    $data['empresa'] = $this->empresa;
+    $data['empresa'] = $this->input->post('tienda');
     $data['usuario'] = $this->usuario;
-    $data['tipo'] = "OPERACION";
+    $data['tipo'] = "CAJA";
+    $data['modalidad'] = "ABONO";
     $data['caja'] = $this->input->post('caja');
     $data['concepto'] = $this->input->post('concepto');
     $data['monto'] = $this->input->post('monto');
@@ -131,13 +139,19 @@ class Ingreso extends CI_Controller
   {
     $query = $this->Controlador_model->get($id, "ingreso");
     $statusCaja = $this->Controlador_model->get($query->caja, "caja");
-    if($statusCaja->estado == '0'){
+    if ($statusCaja->estado == '0') {
       $this->Controlador_model->delete_by_id($id, $this->controlador);
       $respuesta = array("status" => TRUE);
-    }else{
+    } else {
       $respuesta = array("status" => FALSE);
     }
     echo json_encode($respuesta);
-    
+  }
+
+
+  public function ajax_operaciontienda($tienda)
+  {
+    $dataCajas = $this->db->where("tienda", $tienda)->order_by("nombre", "ASC")->get("cajaprincipal")->result();
+    echo json_encode($dataCajas);
   }
 }

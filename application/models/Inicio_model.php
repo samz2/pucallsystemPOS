@@ -33,50 +33,11 @@ class Inicio_model extends CI_Model
 		echo json_encode($row_set);
 	}
 
-	public function autocompletarcodigobarra($q)
-	{
-		$this->db->like('codigoBarra', $q);
-
-		$query = $this->db->get('producto');
-
-		if ($query->num_rows() > 0) {
-
-			foreach ($query->result() as $row) {
-				$verificarStock = $this->db->where("producto", $row->id)->where("cantidad >", 0)->get("stock")->row();
-
-				if ($verificarStock) {
-					$row_set[] = array(
-						'label' => $row->codigoBarra,
-						'idproducto' => $row->id,
-						'idcategoria' => $row->categoria,
-						'precioproducto' => $row->precioventa,
-						'status' => TRUE
-					);
-				} else {
-					$row_set[] = array(
-						'label' => "El imei: " . $row->codigoBarra . ", esta sin stock",
-						'idproducto' => "",
-						'idcategoria' => "",
-						'precioproducto' => "",
-						'status' => FALSE
-					);
-				}
-			}
-		} else {
-			$row_set[] = array(
-				'label' => 'SIN RESULTADOS',
-				'status' => FALSE
-			);
-		}
-
-		echo json_encode($row_set);
-	}
-	
 	function getCodigoBarra($codigobarra)
 	{
-	 $this->db->where("codigoBarra", $codigobarra);
-	 $this->db->where("estado", "0");
-	 return $this->db->get("producto")->row();
+		$this->db->where("codigoBarra", $codigobarra);
+		$this->db->where("estado", "0");
+		return $this->db->get("producto")->row();
 	}
 
 	public function get($id, $tabla)
@@ -125,9 +86,7 @@ class Inicio_model extends CI_Model
 
 	public function comanda($venta)
 	{
-		$this->db->select('DISTINCT(producto), nombre, opcion, precio,variante, tipo');
 		$this->db->where('venta', $venta);
-		$this->db->group_by('producto');
 		$query = $this->db->get('ventadetalle');
 		return $query->result();
 	}
@@ -288,14 +247,14 @@ class Inicio_model extends CI_Model
 		return $this->db->where('venta', $id)->get($tabla)->result();
 	}
 
-	public function cajabierta($estado, $empresa)
+	public function cajabierta($estado, $cajaprincipal)
 	{
-		return $this->db->where('empresa', $empresa)->where('estado', $estado)->get('caja')->last_row();
+		return $this->db->where('cajaprincipal', $cajaprincipal)->where('estado', $estado)->get('caja')->row();
 	}
 
-	public function maximo($tabla, $empresa)
+	public function maximo($tabla, $cajaprincipal)
 	{
-		return $this->db->where('empresa', $empresa)->get($tabla)->last_row();
+		return $this->db->where('cajaprincipal', $cajaprincipal)->get($tabla)->last_row();
 	}
 
 	public function getmesa($venta)
@@ -306,6 +265,11 @@ class Inicio_model extends CI_Model
 		$this->db->join('zona z', 'z.id = m.zona');
 		$this->db->where('v.id', $venta);
 		return $this->db->get()->row();
+	}
+
+	public function ultimocredito($tienda)
+	{
+		return $this->db->select_max('numero')->where('tienda', $tienda)->get('credito')->row();
 	}
 
 	public function pedidotemporal($venta)
@@ -395,14 +359,6 @@ class Inicio_model extends CI_Model
 		return $this->db->where('caja', $id)->get($tabla)->result();
 	}
 
-	public function getAlertaStock()
-	{
-		
-		$query = $this->db->query("select p.nombre, p.id as idproducto, s.cantidad from stock s inner join producto p on p.id = s.producto where s.cantidad <= p.alertqt");
-		return $query->result();
-		
-		
-	}
 
 	public function queryCategoria($idcategoriaP)
 	{
@@ -478,7 +434,7 @@ class Inicio_model extends CI_Model
 		return $this->db->get("venta");
 	}
 
-	public function existenciaStock($producto, $almacen, $lote, $cantidad, $empresa)
+	public function existenciaStock($producto, $almacen, $lote, $empresa)
 	{
 		$this->db->where('producto',  $producto);
 		$this->db->where('almacen',  $almacen);
@@ -500,14 +456,16 @@ class Inicio_model extends CI_Model
 		return $this->db->get('stock')->row();
 	}
 
-	function queryLotes($empresa, $producto, $almacen){
+	function queryLotes($empresa, $producto, $almacen)
+	{
 		$this->db->where("empresa", $empresa);
 		$this->db->where("producto", $producto);
 		$this->db->where("almacen", $almacen);
 		return $this->db->where("lote IS NOT NULL")->get("stock");
 	}
 
-	function queryStock($producto, $almacen, $empresa){
+	function queryStock($producto, $almacen, $empresa)
+	{
 		$this->db->where("producto", $producto);
 		$this->db->where("almacen", $almacen);
 		$this->db->where("empresa", $empresa);
@@ -515,7 +473,8 @@ class Inicio_model extends CI_Model
 		return $this->db->get("stock")->row();
 	}
 
-	function dataLotes($producto, $almacen, $empresa){
+	function dataLotes($producto, $almacen, $empresa)
+	{
 		$this->db->where("producto", $producto);
 		$this->db->where("almacen", $almacen);
 		$this->db->where("empresa", $empresa);
@@ -523,9 +482,11 @@ class Inicio_model extends CI_Model
 		return $this->db->get("stock");
 	}
 
-	function totalVentasNoProcesadas($usuario, $empresa){
+	function totalVentasNoProcesadas($usuario, $empresa, $idcaja)
+	{
 		$this->db->where('usuario_creador', $usuario);
 		$this->db->where('empresa', $empresa);
+		$this->db->where('caja', $idcaja);
 		$this->db->where('estado', '0');
 		$this->db->where('formapago', 'CONTADO');
 		$this->db->where('mesa IS NULL');
@@ -533,38 +494,47 @@ class Inicio_model extends CI_Model
 	}
 
 
-	function estadoVenta($idventa, $empresa, $estado){
-		$this->db->where("id", $idventa); 
-		$this->db->where("empresa", $empresa); 
+	function estadoVenta($idventa, $empresa, $estado)
+	{
+		$this->db->where("id", $idventa);
+		$this->db->where("empresa", $empresa);
 		$this->db->where("estado", $estado);
 		$this->db->or_where("estado", "4");
 		return $this->db->get("venta")->row();
 	}
 
-	function getCajaPagos($idcaja, $tabla, $metodoPago){
+	function getCajaPagos($idcaja, $tabla, $metodoPago)
+	{
 		$this->db->select("SUM(monto) as totalpagos");
-		$this->db->where("tipo", "VENTA");
+		$this->db->where("tipo", "CAJA");
+		$this->db->where("modalidad", "VENTA");
 		$this->db->where("caja", $idcaja);
 		$this->db->where("metodopago", $metodoPago);
 		return $this->db->get($tabla)->row();
 	}
 
-	function geVentastCaja($idcaja, $tabla){
+	function geVentastCaja($idcaja, $tabla)
+	{
 		$this->db->where("caja", $idcaja);
 		$this->db->where("estado", "1");
 		return $this->db->get($tabla)->result();
 	}
 
-	function totalGenerados($idcaja, $metodopago){
+	function totalGenerados($idcaja, $metodopago)
+	{
 		$this->db->where("caja", $idcaja);
 		$this->db->where("metodopago", $metodopago);
-		$this->db->where("tipo", "VENTA");
+		$this->db->where("tipo", "CAJA");
+		$this->db->where("modalidad", "VENTA");
 		return $this->db->get("ingreso")->num_rows();
 	}
 
-	function abonosCaja($idcaja){
+	function abonosCaja($idcaja)
+	{
 		$this->db->where("caja", $idcaja);
-		$this->db->where("tipo", "OPERACION");
+		$this->db->where("tipo", "CAJA");
+		$this->db->where("modalidad !=", "VENTA");
+		$this->db->where("metodopago", "EFECTIVO");
 		return $this->db->get("ingreso")->result();
 	}
 
@@ -578,19 +548,38 @@ class Inicio_model extends CI_Model
 		}
 		return $this->db->get("stock")->row();
 	}
-	
+
 	public function addLeadingZeros($num)
 	{
 		$correlativo = "";
 		$cantCeros = 6 - strlen($num);
 		$i = 0;
-		while($i < $cantCeros)
-		{
+		while ($i < $cantCeros) {
 			$correlativo .= "0";
 			$i++;
-		}	
+		}
 		$correlativo .= $num;
 
 		return $correlativo;
 	}
+	public function productoVariante($idproducto){
+		$this->db->where('producto', $idproducto);
+		return $this->db->get("productovariante")->result();
+	}
+
+	public function getAlertaStock($idalmacen, $idtienda)
+	{
+		//? NO FUNCIONO
+		/* $this->db->select("pr.nombre, sto.cantidad, pr.alertqt");
+		$this->db->from("stock sto");
+		$this->db->join("producto pr", "pr.id = sto.producto");
+		$this->db->where("s.almacen", $idalmacen);
+		$this->db->where("s.empresa", $idtienda);
+		$this->db->where("sto.cantidad <=", "pr.alertqt");
+		return $this->db->get()->result(); */
+		//? EXITO
+		$query = $this->db->query("select p.nombre, p.id as idproducto, s.cantidad, p.alertqt from stock s inner join producto p on p.id = s.producto where s.cantidad <= p.alertqt and s.empresa = $idtienda and s.almacen = $idalmacen");
+		return $query->result();
+	}
+
 }

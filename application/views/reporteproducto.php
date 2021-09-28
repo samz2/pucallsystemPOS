@@ -27,70 +27,39 @@
     <div class="col-md-8">
       <!-- chart container  -->
       <div class="statCart">
-        <h3>estadisticas mensuales</h3>
+        <h3 class="text-center">ESTADISTICAS MENSUALES</h3>
         <div style="width:100%">
-          <canvas id="canvas" height="330" width="750"></canvas>
+          <canvas id="canvas" width="750"></canvas>
         </div>
       </div>
     </div>
     <div class="col-md-4">
       <!-- pie container  -->
       <div class="statCart">
-        <h3>5 Productos TOP este mes</h3>
+        <h3 class="text-center">
+          <div>5 PRODUCTOS TOP DE ESTE MES</div>
+          <?php if (count($Top5product) >= 5) { ?>
+            <?php $producto0 = $this->Controlador_model->get($Top5product[0]->producto, 'producto'); ?>
+            <?php $producto1 = $this->Controlador_model->get($Top5product[1]->producto, 'producto'); ?>
+            <?php $producto2 = $this->Controlador_model->get($Top5product[2]->producto, 'producto'); ?>
+            <?php $producto3 = $this->Controlador_model->get($Top5product[3]->producto, 'producto'); ?>
+            <?php $producto4 = $this->Controlador_model->get($Top5product[4]->producto, 'producto'); ?>
+            <span class="label label-default" style="background-color: #F3565D; font-size:13px; margin:3px; display:inline-block"><?= $producto0->nombre ?></span>
+            <span class="label label-default" style="background-color: #FC9D9B; font-size:13px; margin:3px; display:inline-block"><?= $producto1->nombre ?></span>
+            <span class="label label-default" style="background-color: #FACDAE; font-size:13px; margin:3px; display:inline-block"><?= $producto2->nombre ?></span>
+            <span class="label label-default" style="background-color: #9FC2C4; font-size:13px; margin:3px; display:inline-block"><?= $producto3->nombre ?></span>
+            <span class="label label-default" style="background-color: #8297A8; font-size:13px; margin:3px; display:inline-block"><?= $producto4->nombre ?></span>
+          <?php } ?>
+        </h3>
         <div id="canvas-holder">
           <?= count($Top5product) >= 5 ? '<canvas id="chart-area2" style="width:auto"/>' : '<h3 style="margin: 50px 0">NO HAY PRODUCTOS</h3>'; ?>
         </div>
       </div>
     </div>
   </div>
-  <?php if (count($Top5product) >= 5) { ?>
-    <div class="statCart" style="margin-top: 50px;">
-      <div class="row">
-        <div class="col-md-2">
-          <h4>
-            <center>5 Productos TOP este mes</center>
-          </h4>
-        </div>
-        <?php $producto0 = $this->Controlador_model->get($Top5product[0]->producto, 'producto'); ?>
-        <?php $producto1 = $this->Controlador_model->get($Top5product[1]->producto, 'producto'); ?>
-        <?php $producto2 = $this->Controlador_model->get($Top5product[2]->producto, 'producto'); ?>
-        <?php $producto3 = $this->Controlador_model->get($Top5product[3]->producto, 'producto'); ?>
-        <?php $producto4 = $this->Controlador_model->get($Top5product[4]->producto, 'producto'); ?>
-        <div class="col-lg-10">
-          <span class="label label-default" style="background-color: #F3565D; font-size:15px; margin:5px; display:inline-block"><?= $producto0->nombre ?></span>
-          <span class="label label-default" style="background-color: #FC9D9B; font-size:15px; margin:5px; display:inline-block"><?= $producto1->nombre ?></span>
-          <span class="label label-default" style="background-color: #FACDAE; font-size:15px; margin:5px; display:inline-block"><?= $producto2->nombre ?></span>
-          <span class="label label-default" style="background-color: #9FC2C4; font-size:15px; margin:5px; display:inline-block"><?= $producto3->nombre ?></span>
-          <span class="label label-default" style="background-color: #8297A8; font-size:15px; margin:5px; display:inline-block"><?= $producto4->nombre ?></span>
-        </div>
-      </div>
-    </div>
-  <?php } ?>
   <!-- ************************************************************************************************** -->
 
-  <?php if (count($Top5product) >= 5) { ?>
-    <div class="statCart" style="margin-top: 50px;">
-      <div class="row">
-        <div class="col-md-2">
-          <h4>
-            <center>TOP Vendedores</center>
-          </h4>
-        </div>
-        <?php $producto0 = $this->Controlador_model->get($Top5product[0]->producto, 'producto'); ?>
-        <?php $producto1 = $this->Controlador_model->get($Top5product[1]->producto, 'producto'); ?>
-        <?php $producto2 = $this->Controlador_model->get($Top5product[2]->producto, 'producto'); ?>
-        <?php $producto3 = $this->Controlador_model->get($Top5product[3]->producto, 'producto'); ?>
-        <?php $producto4 = $this->Controlador_model->get($Top5product[4]->producto, 'producto'); ?>
-        <div class="col-lg-10">
-          <span class="label label-default" style="background-color: #F3565D; font-size:15px; margin:5px; display:inline-block"><?= $producto0->nombre ?></span>
-          <span class="label label-default" style="background-color: #FC9D9B; font-size:15px; margin:5px; display:inline-block"><?= $producto1->nombre ?></span>
-          <span class="label label-default" style="background-color: #FACDAE; font-size:15px; margin:5px; display:inline-block"><?= $producto2->nombre ?></span>
-          <span class="label label-default" style="background-color: #9FC2C4; font-size:15px; margin:5px; display:inline-block"><?= $producto3->nombre ?></span>
-          <span class="label label-default" style="background-color: #8297A8; font-size:15px; margin:5px; display:inline-block"><?= $producto4->nombre ?></span>
-        </div>
-      </div>
-    </div>
-  <?php } ?>
+
   <!-- ************************************************************************************************** -->
   <div class="row rangeStat" style="margin-top:50px; margin-bottom:70px;">
     <div class="col-md-12">
@@ -110,7 +79,10 @@
         <div id="statyears">
           <table class="StatTable">
             <tr>
-              <td><span class="revenuespan"><?= $monthly->january ?> Soles</span><span class="expencespan"><?= $monthlyExp->january ?> Soles</span>Enero</td>
+              <td>
+                <span class="revenuespan"><?= $monthly->january ?> Soles</span>
+                <span class="expencespan"><?= $monthlyExp->january ?> Soles</span>Enero
+              </td>
               <td><span class="revenuespan"><?= $monthly->feburary ?> Soles</span><span class="expencespan"><?= $monthlyExp->feburary ?> Soles</span>Febrero</td>
               <td><span class="revenuespan"><?= $monthly->march ?> Soles</span><span class="expencespan"><?= $monthlyExp->march ?> Soles</span>Marzo</td>
               <td><span class="revenuespan"><?= $monthly->april ?> Soles</span><span class="expencespan"><?= $monthlyExp->april ?> Soles</span>Abril</td>
@@ -139,31 +111,61 @@
   <div class="col-md-12">
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title">Reporte <?= $this->controlador ?></h3>
+        <h3 class="panel-title clearfix">
+          <div class="pull-left">Reporte <?= $this->controlador ?></div>
+          <div class="pull-right">
+            <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+            <a  onclick="inventarioproducto()" class="btn btn-info btn-sm" data-toggle="tooltip">
+              <i class="fa fa-file"></i>
+              DESCARGAR
+            </a>
+          </div>
+        </h3>
+
       </div>
       <!-- /.box-header -->
-      <form action="" class="form-horizontal" method="POST" id="form_01" role="form">
+      <form action="" method="POST" id="form_01" role="form">
         <div class="panel-body">
-          <div class="form-group">
-            <label class="col-sm-2 control-label">Fecha<span class="required">*</span></label>
-            <div class="col-sm-5">
-              <input class="form-control" id="finicio" type="date" name="finicio" value="<?= date('Y-m-d') ?>">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Fecha inicio <span class="required">*</span></label>
+                <input class="form-control" id="finicio" type="date" name="finicio" value="<?= date('Y-m-d') ?>">
+              </div>
             </div>
-            <div class="col-sm-5">
-              <input class="form-control" id="factual" type="date" name="factual" value="<?= date('Y-m-d') ?>">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Fecha final <span class="required">*</span></label>
+                <input class="form-control" id="factual" type="date" name="factual" value="<?= date('Y-m-d') ?>">
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="col-sm-2 control-label">Empresa<span class="required">*</span></label>
-            <div class="col-sm-10">
-              <select id="empresa" name="empresa" class="form-control" required>
-                <?php foreach ($empresas as $value) { ?>
-                  <option value="<?= $value->id ?>"><?= $value->ruc . ' | ' . ($value->tipo == 0 ? $value->nombre : $value->razonsocial) ?></option>
-                <?php } ?>
-              </select>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Empresa <span class="required">*</span></label>
+                <select id="empresa" name="empresa" class="form-control" required>
+                  <option value="0">TODOS</option>
+                  <?php foreach ($empresas as $value) { ?>
+                    <option value="<?= $value->id ?>"><?= $value->ruc . ' | ' . ($value->tipo == 0 ? $value->nombre : $value->razonsocial) ?></option>
+                  <?php } ?>
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Tipo reporte <span class="required">*</span></label>
+                <select id="tiporeporteproducto" name="tiporeporteproducto" class="form-control" required>
+                  <option value="VENDIDO">PORCENTAJE DE VENTAS DE PRODUCTOS</option>
+                  <option value="VALORIZADO">VALORIZADO</option>
+                  <option value="INVENTARIO">INVENTARIO/MARGEN</option>
+                </select>
+              </div>
             </div>
           </div>
+
+
         </div>
         <!-- /.box-body -->
         <div class="panel-footer text-center">
@@ -175,23 +177,11 @@
           </a>
           -->
 
-
-
-          <a onclick="vendido()" class="btn btn-warning" data-toggle="tooltip" title="VENDIDO"><i class="fa fa-upload"></i></a>
-          <a style="position: relative;" onclick="vendidoexcel()" class="btn btn-danger" data-toggle="tooltip" title="VENDIDO">
+          <a onclick="buscareporteproduco()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+          <a onclick="descargarreporteproducto()" class="btn btn-danger btn-sm" data-toggle="tooltip">
+            
             <i class="fa fa-file-excel-o"></i>
-            <i style="font-size:10px; position:absolute; bottom:6px; right:4px" class="fa fa-download"></i>
-          </a>
-          <a onclick="valorizado()" class="btn btn-warning" data-toggle="tooltip" title="VALORIZADO"><i class="fa fa-upload"></i></a>
-          <a style="position: relative;" onclick="valorizadoexcel()" class="btn btn-danger" data-toggle="tooltip" title="VALORIZADO">
-            <i class="fa fa-file-excel-o"></i>
-            <i style="font-size:10px; position:absolute; bottom:6px; right:4px" class="fa fa-download"></i>
-          </a>
-
-          <a onclick="margenproducto()" class="btn btn-warning" data-toggle="tooltip" title="INVENTARIO"><i class="fa fa-upload"></i></a>
-          <a style="position: relative;" onclick="margenproductoexcel()" class="btn btn-danger" data-toggle="tooltip" title="INVENTARIO EXCEL">
-            <i class="fa fa-file-excel-o"></i>
-            <i style="font-size:10px; position:absolute; bottom:6px; right:4px" class="fa fa-download"></i>
+            DESCARGAR
           </a>
           <!--
           <a style="position: relative;" onclick="inventarioexcel()" class="btn btn-danger" data-toggle="tooltip" title="INVENTARIO">
@@ -199,11 +189,7 @@
             <i style="font-size:10px; position:absolute; bottom:6px; right:4px" class="fa fa-download"></i>
           </a>
                 -->
-          <a style="position: relative;" onclick="inventarioproducto()" class="btn btn-info" data-toggle="tooltip" title="INVENTARIO PDF">
-            <i class="fa fa-file"></i>
-            <i style="font-size:10px; position:absolute; bottom:6px; right:4px" class="fa fa-download"></i>
-          </a>
-          <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+
         </div>
       </form>
     </div>
@@ -264,7 +250,7 @@
 
 
 
-<!-- START ALERTS AND CALLOUTS -->  
+<!-- START ALERTS AND CALLOUTS -->
 <div class="row">
   <div class="col-md-12">
     <div class="panel panel-default">
@@ -272,34 +258,52 @@
         <h3 class="panel-title">Reporte Top vendedores</h3>
       </div>
       <!-- /.box-header -->
-      <form action="" class="form-horizontal" method="POST" id="form_01" role="form">
+      <form action="" method="POST" id="form_01" role="form">
         <div class="panel-body">
-          <div class="form-group">
-            <label class="col-sm-2 control-label">Fecha<span class="required">*</span></label>
-            <div class="col-sm-5">
-              <input class="form-control" id="finicio2" type="date" name="finicio2" value="<?= date('Y-m-d') ?>">
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Fecha inicio<span class="required">*</span></label>
+                <input class="form-control" id="finicio2" type="date" name="finicio2" value="<?= date('Y-m-d') ?>">
+              </div>
             </div>
-            <div class="col-sm-5">
-              <input class="form-control" id="factual2" type="date" name="factual2" value="<?= date('Y-m-d') ?>">
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="col-sm-2 control-label">Perfil<span class="required">*</span></label>
-            <div class="col-sm-10">
-              <select id="perfiles" name="perfiles" class="form-control">
-              <option value="TODOS">TODOS</option>
-                <?php foreach ($perfiles as $value) { ?>
-                  <option value="<?= $value->nombre ?>"> <?= $value->nombre ?></option>
-                <?php } ?>
-              </select>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Fecha final<span class="required">*</span></label>
+                <input class="form-control" id="factual2" type="date" name="factual2" value="<?= date('Y-m-d') ?>">
+              </div>
             </div>
           </div>
+
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Perfil <span class="required">*</span></label>
+                <select id="perfiles" name="perfiles" class="form-control">
+                  <option value="TODOS">TODOS</option>
+                  <?php foreach ($perfiles as $value) { ?>
+                    <option value="<?= $value->nombre ?>"> <?= $value->nombre ?></option>
+                  <?php } ?>
+                </select>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label>Empresa <span class="required">*</span></label>
+                <select id="empresavendedor" name="empresavendedor" class="form-control">
+                  <?php foreach ($empresas as $empresa) { ?>
+                    <option value="<?= $empresa->id ?>"> <?= $empresa->ruc . " | " . $empresa->razonsocial . " | " . $empresa->nombre . " | " . $empresa->serie ?></option>
+                  <?php } ?>
+                </select>
+              </div>
+            </div>
+          </div>
+
+
         </div>
 
         <div class="panel-footer text-center">
-
-          <a onclick="reportevendedores()" class="btn btn-warning" data-toggle="tooltip" title="VENDIDO"><i class="fa fa-upload"></i></a>
-          <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
+          <a onclick="reportevendedores()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-group"></i> BUSCAR TOP VENDEROR</a>
         </div>
       </form>
     </div>
@@ -426,14 +430,15 @@
       }
     });
   };
-  
+
   function reportevendedores() {
     $.ajax({
       url: '<?= $this->url ?>/vendido2',
       data: {
         'finicio2': $('#finicio2').val(),
         'factual2': $('#factual2').val(),
-        'perfiles': $('#perfiles').val()
+        'perfiles': $('#perfiles').val(),
+        'empresavendedor': $("#empresavendedor").val()
       },
       type: 'post',
       beforeSend: function() {
@@ -517,13 +522,7 @@
   };
 
   function vendidoexcel() {
-    $.ajax({
-      url: '<?= $this->url ?>/vendidoexcel',
-      type: 'POST',
-      success: function() {
-        window.open('<?= $this->url ?>/vendidoexcel/' + $('#finicio').val() + '/' + $('#factual').val() + '/' + $('#empresa').val());
-      },
-    });
+    window.open('<?= $this->url ?>/vendidoexcel/' + $('#finicio').val() + '/' + $('#factual').val() + '/' + $('#empresa').val());
   };
 
   function valorizadoexcel() {
@@ -611,12 +610,11 @@
         pointHoverBackgroundColor: "#fff",
         pointHoverBorderColor: "#fff",
         data: [<?= $monthly->january; ?>, <?= $monthly->feburary; ?>, <?= $monthly->march; ?>, <?= $monthly->april; ?>, <?= $monthly->may; ?>, <?= $monthly->june; ?>, <?= $monthly->july; ?>, <?= $monthly->august; ?>, <?= $monthly->september; ?>, <?= $monthly->october; ?>, <?= $monthly->november; ?>, <?= $monthly->december; ?>]
-      }
+      },
     ]
   }
   window.onload = function() {
     // Chart.defaults.global.gridLines.display = false;
-
     var ctx = document.getElementById("canvas").getContext("2d");
     window.myLine = new Chart(ctx, {
       type: 'line',
@@ -736,5 +734,39 @@
 
   function margenproductoexcel() {
     window.open('<?= $this->url ?>/margenproductoexcel/' + $('#empresa').val());
+  }
+
+  function buscareporteproduco() {
+    let tiporeporteproducto = $("#tiporeporteproducto").val();
+    if (tiporeporteproducto == "VENDIDO") {
+      vendido();
+    } else if (tiporeporteproducto == "VALORIZADO") {
+      valorizado();
+    } else if (tiporeporteproducto == "INVENTARIO") {
+      margenproducto();
+    } else {
+      Lobibox.notify('warning', {
+        size: 'mini',
+        position: "top right",
+        msg: 'Ocurrio un problema con su peticion :('
+      });
+    }
+  }
+
+  function descargarreporteproducto() {
+    let tiporeporteproducto = $("#tiporeporteproducto").val();
+    if (tiporeporteproducto == "VENDIDO") {
+      vendidoexcel();
+    } else if (tiporeporteproducto == "VALORIZADO") {
+      valorizadoexcel();
+    } else if (tiporeporteproducto == "INVENTARIO") {
+      margenproductoexcel();
+    } else {
+      Lobibox.notify('warning', {
+        size: 'mini',
+        position: "top right",
+        msg: 'Ocurrio un problema con su peticion :('
+      });
+    }
   }
 </script>

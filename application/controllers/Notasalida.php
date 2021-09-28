@@ -2,7 +2,7 @@
 
 class Notasalida extends CI_Controller
 {
-  
+
   public function __construct()
   {
     parent::__construct();
@@ -53,7 +53,7 @@ class Notasalida extends CI_Controller
       $boton = '';
       //add html fodr action
       if ($value->estado == '2') {
-          $boton .= '<a onclick="aprobar(' . $value->id . ')" class="btn btn-warning btn-sm" title="Aprobar"><i class="fa fa-check"></i></a> ';
+        $boton .= '<a onclick="aprobar(' . $value->id . ')" class="btn btn-warning btn-sm" title="Aprobar"><i class="fa fa-check"></i></a> ';
       }
       $boton .= '<a onclick="visualizar(' . $value->id . ')" class="btn btn-default btn-sm" title="Visualizar"><i class="fa fa-eye"></i></a> ';
       $boton .= '<a onclick="imprimir(' . $value->id . ')" class="btn btn-danger btn-sm" title="Imprimir"><i class="fa fa-print"></i></a> ';
@@ -156,8 +156,8 @@ class Notasalida extends CI_Controller
       if ($data->estado == '0') {
         $row .= '<a onclick="grabar(' . $data->id . ')" class="btn btn-success" data-toggle="tooltip">GENERAR</a> ';
       } else {
-        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><span class="hidden-xs">IMPRIMIR</span> <i class="fa fa-print"></i></a> ';
-        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a> ';
+        $row .= '<a onclick="imprimir(' . $data->id . ')" class="btn btn-danger" data-toggle="tooltip"><i class="fa fa-print"></i>  <span class="hidden-xs">IMPRIMIR</span></a> ';
+        $row .= '<a href="' . $this->url . '/crear" class="btn btn-warning" data-toggle="tooltip"><i class="fa fa-plus"></i>  <span class="hidden-xs">NUEVO</span> </a> ';
       }
     }
     echo $row;
@@ -193,12 +193,12 @@ class Notasalida extends CI_Controller
       //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
       $movimiento['created'] = date('Y-m-d');
       $movimiento['hora'] = date("H:i:s");
-      
+
       $this->Controlador_model->save('movimiento', $movimiento);
 
       if (true) {
-        $cantidadIngreso = $this->Controlador_model->getStockAlmacen($value->producto,$this->input->post('destinotraslado'), $value->lote, $notasalida->empresa);
-        
+        $cantidadIngreso = $this->Controlador_model->getStockAlmacen($value->producto, $this->input->post('destinotraslado'), $value->lote, $notasalida->empresa);
+
         $movimientoIngreso['empresa'] = $notasalida->empresa;
         $movimientoIngreso['usuario'] = $this->usuario;
         $movimientoIngreso['notasalida'] = $this->notasalida;
@@ -217,8 +217,7 @@ class Notasalida extends CI_Controller
         //$movimientoIngreso['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
         $movimientoIngreso['created'] = date('Y-m-d');
         $movimientoIngreso['hora'] = date("H:i:s");
-        if(true)
-        {
+        if (true) {
           $this->Controlador_model->save('movimiento', $movimientoIngreso);
         }
       }
@@ -226,11 +225,10 @@ class Notasalida extends CI_Controller
 
       //Descontamos el stock del almacen
       $stockDescontar['cantidad'] = $cantidad->cantidad - $value->cantidaditem;
-      if(true)
-      {
+      if (true) {
         $this->db->where('id', $cantidad->id)->update('stock', $stockDescontar);
       }
-      
+
 
       if (true) {
         $dataStock['cantidad'] =  $value->cantidaditem;
@@ -240,14 +238,12 @@ class Notasalida extends CI_Controller
       }
     }
     $data['created'] = date('Y-m-d');
-    if(true)
-    {
+    if (true) {
       $data['estado'] = '2';
-    }else
-    {
+    } else {
       $data['estado'] = '1';
     }
-    
+
     if ($this->db->where('id', $this->notasalida)->update($this->controlador, $data)) {
       echo true;
     }
@@ -298,7 +294,7 @@ class Notasalida extends CI_Controller
     </div>
     <div class="pull-right m-t-30"></div></div></div><div class="m-h-50"></div><div class="row"><div class="col-md-12">
     <div class="table-responsive">
-    <table class="table table-bordered table-condensed">
+    <table id="tabla-salida" class="table table-bordered table-striped">
     <thead>
     <tr>
     <th>#</th>
@@ -308,16 +304,23 @@ class Notasalida extends CI_Controller
     <th>Cantidad</th>
     <th>C. Item</th>
     <th>Precio</th>
-    <th>Sub-total</th>
+    <th>Salida</th>';
+    if ($data->tiposalida == 'TRASLADO DE ALMACEN') {
+      $ticket .=  '<th>Destino</th>';
+    } else {
+    }
+    $ticket .=  '<th>Sub-total</th>
     </tr>
     </thead>
     <tbody>';
+    
     $total = 0;
     $i = 0;
     foreach ($notasalidadetalle as $value) {
       $i++;
       $producto = $this->Controlador_model->get($value->producto, 'producto');
       $categoria = $this->Controlador_model->get($producto->categoria, 'productocategoria');
+      $almacen = $this->Controlador_model->get($value->almacen, 'almacen');
       $total += $value->subtotal;
       $ticket .= '
       <tr>
@@ -328,11 +331,29 @@ class Notasalida extends CI_Controller
       <td>' . $value->cantidad . '</td>
       <td>' . $value->cantidaditem . '</td>
       <td>' . $value->precio . '</td>
-      <td style="text-align:right">' . number_format($value->subtotal, 2) . '</td>
+      <td>' . $almacen->nombre . ' </td>';
+
+      if ($data->tiposalida == 'TRASLADO DE ALMACEN') {
+        $ticket .= '<td>' . $destino->nombre . '</td>';
+      } else {
+      }
+
+      $ticket .= '<td style="text-align:right">' . number_format($value->subtotal, 2) . '</td>
       </tr>';
     }
-    $ticket .= '<tr><td colspan="7" align="right"><strong>Total:</strong></td><td align="right">
-    <strong>' . number_format($total, 2) . '</strong></td></tr></tbody></table></div></div></div>';
+    $ticket .= '
+    <tfoot>
+    <tr>
+    <td colspan="' . ($data->tiposalida == 'TRASLADO DE ALMACEN' ? "9" : "8") . '" align="right"><strong>Total:</strong></td><td align="right">
+    <strong>' . number_format($total, 2) . '</strong>
+    </td>
+    </tr>
+    </foot>
+    </tbody>
+    </table>
+    </div>
+    </div>
+    </div>';
     echo $ticket;
   }
 
@@ -461,9 +482,11 @@ class Notasalida extends CI_Controller
       } else {
         $dataLote = "S/L";
       }
+
       $data[] = array(
         $no . $campohidden,
         $dataEmpresa  ? $dataEmpresa->ruc . " | " . $dataEmpresa->serie . " | " . $dataEmpresa->nombre : "",
+        $value->medida,
         $producto->codigo,
         $value->nombre,
         $dataLote,
@@ -507,6 +530,12 @@ class Notasalida extends CI_Controller
       $data['status'] = FALSE;
     }
 
+    // if($this->input->post('producto')) {
+    //   $data['inputerror'][] = 'productos';
+    //   $data['error_string'][] = 'Este campo ya existe en la base de datos.';
+    //   $data['status'] = FALSE;
+    // }
+
     if ($cantidadSacar == '') {
       $data['inputerror'][] = 'cantidad';
       $data['error_string'][] = 'Este campo es obligatorio.';
@@ -530,27 +559,22 @@ class Notasalida extends CI_Controller
         $data['error_string'][] = 'Debes seleccionar un lote';
         $data['status'] = FALSE;
       } else {
-        if ($cantidadSacar > $cantidadaActual) {
+        $queryCantidad = $this->Controlador_model->cantidadItem($this->notasalida, $this->input->post('producto'));
+        $totalItemRegistrado = is_null($queryCantidad->cantidaditem) ? 0 : $queryCantidad->cantidaditem;
+        $totalSacar = $totalItemRegistrado + $cantidadSacar;
+        if ($totalSacar > $cantidadaActual) {
           $datalote = "";
           if ($queryStatus) {
             $querylote = $this->Controlador_model->get($this->input->post("lote"), "lote");
             $datalote = ', con lote "' . $querylote->lote . '"';
           }
           $data['inputerror'][] = 'cantidad';
-          $data['error_string'][] = 'Saldo insuficiente en el almacen "' . $dataAlmacen->nombre . '"' . $datalote;
+          // $data['error_string'][] = 'Solo cuenta con "' . $dataAlmacen->nombre . '"' . $datalote. "'.$queryCantidad->cantidaditem.'";
+          $data['error_string'][] = 'Solo cuenta con "' . $stock->cantidad . '" UND en el almacen ' . $dataAlmacen->nombre. "'.$datalote.'";
           $data['status'] = FALSE;
         }
       }
     }
-
-
-    /*
-    if($detallelist) {
-      $data['inputerror'][] = 'productos';
-      $data['error_string'][] = 'Este campo ya existe en la base de datos.';
-      $data['status'] = FALSE;
-    }
-    */
 
     if ($data['status'] === FALSE) {
       echo json_encode($data);
@@ -563,6 +587,7 @@ class Notasalida extends CI_Controller
     $this->_validatedetalle();
     $producto = $this->Controlador_model->get($this->input->post('producto'), 'producto');
     $compras = $this->Controlador_model->get($this->notasalida, $this->controlador);
+
     if ($this->input->post('tipocantidad') == "PAQUETE") {
       $totalCantidad = $this->input->post('paquete') * $this->input->post('cantidad');
       $preciocompra = $this->input->post("preciocomprapaquete");
@@ -674,6 +699,7 @@ class Notasalida extends CI_Controller
       $cantidad = $this->Controlador_model->getStockAlmacen($value->producto, $value->almacen, $value->lote, $notasalida->empresa);
       $movimiento['empresa'] = $notasalida->empresa;
       $movimiento['usuario'] = $this->usuario;
+      $movimiento['modalidad'] = "SALIDA";
       $movimiento['notasalida'] = $this->notasalida;
       $movimiento['tipooperacion'] = "NS";
       $movimiento['producto'] = $value->producto;
@@ -690,16 +716,16 @@ class Notasalida extends CI_Controller
       //$movimiento['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
       $movimiento['created'] = date('Y-m-d');
       $movimiento['hora'] = date("H:i:s");
-      if(!$this->input->post('confirmacion'))
-      {
+      if (!$this->input->post('confirmacion')) {
         $this->Controlador_model->save('movimiento', $movimiento);
       }
       if ($this->input->post('tiposalida') == 'TRASLADO DE ALMACEN') {
-        $cantidadIngreso = $this->Controlador_model->getStockAlmacen($value->producto,$this->input->post('destinotraslado'), $value->lote, $notasalida->empresa);
-        
+        $cantidadIngreso = $this->Controlador_model->getStockAlmacen($value->producto, $this->input->post('destinotraslado'), $value->lote, $notasalida->empresa);
+
         $movimientoIngreso['empresa'] = $notasalida->empresa;
         $movimientoIngreso['usuario'] = $this->usuario;
         $movimientoIngreso['notasalida'] = $this->notasalida;
+        $movimientoIngreso['modalidad'] = "ENTRADA";
         $movimientoIngreso['tipooperacion'] = "NS";
         $movimientoIngreso['producto'] = $value->producto;
         $movimientoIngreso['almacen'] = $this->input->post('destinotraslado');
@@ -715,8 +741,7 @@ class Notasalida extends CI_Controller
         //$movimientoIngreso['costopromedio'] = $cantidad ? $cantidad->costopromedio : $producto->preciocompra;
         $movimientoIngreso['created'] = date('Y-m-d');
         $movimientoIngreso['hora'] = date("H:i:s");
-        if(!$this->input->post('confirmacion'))
-        {
+        if (!$this->input->post('confirmacion')) {
           $this->Controlador_model->save('movimiento', $movimientoIngreso);
         }
       }
@@ -724,11 +749,10 @@ class Notasalida extends CI_Controller
 
       //Descontamos el stock del almacen
       $stockDescontar['cantidad'] = $cantidad->cantidad - $value->cantidaditem;
-      if(!$this->input->post('confirmacion'))
-      {
+      if (!$this->input->post('confirmacion')) {
         $this->db->where('id', $cantidad->id)->update('stock', $stockDescontar);
       }
-      
+
 
       if ($this->input->post('tiposalida') == 'TRASLADO DE ALMACEN') {
         //? consultamos si donde se va trasladar el stock ya tiene registro
@@ -751,14 +775,12 @@ class Notasalida extends CI_Controller
     $data['almacendestino'] = $this->input->post('destinotraslado') <> 0 ? $this->input->post('destinotraslado') : NULL;
     $data['empleado'] = $this->input->post('empleado') ? $this->input->post('empleado') : NULL;
     $data['comentario'] = $this->input->post('comentario') ? $this->input->post('comentario') : NULL;
-    if($this->input->post('confirmacion'))
-    {
+    if ($this->input->post('confirmacion')) {
       $data['estado'] = '2';
-    }else
-    {
+    } else {
       $data['estado'] = '1';
     }
-    
+
     if ($this->db->where('id', $this->notasalida)->update($this->controlador, $data)) {
       echo json_encode(array("status" => TRUE));
     }
@@ -886,6 +908,49 @@ class Notasalida extends CI_Controller
     }
   }
 
+  function ajax_stockactual()
+  {
+    $idproducto = $this->input->post("idproducto");
+    $queryProducto = $this->Controlador_model->get($idproducto, "producto");
+    if ($queryProducto->tipo == '0') {
+      $almacenes = $this->db->where("empresa", $this->empresa)->get('almacen')->result();
+      $html = '
+    <div class="row">
+     <div class="col-lg-12">
+     <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Almacen</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+     ';
+      foreach ($almacenes as $value) {
+        $dataProducto = $this->Controlador_model->get($idproducto, "producto");
+        $dataStock = $this->Controlador_model->stockAlmacen($idproducto, $value->id, $this->empresa);
+        $cantidadStock =  $dataStock->cantidad == "" ? 0 : $dataStock->cantidad;
+        $html .= '
+          <tbody>
+            <tr class="' . ($cantidadStock == 0 ? "danger" : "success") . '">
+              <td>' . $dataProducto->nombre . '</td>
+              <td>' . $value->nombre . '</td>
+              <td style="text-align:right" >' . $cantidadStock . '</td>
+            </tr>
+          </tbody>';
+      }
+      $html .= '
+      </table>
+     </div>
+    </div>';
+    } else {
+      $stockCombo = $this->totalStock($idproducto, 0, FALSE);
+      $html = "<div class='alert alert-success text-center' style='font-weight: bold;color: #8e27c1;background: #906fc5a1;border-color: #905ec5;'><h4>TOTAL DE STOCK $stockCombo </h4></div>";
+    }
+    echo json_encode(['datahtml' => $html]);
+  }
+
+
   function ajax_empresaAlmacen($idempresa)
   {
     $numero = $this->Controlador_model->codigos($this->controlador, $idempresa);
@@ -912,10 +977,9 @@ class Notasalida extends CI_Controller
 
   public function listaalmacenes()
   {
-    $almacenes = $this->db->where("id !=",$this->input->post("idAlmacen"))->get("almacen")->result();
+    $almacenes = $this->db->where("id !=", $this->input->post("idAlmacen"))->get("almacen")->result();
     echo json_encode($almacenes);
   }
 }
-
 /* End of file compra.php */
 /* Location: ./system/application/controllers/compra.php */

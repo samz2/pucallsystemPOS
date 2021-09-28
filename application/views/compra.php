@@ -14,7 +14,7 @@
                   <label for="exampleInputEmail1">Producto</label>
                   <div class="input-group">
                     <input type="hidden" class="form-control" name="producto" id="producto">
-                    <input type="text" class="form-control limpiar" name="productos" id="productos" placeholder="BUSCAR PRODUCTO">
+                    <input type="text" class="form-control limpiar" name="productos" id="productos" placeholder="BUSCAR PRODUCTO...">
                     <span class="help-block"></span>
                     <span class="input-group-addon"><i class="fa fa-search"></i></span>
                   </div>
@@ -24,7 +24,7 @@
             <div class="row">
               <div class="col-lg-12">
                 <div class="form-group">
-                  <label for="almacen">Almacen</label>
+                  <label for="almacen">Almacen Destino</label>
                   <select class="form-control" name="almacen" id="almacen">
                     <option value="0">SELECCIONE</option>
                     <?php foreach ($almacenes as $almacen) { ?>
@@ -123,12 +123,12 @@
           </h3>
           <div class="pull-right">
             <a onclick="location.reload()" class="btn btn-openid" data-toggle="tooltip">
-              <span class="hidden-xs">Recargar</span>
               <i class="fa fa-repeat"></i>
+              <span class="hidden-xs">Recargar</span>
             </a>
             <a href="<?= $this->url ?>/volver" class="btn btn-default" data-toggle="tooltip">
-              <span class="hidden-xs">Volver</span>
               <i class="fa fa-arrow-left"></i>
+              <span class="hidden-xs">Volver</span>
             </a>
           </div>
         </div>
@@ -152,18 +152,37 @@
                   <label>Usuario<span class="required">*</span></label>
                   <div>
                     <input type="hidden" class="form-control" name="usuario" id="usuario">
-                    <input type="text" class="form-control limpiar" name="usuarios" id="usuarios">
+                    <input type="text" class="form-control" placeholder="BUSCAR USUARIO..." name="usuarios" id="usuarios" readonly>
                     <span class="help-block"></span>
                   </div>
                 </div>
               </div>
             </div>
-
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Costo de Compra <span class="required">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-addon">S/.</span>
+                    <input type="text" class="form-control" id="costocompra" name="costocompra" readonly>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Costo de Flete</label>
+                  <div class="input-group">
+                    <span class="input-group-addon">S/.</span>
+                    <input type="text" class="form-control" id="costoadiconal" name="costoadiconal" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="row">
               <div class="col-lg-6">
                 <div class="form-group">
                   <label>IGV<span class="required">*</span></label>
-                  <select id="igv" name="igv" onchange="save()" class="form-control">
+                  <select id="igv" name="igv" onchange="saveigv()" class="form-control">
                     <option value="0">0 %</option>
                     <option value="18">18 %</option>
                   </select>
@@ -171,8 +190,11 @@
               </div>
               <div class="col-lg-6">
                 <div class="form-group">
-                  <label>Monto</label>
-                  <input type="text" class="form-control" id="montototal" name="montototal" readonly>
+                  <label>Costo Total</label>
+                  <div class="input-group">
+                    <span class="input-group-addon">S/.</span>
+                    <input type="text" class="form-control" id="montototal" name="montototal" readonly>
+                  </div>
                 </div>
               </div>
             </div>
@@ -188,7 +210,7 @@
                   <label>Proveedor</label>
                   <div class="input-group">
                     <input type="hidden" class="form-control" name="proveedor" id="proveedor">
-                    <input type="text" class="form-control limpiar" name="proveedores" id="proveedores">
+                    <input type="text" class="form-control limpiar" placeholder="BUSCAR PROVEEDOR..." name="proveedores" id="proveedores">
                     <span class="help-block"></span>
                     <span class="input-group-btn">
                       <a onclick="crearproveedor()" class="btn btn-primary">
@@ -203,7 +225,7 @@
             <div class="row">
               <div class="col-lg-12">
                 <div class="form-group">
-                  <button type="button" class="btn btn-warning btn-block waves-effect waves-light" id="btnSaveDetalle" onclick="cosotoadicionales()">COSTOS ADICIONALES <i class="fa fa-money"></i></button>
+                  <button type="button" id="costoadicional" class="btn btn-warning btn-block waves-effect waves-light" onclick="cosotoadicionales()">AGREGAR COSTO DE FLETE <i class="fa fa-truck" style="transform:scaleX(-1)"></i></button>
                 </div>
               </div>
             </div>
@@ -222,21 +244,25 @@
         </div>
         <div class="panel-body">
           <div class="panel-body table-responsive">
-            <table id="tabla_detalle" class="table table-bordered table-striped">
+            <table id="tabla_detalle" class="table table-bordered table-striped text-center" style="text-align:center; vertical-align: middle">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Destino</th>
-                  <th>Producto</th>
-                  <th>Lote</th>
-                  <th>T. Medida</th>
-                  <th>Precio sin IGV</th>
-                  <th>Precio con IGV</th>
-                  <th>Regalo</th>
-                  <th>Cantidad</th>
-                  <th>C. Item</th>
-                  <th>Total</th>
-                  <th>Accion</th>
+                  <th><b>#</b></th>
+                  <th><b>Destino</b></th>
+                  <th><b>Producto</b></th>
+                  <th><b>Lote</b></th>
+                  <th><b>T. Medida</b></th>
+                  <th><b>Regalo</b></th>
+                  <th><b>Cantidad</b></th>
+                  <th><b>C. Item</b></th>
+                  <th><b>S/. Paquete</b></th>
+                  <th><b>S/. paqute</b> <label class="label label-success">+ IGV</label> </th>
+                  <th><b>S/. und</b></th>
+                  <th><b>S/. und</b> <label class="label label-success">+ IGV</label></th>
+                  <th><b>S/. und</b> <label class="label label-success">+ IGV</label> <label class="label label-success">+ FLETE</label></th>
+                  <th><b>Total</b></th>
+                  <th><b>Total</b> <label class="label label-success">+ IGV</label> <label class="label label-success">+ FLETE</label></th>
+                  <th><b>Acción</b></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -277,9 +303,9 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generar()" class="btn btn-warning" data-toggle="tooltip">BUSCAR <i class="fa fa-search"></i></a>
-            <a onclick="pendiente()" class="btn btn-danger" data-toggle="tooltip">PENDIENTES <i class="fa fa-clipboard"></i></a>
-            <!--<a onclick="exportar()" class="btn btn-success" data-toggle="tooltip" title="EXPORTAR"><i class="fa fa-download"></i></a>-->
+            <a onclick="generar()" class="btn btn-warning btn-sm" data-toggle="tooltip"><i class="fa fa-search"></i> BUSCAR</a>
+            <a onclick="pendiente()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-clipboard"></i> PENDIENTES</a>
+            <a onclick="exportar()" class="btn btn-success btn-sm" data-toggle="tooltip"><i class="fa fa-download"></i> DESCARGAR</a>
 
           </div>
         </form>
@@ -294,8 +320,8 @@
               Lista de <?= $this->titulo_controlador ?>
             </div>
             <div>
-              <a onclick="location.reload()" class="btn btn-yahoo" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
-              <a href="<?= $this->url ?>/crear" class="btn btn-primary" data-toggle="tooltip">NUEVO <i class="fa fa-plus"></i></a>
+              <a onclick="location.reload()" class="btn btn-yahoo btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+              <a href="<?= $this->url ?>/crear" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
             </div>
           </h3>
         </div>
@@ -311,9 +337,11 @@
                 <th>N° Doc.</th>
                 <th>Proveedor</th>
                 <th>Estado</th>
-                <th>Monto</th>
+                <th>Monto Compra</th>
+                <th>Monto Flete</th>
+                <th>Total</th>
                 <th>Fecha</th>
-                <th>Accion</th>
+                <th>Acciones BTN</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -367,29 +395,57 @@
                 <span class="help-block"></span>
               </div>
             </div>
-            <div class="form-group">
+            <!-- <div class="form-group">
               <label class="col-sm-2 control-label">Valor</label>
               <div class="col-sm-10">
                 <input type="text" class="form-control" id="totales" name="totales" readonly>
               </div>
-            </div>
+            </div> -->
             <div class="form-group">
               <label class="col-sm-2 control-label" for="formapago">Forma Pago</label>
               <div class="col-sm-10">
-                <select class="form-control" name="formapago" id="formapago">
+                <select class="form-control" name="formapago" id="formapago" onchange="formapagocompra()">
                   <option value="CONTADO">CONTADO</option>
-                  <!--<option value="CREDITO">CREDITO</option>-->
+                  <option value="CREDITO">CREDITO</option>
                 </select>
               </div>
             </div>
             <div id="metodo" class="form-group">
               <label class="col-sm-2 control-label" for="metodopago">Metodo Pago</label>
               <div class="col-sm-10">
-                <select class="form-control" name="metodopago" id="metodopago">
+                <select class="form-control" name="metodopago" id="metodopago" onchange="metodopagocompra()">
                   <option value="EFECTIVO">EFECTIVO</option>
+                  <option value="TARJETA">TARJETA</option>
+                  <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                  <option value="DEPOSITO">DEPOSITO</option>
                   <option value="INTERNET">INTERNET</option>
-                  <!--<option value="PAGO ANTERIOR">PAGO ANTERIOR</option>-->
                 </select>
+              </div>
+            </div>
+
+            <div class="form-group" id="tipocard">
+              <label class="col-sm-2 control-label">Tipo Tarjeta</label>
+              <div class="col-sm-10">
+                <i class="fa fa-cc-visa fa-2x" id="visa" aria-hidden="true"></i>
+                <i class="fa fa-cc-mastercard fa-2x" id="mastercard" aria-hidden="true"></i>
+                <i class="fa fa-cc-amex fa-2x" id="amex" aria-hidden="true"></i>
+                <i class="fa fa-cc-discover fa-2x" id="discover" aria-hidden="true"></i>
+                <select class="form-control" name="tipotarjeta" id="tipotarjeta">
+                  <option value="VISA">VISA</option>
+                  <option value="DISCOVER">DISCOVER</option>
+                  <option value="MASTERCARD">MASTERCARD</option>
+                  <option value="DINERS CLUB">DINERS CLUB</option>
+                  <option value="AMERICAN EXPRESS">AMERICAN EXPRESS</option>
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+
+            <div class="form-group" id="content-operacion">
+              <label class="col-sm-2 control-label" for="metodopago">N° de operacion</label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control" id="operacion" name="operacion">
+                <span class="help-block"></span>
               </div>
             </div>
             <div class="form-group">
@@ -478,13 +534,37 @@
 
 <!-- Modal ticket -->
 <div class="modal fade" id="ticket" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog modal-lg" role="document" id="ticketModal" style="width:50%">
+  <div class="modal-dialog modal-lg" role="document" id="ticketModal" style="width:70%">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title"></h4>
       </div>
-      <div id="printSection" class="modal-body" id="modal-body"></div>
+      <div id="printSection" class="modal-body" id="modal-body">
+        
+        <!-- <table id="tablamain" class="table table-striped table-bordered">
+          <div class="clearfix">
+            <div class="pull-left">
+              <h4 class="text-left">
+                <thead>
+                  <tr class="text-title-panel">
+                    <th>#</th>
+                    <th>Código</th>
+                    <th>Destino</th>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Regalo</th>
+                    <th>Total Items</th>
+                    <th>Precio</th>
+                    <th>Precio <label class="label label-success"> + Flete</th>
+                    <th>Sub-total</th>
+                    <th>Sub-total <label class="label label-success"> + flete</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+        </table> -->
+      </div>
     </div>
   </div>
 </div>
@@ -590,23 +670,92 @@
         <h3 class="modal-title text-center"></h3>
       </div>
       <div class="modal-body form">
-        <form action="#" id="form_costos_adicionales" class="form-horizontal" autocomplete="off">
+        <form action="#" id="form_costos_adicionales" autocomplete="off">
           <input type="hidden" class="form-control" name="id_costo_adicional" id="id_costo_adicional">
           <div class="form-body">
-            <div class="form-group">
-              <label class="control-label col-md-3">Descripcion<span class="required">*</span></label>
-              <div class="col-md-9">
-                <input type="text" class="form-control" name="descripcion_adicional" id="descripcion_adicional">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Proveedor <span class="required">*</span></label>
+                  <div class="input-group">
+                    <input type="hidden" class="form-control" name="proveedorflete" id="proveedorflete">
+                    <input type="text" class="form-control limpiar" name="proveedoresfletes" id="proveedoresfletes" placeholder="BUSCAR PROVEEDOR...">
+                    <span class="help-block"></span>
+                    <span class="input-group-addon"><i class="fa fa-search"></i></span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3">
+                <label>Serie del documento <span class="required">*</span></label>
+                <input type="text" class="form-control" name="serie_documento" id="serie_documento">
+                <span class="help-block"></span>
+              </div>
+              <div class="col-lg-3">
+                <label>Numero del documento<span class="required">*</span></label>
+                <input type="text" class="form-control" name="numero_documento" id="numero_documento">
                 <span class="help-block"></span>
               </div>
             </div>
-            <div class="form-group">
-              <label class="control-label col-md-3">Costo <span class="required">*</span></label>
-              <div class="col-md-9">
-                <input type="text" class="form-control" name="costo_adicional" id="costo_adicional">
-                <span class="help-block"></span>
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label>Descripcion del registro</label>
+                  <input type="text" class="form-control" name="descripcion_adicional" id="descripcion_adicional">
+                  <span class="help-block"></span>
+                </div>
+              </div>
+              <div class="col-lg-3">
+                <div class="form-group">
+                  <label>Monto <span class="required">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-addon">S/ </span>
+                    <input type="number" class="form-control" name="costo_adicional" id="costo_adicional">
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-3" id="content-formapago">
+                <div class="form-group">
+                  <label>Forma de pago <span class="required">*</span></label>
+                  <select class="form-control" name="formapago_adicional" id="formapago_adicional" onchange="formapago_flete()">
+                    <option value="CREDITO">CREDITO</option>
+                    <option value="CONTADO">CONTADO</option>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
               </div>
             </div>
+            <div class="row">
+              <div class="col-lg-12" id="content-metodopago-flete">
+                <div class="form-group">
+                  <label for="metodopago_flete">Metodo de Pago</label>
+                  <select class="form-control" name="metodopago_flete" id="metodopago_flete" onchange="procesometodopago_flete()">
+                    <option value="EFECTIVO">EFECTIVO</option>
+                    <option value="TARJETA">TARJETA</option>
+                    <option value="DEPOSITO">DEPOSITO</option>
+                    <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-lg-12" id="content-tipotarjeta">
+                <div class="form-group">
+                  <label>Tipo Tarjeta</label>
+                  <select class="form-control" name="tipotarjeta_flete" id="tipotarjeta_flete">
+                    <option value="VISA">VISA</option>
+                    <option value="DISCOVER">DISCOVER</option>
+                    <option value="MASTERCARD">MASTERCARD</option>
+                    <option value="DINERS CLUB">DINERS CLUB</option>
+                    <option value="AMERICAN EXPRESS">AMERICAN EXPRESS</option>
+                  </select>
+                  <span class="help-block"></span>
+                </div>
+              </div>
+            </div>
+
+
+
+
+
           </div>
         </form>
         <button type="button" id="btnSaveCostoAdicional" onclick="save_costo_adicional()" class="btn btn-primary pull-right"></button>
@@ -621,10 +770,13 @@
               </div>
               <!-- /.box-header -->
               <div class="panel-body table-responsive">
-                <table id="tabla_almacen" class="table table-bordered table-striped">
+                <table id="tabla_costo_adicional" class="table table-bordered table-striped">
                   <thead>
                     <tr class="text-title-panel">
                       <th>#</th>
+                      <th>Proveedor</th>
+                      <th>Documento</th>
+                      <th>Forma de Pago</th>
                       <th>Descripcion</th>
                       <th>Monto</th>
                       <th></th>
@@ -648,7 +800,7 @@
   var save_method;
   $(document).ready(function() {
     <?php if ($this->compra) { ?>
-      
+      formapagocompra();
       var table_costoadicional;
       cambiarventa();
       cargar_detalle();
@@ -725,6 +877,8 @@
 
     })
 
+    metodopagocompra();
+
 
     $("#empresas").autocomplete({
       source: "<?= $this->url ?>/completarempresa",
@@ -743,14 +897,24 @@
       }
     });
 
-    $("#usuarios").autocomplete({
+    $("#proveedoresfletes").autocomplete({
+      source: "<?= $this->url ?>/completarproveedoresfletes",
+      minLength: 2,
+      select: function(event, ui) {
+        $("#proveedorflete").val(ui.item.proveedor);
+      }
+    });
+
+    /* $("#usuarios").autocomplete({
       source: "<?= $this->url ?>/completarusuario",
       minLength: 2,
       select: function(event, ui) {
         $("#usuario").val(ui.item.usuario);
         save();
       }
-    });
+    }); */
+
+    formapago_flete();
 
     $("input").keyup(function() {
       $(this).parent().removeClass('has-error');
@@ -875,6 +1039,20 @@
     $('.modal-title').text('CREAR LOTE');
   };
 
+  function metodopagocompra() {
+    if ($("#metodopago").val() != "EFECTIVO") {
+      if ($("#metodopago").val() == "TARJETA") {
+        $("#tipocard").show("fast");
+      } else {
+        $("#tipocard").hide("fast");
+      }
+      $("#content-operacion").show("fast");
+    } else {
+      $("#tipocard").hide("fast");
+      $("#content-operacion").hide("fast");
+    }
+  }
+
   function empresaalmacen() {
     $.ajax({
       url: "<?= $this->url ?>/ajax_empresaAlmacen/" + $("#empresa").val(),
@@ -944,9 +1122,6 @@
         }
       },
       "destroy": true,
-      //Feature control the processing indicator.
-      "processing": true,
-      // Load data for the table's content from an Ajax source
       "ajax": {
         url: "<?= $this->url ?>/ajax_list_detalle",
         type: 'GET'
@@ -954,12 +1129,57 @@
     });
   };
 
+  function formapagocompra() {
+    if ($('#formapago').val() == 'CONTADO') {
+      $('#metodo').show("fast");
+      $("#content-operacion").show("fast");
+    } else {
+      $('#metodo').hide("fast");
+      $("#content-operacion").hide("fast");
+    }
+  }
+
+  function formapago_flete() {
+    let formapago = $("#formapago_adicional").val();
+    if (formapago == "CREDITO") {
+      document.querySelector("#content-metodopago-flete").className = "";
+      document.querySelector("#content-tipotarjeta").className = "";
+      $("#content-metodopago-flete").addClass("col-lg-12");
+      $("#content-metodopago-flete").hide("fast");
+      $("#content-tipotarjeta").hide("fast");
+    } else {
+      $("#content-metodopago-flete").show("fast");
+    }
+  }
+
   function visualizar(id) {
     $.ajax({
       url: "<?= $this->url ?>/visualizar/" + id,
       type: "POST",
       success: function(data) {
         $('#printSection').html(data);
+        $('#tabla-compra').dataTable({
+          language: {
+            "decimal": "",
+            "emptyTable": "No hay información",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+            "infoEmpty": "Mostrando 0 to 0 of 0 Entradas",
+            "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ Entradas",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "Sin resultados encontrados",
+            "paginate": {
+              "first": "Primero",
+              "last": "Ultimo",
+              "next": "Siguiente",
+              "previous": "Anterior"
+            }
+          },
+        });
         $('#ticket').modal('show');
         $('.modal-title').text('DETALLES DE LA COMPRA');
       },
@@ -1009,6 +1229,7 @@
       },
     });
   };
+
 
   function pendiente() {
     table = $('#tabla').DataTable({
@@ -1134,7 +1355,7 @@
               msg: 'El registro fue eliminado exitosamente.'
             });
             cambiarventa();
-            $("#productos").focus();
+            /* $("#productos").focus(); */
           },
           error: function(jqXHR, textStatus, errorThrown) {
             Lobibox.notify('error', {
@@ -1183,6 +1404,8 @@
       type: "GET",
       dataType: "JSON",
       success: function(data) {
+        let costoAdicional = data.costoAdicional.monto != null ? data.costoAdicional.monto : 0;
+        let operacion = parseFloat(data.montototal) + parseFloat(costoAdicional);
         $('[name="empresa"]').val(data.empresa);
         $('[name="empresas"]').val(data.nombreempresa);
         $('[name="usuario"]').val(data.usuario);
@@ -1192,8 +1415,10 @@
         $('[name="nombrepro"]').val(data.nombreproveedor);
         $('[name="codigo"]').val(data.codigo);
         $('[name="igv"]').val(data.igv);
-        $('[name="montototal"]').val(data.montototal);
-        $('[name="totales"]').val(data.montototal);
+        $('[name="costocompra"]').val(data.montototal);
+        $('[name="costoadiconal"]').val(costoAdicional);
+        $('[name="montototal"]').val(operacion);
+        /*  $('[name="totales"]').val(data.operacion); */
         if (data.contador == 0) {
           $("#empresa").prop('disabled', false);
           $("#igv").prop('disabled', false);
@@ -1209,11 +1434,15 @@
           $("#content-datos-compra").addClass("col-lg-6");
           $("#content-detalles-compra").addClass("col-lg-6")
           $("#content-detalles-compra").show();
+          $("#btnSaveCostoAdicional").show();
+          $("#costoadicional").show();
         } else {
+          $("#btnSaveCostoAdicional").hide();
           $("#usuarios").prop('disabled', true);
           $("#proveedores").prop('disabled', true);
           $("#content-datos-compra").addClass("col-lg-12");
           $("#content-detalles-compra").hide();
+          $("#costoadicional").hide();
         }
         $("#almacen").html("");
         if (data.empresaAlmacen.length > 0) {
@@ -1433,10 +1662,10 @@
 
   function exportar() {
     $.ajax({
-      url: '<?= $this->url ?>/excel',
+      url: '<?= $this->url ?>/detalleexcel',
       type: 'POST',
       success: function() {
-        window.open('<?= $this->url ?>/excel/' + $('#finicio').val() + '/' + $('#factual').val());
+        window.open('<?= $this->url ?>/detalleexcel/' + $('#finicio').val() + '/' + $('#factual').val() + '/' + $('#empresa').val());
       },
     });
   };
@@ -1547,15 +1776,16 @@
     save_method = 'add';
     $('#form_costos_adicionales')[0].reset();
     $('#btnSaveCostoAdicional').html(`AGREGAR <i class="fa fa-check-circle"></i>`);
-    $('.form-group').removeClass('has-error'); // clear error class
+    $('.form-group').removeClass('has-error');
     $('.help-block').empty(); // clear error string
     $("#costos_adicionales_modal").modal("show");
-    $('.modal-title').text('AGREGAR COSTO ADICIONAL'); // Set Title to Bootstrap modal title
+    $('.modal-title').text('AGREGAR COSTO DE FLETE'); // Set Title to Bootstrap modal title
+    formapago_flete();
     cargar_cosotoadicionales();
   }
 
   function cargar_cosotoadicionales() {
-    table_costoadicional = $('#tabla_almacen').DataTable({
+    table_costoadicional = $('#tabla_costo_adicional').DataTable({
       language: {
         "decimal": "",
         "emptyTable": "No hay información",
@@ -1607,17 +1837,20 @@
       success: function(data) {
         if (data.status) {
           save_method = 'add';
-          $(".modal-title").text("AGREGAR COSTO ADICIONAL");
+          $(".modal-title").text("AGREGAR COSTO DE FLETE");
           reload_tables_cosotosadicionales();
+          reload_table_detalle()
           $('#form_costos_adicionales')[0].reset();
+          formapago_flete();
           Lobibox.notify('success', {
             size: 'mini',
             position: "top right",
             msg: msgsuccess
           });
+          cambiarventa();
         } else {
           for (var i = 0; i < data.inputerror.length; i++) {
-            $('[name="' + data.inputerror[i] + '"]').parent().parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
+            $('[name="' + data.inputerror[i] + '"]').parent().addClass('has-error'); //select parent twice to select div form-group class and add has-error class
             $('[name="' + data.inputerror[i] + '"]').next().text(data.error_string[i]); //select span help-block class set text error string
           }
         }
@@ -1630,7 +1863,7 @@
           position: "top right",
           msg: msgerror
         });
-        $('#btnSaveCostoAdicional').text('AGREGAR <i class="fa fa-check-circle"></i>'); //change button text
+        $('#btnSaveCostoAdicional').html('AGREGAR <i class="fa fa-check-circle"></i>'); //change button text
         $('#btnSaveCostoAdicional').attr('disabled', false); //set button disable
       }
     });
@@ -1640,5 +1873,117 @@
     table_costoadicional.ajax.reload(null, false); //reload datatable ajax
   };
 
+  function edit_costoadicional(id) {
+    save_method = 'update';
+    $('#form_costos_adicionales')[0].reset();
+    $('.form-group').removeClass('has-error');
+    $('.help-block').empty();
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_edit_costoadicional/" + id,
+      type: "GET",
+      dataType: "JSON",
+      success: function(data) {
+        $('[name="id_costo_adicional"]').val(data.id);
+        $('[name="descripcion_adicional"]').val(data.descripcion);
+        $('[name="costo_adicional"]').val(data.monto);
+        $('#btnSaveAlmacen').text('MODIFICAR');
+        $('.modal-title').text('EDITAR COSTO DE FLETE');
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: 'Error al obtener datos de ajax.'
+        });
+      }
+    });
+  };
+
+  function borrar_cosotoadicional(id) {
+    bootbox.confirm("¿ Seguro desea Eliminar este registro ?", function(result) {
+      if (result === true) {
+        $.ajax({
+          url: "<?= $this->url ?>/ajax_deletecostoadicional/" + id,
+          type: "POST",
+          dataType: "JSON",
+          success: function(data) {
+            if (data.status) {
+              reload_tables_cosotosadicionales();
+              reload_table_detalle();
+              Lobibox.notify('success', {
+                size: 'mini',
+                position: "top right",
+                msg: 'El registro fue eliminado exitosamente.'
+              });
+              cambiarventa();
+            } else {
+              Lobibox.notify('warning', {
+                size: 'mini',
+                position: "top right",
+                msg: 'El flete ya tiene registros de pago'
+              });
+            }
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            Lobibox.notify('error', {
+              size: 'mini',
+              position: "top right",
+              msg: 'No se puede eliminar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+            });
+          }
+        });
+      }
+    });
+  };
+
+  function saveigv() {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_updateigv",
+      type: "POST",
+      data: {
+        "igv": $("#igv").val()
+      },
+      dataType: "JSON",
+      success: function(data) {},
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: 'Ocurrio un problema al actulizar igv recargue la pagina'
+        });
+      }
+    });
+  }
+
+  function procesometodopago_flete() {
+    let metodopagoproceso = $("#metodopago_flete").val();
+    if (metodopagoproceso == "TARJETA") {
+      document.querySelector("#content-tipotarjeta").className = "";
+      document.querySelector("#content-metodopago-flete").className = "";
+      document.querySelector("#content-metodopago-flete").className = "col-lg-6";
+      document.querySelector("#content-tipotarjeta").className = "col-lg-6";
+      $("#content-tipotarjeta").show("fast");
+    } else {
+      document.querySelector("#content-tipotarjeta").className = "";
+      document.querySelector("#content-metodopago-flete").className = "";
+      document.querySelector("#content-metodopago-flete").className = "col-lg-12";
+      $("#content-tipotarjeta").hide("fast");
+    }
+  }
+
+  function el(el) {
+    return document.getElementById(el);
+  }
+
+  el('cantidad').addEventListener('input', function() {
+    var val = this.value;
+    this.value = val.replace(/\D|\-/, '');
+  });
+
+
+  el('cantidadpaquete').addEventListener('input', function() {
+    var val = this.value;
+    this.value = val.replace(/\D|\-/, '');
+  });
 </script>
 <script type="text/javascript" src="<?= base_url() . RECURSOS ?>js/jquery-ui/js/jquery-ui-1.9.2.custom.js"></script>

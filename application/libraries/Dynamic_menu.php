@@ -31,7 +31,7 @@ class Dynamic_menu {
       $perfilmenus = $this->ci->db->where('perfil', $perfil)->order_by("posicion", "asc")->get('perfilmenu')->result();
       // now we will build the dynamic menus.
       $html_out  = '';
-      $html_out .= '<ul id="menu-izquierdo" class="nav navbar-nav" '.($dataempresa->color_menu != "" ? "style='background: $dataempresa->color_menu'" : "").'>';
+      $html_out .= '<ul id="menu-izquierdo" class="nav navbar-nav"  style="display: flex;justify-content: center;align-items: center; '.($dataempresa->color_menu != "" ? "background: $dataempresa->color_menu" : "").'">';
       // me despliega del query los rows de la base de datos que deseo utilizar
       foreach ($perfilmenus as $data) {
         $id = $data->id;
@@ -46,14 +46,14 @@ class Dynamic_menu {
         // are we allowed to see this menu?
         if ($parent_id == 0) {
           if ($is_parent == TRUE) {
-            // CodeIgniter's anchor(uri segments, text, attributes) tag.
+            // CodeIgniter's anchor(uri segments, text, attributes) tag. 25px
             $html_out .= '<li class="dropdown">';
             $html_out .= '<a href="#" class="dropdown-toggle flat-box" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">';
-            $html_out .= '<i class="'.$icon.'"></i><span class="menu-text">'.$title.'</span><span class="caret"></span>';
+            $html_out .= '<i class="'.$icon.'" ></i><span class="menu-text">'.$title.'</span><span class="caret"></span>';
             $html_out .= $this->get_childs($id);
             $html_out .= '</li>';
           } else {
-            $html_out .= '<li class="flat-box">'.anchor($url, '<i class="'.$icon.'"></i><span class="menu-text">'.$title.'</span>', 'name="'.$title.'" id="'.$id.'"').'</li>';
+            $html_out .= '<li class="flat-box">'.anchor($url, '<i class="'.$icon.'" '.($icon == "fa fa-cart-plus" ? "style='font-size:25px'" : "hla").'></i><span class="menu-text">'.$title.'</span>', 'name="'.$title.'" id="'.$id.'"').'</li>';
           }
         }
         // print_r($id);

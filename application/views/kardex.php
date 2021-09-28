@@ -36,7 +36,7 @@
 
         </div>
         <div class="panel-footer text-center">
-          <a onclick="verxFecha()" class="btn btn-warning" data-toggle="tooltip" data-placement="top">BUSCAR <i class="fa fa-search"></i></a>
+          <a onclick="verxFecha()" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top"><i class="fa fa-search"></i> BUSCAR</a>
         </div>
       </form>
     </div>
@@ -45,7 +45,21 @@
   <div class="col-xs-12">
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title text-dark">Movimiento de <?= $this->titulo_controlador ?></h3>
+        <h3 class="panel-title text-dark clearfix">
+          <div class="pull-left">Movimiento de <?= $this->titulo_controlador ?></div>
+          <div class="pull-right">
+            <div style="display:flex">
+              <div style="display:flex; flex-direction:column; text-align: center;margin-right:5px">
+              <i class='fa fa-arrow-circle-left' style='color:#c31717; font-size:25px'></i>
+              <label>SALIDA</label>
+            </div>
+            <div style="display:flex; flex-direction:column; text-align:center">
+            <i class='fa fa-arrow-circle-right' style='color:#15790e; font-size:25px'></i>
+              <label>ENTRADA</label>
+            </div>
+            </div>
+          </div>
+        </h3>
       </div><!-- /.box-header -->
       <!-- /.box -->
       <div class="panel-body table-responsive">

@@ -322,49 +322,70 @@
   .alertacantidad__rojo {
     background: #d20a2b;
   }
+
+  .sinborde {
+    border: none;
+  }
 </style>
 <?php if (!$this->caja) { ?>
   <div class="container container-small">
     <?= $this->session->flashdata('mensaje') ?>
     <div class="row">
-      <h1 class="text-center choose_store">ELIGE UNA TIENDA</h1>
+      <h1 class="text-center choose_store">ELIGE UNA CAJA</h1>
     </div>
     <div class="row">
       <ul id="storeline">
-        <?php foreach ($tiendas as $store) { ?>
-          <?php $apertura = $this->Controlador_model->cajabierta('0', $store->id); ?>
-          <?php $caja = $apertura ? $apertura->id : FALSE; ?>
-          <?php $estado = $apertura ? 0 : 1; ?>
-          <?php if ($apertura) { ?>
-            <?php $disabled = ''; ?>
+        <?php foreach ($cajaprincipales as $cajaprincipal) { ?>
+          <?php
+          $apertura = $this->Controlador_model->cajabierta('0', $cajaprincipal->id);
+          $tienda = $this->Controlador_model->get($cajaprincipal->tienda, "empresa");
+          $queryPerfil = $this->Controlador_model->get($this->perfil, "perfil");
+          $estado = $apertura ? 0 : 1;
+          $aperturar = TRUE;
+          $hacerventas = TRUE;
+          $mensaje = "";
+          ?>
+          <?php if ($estado == 0) { ?>
+            <!-- 0 es abierto -->
+            <?php
+            $dataHacerVentas = $queryPerfil ? $queryPerfil->estado_hacerventas : "1";; //? Si ocurrio un problema con la consulta que te deje hacer ventas nomas
+            if ($dataHacerVentas == "1") {
+              $hacerventas = TRUE;
+              $mensaje = "ABIERTO";
+            } else {
+              $hacerventas = FALSE;
+              $mensaje = "<span style='font-size:10px'>NO TIENES PERMISOS PARA HACER VENTAS</span>";
+            }
+            ?>
           <?php } else { ?>
-            <?php $maximo = $this->Controlador_model->cajabierta('1', $store->id); ?>
-            <?php if ($maximo && $maximo->created == date('Y-m-d')) { ?>
-              <?php //$disabled = 'style="pointer-events: none; display: inline-block;opacity: 0.3;"'; 
-              ?>
-              <?php $disabled = ''; ?>
-            <?php } else { ?>
-              <?php if ($this->perfil == 1 || $this->perfil == 2 || $this->perfil == 3) { ?>
-                <?php $disabled = ''; ?>
-              <?php } else { ?>
-                <?php $disabled = 'style="pointer-events: none; display: inline-block;opacity: 0.3;"'; ?>
-              <?php } ?>
-            <?php } ?>
+            <!-- 1 es cerrado -->
+            <?php
+            $dataPerfil = $queryPerfil ? $queryPerfil->estado_aperturacaja : "1"; //? Si ocurrio un problema con la consulta que te deje abrir nomas
+            if ($dataPerfil == "1") {
+              //Puede aperturar caja
+              $aperturar = TRUE;
+              $mensaje = "CERRADO";
+            } else {
+              $aperturar = FALSE;
+              $mensaje = "<span style='font-size:10px'>NO TIENES PERMISOS PARA APERTURAR CAJA</span>";
+            } ?>
           <?php } ?>
-          <a <?= $disabled ?> onclick="OpenRegister('<?= $estado ?>', <?= $store->id ?>)">
-            <li class="listing clearfix">
+
+          <button <?= (!$hacerventas ? "disabled = 'true'" : "") ?> <?= (!$aperturar ? "disabled = 'true'" : "") ?> onclick="OpenRegister('<?= $estado ?>', <?= $cajaprincipal->id ?>)" class="sinborde">
+            <li class="listing clearfix" <?= (!$hacerventas ? "style = 'cursor:not-allowed'" : "") ?> <?= (!$aperturar ? "style = 'cursor:not-allowed'" : "") ?>>
               <div class="image_wrapper">
-                <img src="<?= base_url() . RECURSOS ?>img/store.svg" alt="store">
+                <img src="<?= base_url() . RECURSOS ?>img/register2.svg" alt="store">
               </div>
-              <div class="info">
-                <span class="store_title"><?= $store->tipo == 0 ? $store->nombre : $store->razonsocial ?></span>
-                <span class="store_info"><?= $store->telefono ?> <span>&bull;</span> <?= $store->direccion ?></span>
+              <div class="info text-left">
+                <span class="store_title"><?= $cajaprincipal->nombre ?></span>
+                <span class="store_info"><span>&bull;</span><?= $tienda->tipo == 0 ? $tienda->nombre : $tienda->razonsocial ?></span>
+                <span class="store_info"><?= $tienda->tipo == 1 ?  "<span>&bull;</span>" . $tienda->nombre : "" ?><?= ($apertura ? "<span>&bull;</span>" . $apertura->descripcion : "") ?> </span>
+                <span class="store_info"><?= $tienda->telefono != "" ? "<span>&bull;</span>" . $tienda->telefono : "<span>&bull;</span> S/D DEL TELEFONO" ?> <?= "<span>&bull;</span>" . $tienda->direccion ?></span>
               </div>
               <span class=" cerrado <?= $estado == 0 ? 'store_open' : 'store_close'; ?>" style="z-index:1">
-
                 <?= $estado == 0 ? '<div class="main-wrapper">
                           <div class="signboard-wrapper">
-                            <div class="signboard-open">Abierto</div>
+                            <div class="signboard-open">' . $mensaje . '</div>
                             <div class="string-open"></div>
                             <div class="pin pin1"></div>
                             <div class="pin pin3"></div>
@@ -372,7 +393,7 @@
                           </div>
                         </div>' : '<div class="main-wrapper">
                           <div class="signboard-wrapper">
-                            <div class="signboard">CLOSED</div>
+                            <div class="signboard">' . $mensaje . '</div>
                             <div class="string"></div>
                             <div class="pin pin1"></div>
                             <div class="pin pin2"></div>
@@ -381,30 +402,31 @@
                         </div>' ?>
               </span>
             </li>
-          </a>
+          </button>
         <?php } ?>
       </ul>
     </div>
   </div>
 <?php } else { ?>
   <?php
+  $dataCajaPrincipal = $this->Controlador_model->get($this->cajaprincipal, "cajaprincipal");
   $dataCaja = $this->Controlador_model->get($this->caja, "caja");
   $dataUsuario = $this->Controlador_model->get($dataCaja->usuario, "usuario");
   ?>
-  <input id="tresPasos" type="hidden" value="<?= $empresa->pasos ?>">
+  <input id="tresPasos" type="hidden" value="<?= $dataCajaPrincipal->pasos ?>">
   <ul class="cbp-vimenu" id="opcionmenu"></ul>
   <ul class="cbp-vimenu" id="opcionmenuPedidoVenta" style="display:none">
     <li data-toggle="tooltip" data-html="true" data-placement="left" title="Regreso">
       <a onclick="salirPedidoVenta()" id="botonSalirVenta"><i class="fa fa-arrow-left" style="font-size:35px" aria-hidden="true"></i></a>
     </li>
   </ul>
-  <?php 
+  <?php
   $dataPerfil = $this->Controlador_model->get($this->perfil, "perfil");
   $seperar = explode(" ", $dataCaja->apertura);
-  $diassemana = ["Domingo","Lunes","Martes","Miercoles","Jueves","Viernes","Sabado"];
-  $meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  $diassemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+  $meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   ?>
-  <?php if ($dataPerfil->cobradorcaja === '1') { ?>
+  <?php if ($dataPerfil->cobradorcaja === '1' && $dataCajaPrincipal->pasos = "1") { ?>
     <?php $datosCaja = $this->Controlador_model->get($this->caja, "caja"); ?>
     <input id="cobradorCaja" value="1" type="hidden">
     <div id="contenedorPedidosVenta" class="container" style="margin-top:55px; margin-right:55px">
@@ -425,6 +447,7 @@
                 <thead>
                   <tr class="text-title-panel">
                     <th>#</th>
+                    <th>Cliente</th>
                     <th>Referencia</th>
                     <th>Vendedor</th>
                     <th>Monto</th>
@@ -448,12 +471,13 @@
           <label class="label label-default" style="font-size: 12px;display: flex;justify-content: space-around;margin: 0px;padding: 3px;border-radius: 0px 3px;">
             <span><?= $dataCaja->descripcion ?></span>
             <span>ENCARGADO: <?= strtoupper($dataUsuario->usuario) ?></span>
-            <span>APERTURADO: <?= strtoupper($diassemana[date("w", strtotime($seperar[0]))])." ".date("d", strtotime($seperar[0]))." DE ".strtoupper($meses[date("n", strtotime($seperar[0])) - 1]).". HORA: ".date("g:i A", strtotime($seperar[1])); ?></span>
+            <span>APERTURADO: <?= strtoupper($diassemana[date("w", strtotime($seperar[0]))]) . " " . date("d", strtotime($seperar[0])) . " DE " . strtoupper($meses[date("n", strtotime($seperar[0])) - 1]) . ". HORA: " . date("g:i A", strtotime($seperar[1])); ?></span>
           </label>
           <div class="panel panel-border-default CategriaSeleccionar" id="izquierda" style="height: 82vh;overflow:auto;margin: 0px;">
             <div class="panel-heading">
               <h3 class="panel-title text-title-panel">
-                <a onclick="datosProductosVenta()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529">Recargar productos <i class="fa fa-retweet" style="font-size:16px;"></i></a>
+                <a onclick="agregarproductolibre()" class="btn btn-success btn-sm waves-effect waves-light" data-toggle="tooltip" title="AGREGAR"><i class="fa fa-cart-plus" style="font-size: 16px;"></i> Producto Libre</a>
+                <a onclick="datosProductosVenta()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529"><i class="fa fa-retweet" style="font-size:16px;"></i> Recargar productos</a>
               </h3>
             </div>
             <div class="panel-body table-responsive">
@@ -464,8 +488,8 @@
                     <th>Nombre</th>
                     <th>C. Barra</th>
                     <th>Categoria</th>
-                    <th>Precio</th>
-                    <th> <span style="padding-right:50px">Acciones BTN</span> </th>
+                    <th>Precios</th>
+                    <!--  <th> <span style="padding-right:50px">Acciones BTN</span> </th> -->
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -561,12 +585,13 @@
           <label class="label label-default" style="font-size: 12px;display: flex;justify-content: space-around;margin: 0px;padding: 3px;border-radius: 0px 3px;">
             <span><?= $dataCaja->descripcion ?></span>
             <span>ENCARGADO: <?= strtoupper($dataUsuario->usuario) ?></span>
-            <span>APERTURADO: <?= strtoupper($diassemana[date("w", strtotime($seperar[0]))])." ".date("d", strtotime($seperar[0]))." DE ".strtoupper($meses[date("n", strtotime($seperar[0])) - 1]).". HORA: ".date("g:i A", strtotime($seperar[1])); ?></span>
+            <span>APERTURADO: <?= strtoupper($diassemana[date("w", strtotime($seperar[0]))]) . " " . date("d", strtotime($seperar[0])) . " DE " . strtoupper($meses[date("n", strtotime($seperar[0])) - 1]) . ". HORA: " . date("g:i A", strtotime($seperar[1])); ?></span>
           </label>
           <div class="panel panel-border-default CategriaSeleccionar" style="height: 82vh;overflow:auto;margin: 0px;">
             <div class="panel-heading">
               <h3 class="panel-title text-title-panel">
-                <a onclick="datosProductosVenta()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529">Recargar productos <i class="fa fa-retweet" style="font-size:16px;"></i></a>
+                <a onclick="agregarproductolibre()" class="btn btn-success btn-sm waves-effect waves-light" data-toggle="tooltip" title="AGREGAR"><i class="fa fa-cart-plus" style="font-size: 16px;"></i> Producto Libre</a>
+                <a onclick="datosProductosVenta()" class="btn btn-warning btn-sm waves-effect waves-light " data-toggle="tooltip" style="background:#ffc107; color:#212529"><i class="fa fa-retweet" style="font-size:16px;"></i> Recargar productos</a>
               </h3>
             </div>
             <div class="panel-body table-responsive">
@@ -577,8 +602,8 @@
                     <th>Nombre</th>
                     <th>C. Barra</th>
                     <th>Categoria</th>
-                    <th>Precio</th>
-                    <th> <span style="padding-right:50px">Acciones BTN</span> </th>
+                    <th>Precios</th>
+                    <!-- <th> <span style="padding-right:50px">Acciones BTN</span> </th> -->
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -688,9 +713,10 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">ABRIR CAJA</h4>
+        <h4 class="modal-title text-center" id="myModalLabel">ABRIR CAJA</h4>
       </div>
       <form id="cachIH" autocomplete="off">
+        <input type="hidden" name="cajaprincipal" id="cajaprincipal">
         <div class="modal-body">
           <div class="form-group">
             <label for="CashinHand">Fecha</label>
@@ -699,7 +725,6 @@
           <div class="form-group">
             <label for="CashinHand">Saldo Inicial</label>
             <input type="text" class="form-control money" name="saldoinicial" id="saldoinicial" value="0">
-            <input type="hidden" name="empresaIH" id="empresaIH">
           </div>
         </div>
         <div class="modal-footer">
@@ -759,36 +784,6 @@
     </div>
   </div>
 </div>
-<!-- Modal options -->
-
-<div class="modal fade" id="options" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document" id="ticketModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title"></h4>
-      </div>
-      <div class="modal-body" id="modal-body">
-        <form action="#" role="form" id="form_options" autocomplete="off">
-          <div class="col-md-12">
-            <input type="hidden" class="form-control" name="CorrelativoIdentif" id="CorrelativoIdentif">
-            <input type="hidden" class="form-control" name="CantidadModalOpcion" id="CantidadModalOpcion">
-            <input type="hidden" class="form-control" name="precioModalOpcion" id="precioModalOpcion">
-            <input type="hidden" class="form-control" name="VentaModalOpcion" id="VentaModalOpcion">
-            <input type="hidden" class="form-control" name="detalle" id="detalle">
-            <textarea class="form-control" name="opcion" id="opcion"></textarea>
-            <span class="help-block"></span>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default hiddenpr" data-dismiss="modal">CERRAR</button>
-        <button type="submit" class="btn btn-add" onclick="addPoptions()">GRABAR</button>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- /.Modal -->
 
 <!-- Modal -->
 <div class="modal fade" id="AddSale" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -823,7 +818,8 @@
             <label for="paymentMethod">Forma de Pago:</label>
             <select class="form-control" name="formapago" id="formapago">
               <option value="CONTADO">CONTADO</option>
-              <option value="CREDITO">CREDITO</option>
+              <option value="CREDITO">CREDITO A LA VENTA</option>
+              <option value="CREDITOCLIENTE">CREDITO AL CLIENTE</option>
             </select>
           </div>
           <div class="form-group" id="metodo">
@@ -846,6 +842,12 @@
               <option value="DINERS CLUB">DINERS CLUB</option>
               <option value="AMERICAN EXPRESS">AMERICAN EXPRESS</option>
             </select>
+          </div>
+          <div class="form-group" id="content-creditos-disponibles">
+            <label>Creditos Disponibles del cliente</label>
+            <select class="form-control" name="creditosdisponibles" id="creditosdisponibles">
+            </select>
+            <span class="help-block"></span>
           </div>
           <div class="form-group" id="descontado">
             <label>Descuento</label>
@@ -1093,25 +1095,32 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Crear producto libre</h4>
-        <hr>
+        <h4 class="modal-title text-center" id="myModalLabel">CREAR PRODUCTO LIBRE</h4>
       </div>
       <form action="" autocomplete="off" method="POST" id="form_libre" role="form">
         <div class="modal-body">
-          <div class="form-group">
-            <label for="nombre">Nombre<span class="required">*</span></label>
-            <input class="form-control libre" id="nombre" type="text" name="nombre" required>
-            <span class="help-block"></span>
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="nombre">Nombre<span class="required">*</span></label>
+                <input class="form-control libre" id="nombreproductolibre" type="text" name="nombreproductolibre" required>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <div class="form-group">
+                <label for="apellido">Precio</label>
+                <input class="form-control" id="precioventa" type="text" name="precioventa" required>
+                <span class="help-block"></span>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="apellido">Precio</label>
-            <input class="form-control" id="precioventa" type="text" name="precioventa" required>
-            <span class="help-block"></span>
-          </div>
+
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" data-dismiss="modal">CERRAR</button>
-          <button type="button" id="btnSaveLibre" onclick="saveLibre()" class="btn btn-primary">GRABAR</button>
+          <button type="button" id="btnSaveLibre" onclick="saveLibre()" class="btn btn-primary">AGREGAR</button>
         </div>
       </form>
     </div>

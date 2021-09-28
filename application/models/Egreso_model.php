@@ -32,26 +32,18 @@ class Egreso_model extends CI_Model {
   public function maximo() {
     return $this->db->where('empresa', $this->usuario)->where('estado', '1')->get('caja')->row();
   }
-  public function getcaja()
-  {
-    $caja = $this->db->where('estado', '0')->get('caja');
-    $dataHtmlCaja = "";
-    if ($caja->num_rows() > 0) {
-      $dataHtmlCaja .= "<option value=''>SELECCIONE UNA CAJA</option>";
-      foreach ($caja->result() as $cajas) {
-        $dataHtmlCaja .= "<option value='$cajas->id'> $cajas->descripcion | $cajas->created | $cajas->saldoinicial</option>";
-      }
-    } else {
-      $dataHtmlCaja .= "<option value=''>NO HAY CAJAS ABIERTAS</option>";
-    }
-    return $dataHtmlCaja;
-  }
 
   function getEgresoEmpresa($finicio, $factual, $tabla){
     $this->db->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
-    $this->db->where("compra IS NOT NULL");
+    $this->db->where("tipo", "EMPRESA");
     $this->db->order_by('id', 'desc');
     return $this->db->get($tabla)->result();
+  }
+
+  function getCaja($idcaja){
+    $this->db->where("cajaprincipal", $idcaja);
+    $this->db->where("estado", "0"); //? abierto
+    return $this->db->get("caja");
   }
 
 }

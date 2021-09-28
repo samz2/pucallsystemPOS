@@ -18,8 +18,8 @@
             </div>
           </div>
           <div class="panel-footer text-center">
-            <a onclick="generado()" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top">BUSCAR <i class="fa fa-search"></i></a>
-            <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip">RECARGAR <i class="fa fa-repeat"></i></a>
+            <a onclick="generado()" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top"><i class="fa fa-search"></i> BUSCAR</a>
+            <a onclick="location.reload()" class="btn btn-success btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
           </div>
         </form>
       </div>
@@ -29,23 +29,24 @@
       <div class="panel panel-default">
         <div class="panel-heading" style="display:flex; align-items: center; justify-content: space-between">
           <h3 class="panel-title text-dark">Lista de <?= $this->titulo_controlador ?></h3>
-          <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip">NUEVO INGRESO <i class="fa fa-plus"></i></a>
+          <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO INGRESO</a>
         </div>
         <!-- /.box-header -->
         <div class="panel-body table-responsive">
           <table id="tabla" class="table table-striped table-bordered">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Caja</th>
-                <th>Metodo de ingreso</th>
-                <th>Usuario Responsable</th>
-                <th>Tipo ingreso</th>
-                <th>Recibo</th>
-                <th>Concepto</th>
-                <th>Observacion</th>
-                <th>Monto</th>
-                <th>Fecha / Hora</th>
+                <th><b>#</b></th>
+                <th><b>Tienda</b></th>
+                <th><b>Caja</b></th>
+                <th><b>Metodo de ingreso</b></th>
+                <th><b>Usuario Responsable</b></th>
+                <th><b>Tipo ingreso</b></th>
+                <th><b>Recibo</b></th>
+                <th><b>Concepto</b></th>
+                <th><b>Observación</b></th>
+                <th><b>Monto</b></th>
+                <th><b>Fecha / Hora</b></th>
                 <th></th>
               </tr>
             </thead>
@@ -69,11 +70,21 @@
         <form action="#" id="form" class="form-horizontal" autocomplete="off">
           <input type="hidden" class="form-control" id="id" name="id">
           <div class="form-body">
-            <div class="form-group">
-              <label class="control-label col-md-3">Caja<span class="required">*</span></label>
+            <div class="form-group" id="content-tienda">
+              <label class="control-label col-md-3">Tienda <span class="required">*</span></label>
+              <div class="col-md-9">
+                <select class="form-control" name="tienda" id="tienda" class="form-control" style="width:100%" onchange="operaciontienda()">
+                  <?php foreach ($empresas as $empresa) { ?>
+                    <option value="<?= $empresa->id ?>"><?= $empresa->ruc . " SERIE " . $empresa->serie . " | " . $empresa->nombre ?></option>
+                  <?php } ?>
+                </select>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group" id="content-caja">
+              <label class="control-label col-md-3">Caja <span class="required">*</span></label>
               <div class="col-md-9">
                 <select class="form-control" name="caja" id="caja" class="form-control" style="width:100%">
-                  <?= $caja ?>
                 </select>
                 <span class="help-block"></span>
               </div>
@@ -127,6 +138,7 @@
   var table;
   $(document).ready(function() {
     generado();
+    operaciontienda();
     $('.money').number(true, 2);
     $("#observacion").mayusculassintildes();
     $('#operacion').numeric();
@@ -152,6 +164,10 @@
         $(this).next().empty();
       }
       $(this).parent().parent().removeClass('has-error');
+    });
+    $("input").keyup(function() {
+      $(this).parent().parent().removeClass('has-error');
+      $(this).next().empty();
     });
   });
 
@@ -190,6 +206,7 @@
     $('#form')[0].reset(); // reset form on modals
     $('.form-group').removeClass('has-error'); // clear error class
     $('.help-block').empty(); // clear error string
+    operaciontienda();
     $('#modal_form').modal('show'); // show bootstrap modal
     $('.modal-title').text('Crear <?= $this->titulo_controlador ?>'); // Set Title to Bootstrap modal title
   };
@@ -197,8 +214,6 @@
   function save() {
     $('#btnSave').text('guardando...'); //change button text
     $('#btnSave').attr('disabled', true); //set button disable
-    console.log("DATOS");
-    console.log($('#form').serialize());
     // ajax adding data to database
     $.ajax({
       url: "<?= $this->url ?>/ajax_add",
@@ -279,4 +294,25 @@
   function reload_table() {
     table.ajax.reload(null, false); //reload datatable ajax
   };
+
+  function operaciontienda() {
+    $.ajax({
+      url: "<?= $this->url ?>/ajax_operaciontienda/" + $("#tienda").val(),
+      type: "POST",
+      dataType: "JSON",
+      success: function(data) {
+        $("#caja").empty();
+        for (value of data) {
+          $("#caja").append(`<option value="${value.id}">${value.nombre}</option>`);
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        Lobibox.notify('error', {
+          size: 'mini',
+          position: "top right",
+          msg: "El registro no se pudo crear verifique las validaciones."
+        });
+      }
+    });
+  }
 </script>

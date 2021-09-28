@@ -48,13 +48,34 @@ class Productocategoria extends CI_Controller
       if ($value->estadoextras == '1') {
         $boton .= '<a class="btn btn-sm btn-info" title="Extras" onclick="extrascategoria(' . $value->id . ')"><i class="fa fa-plus-circle"></i></a> ';
       } 
+      // if ($value->estado == '1') {
+      //   $estaboCategoria = "<label class='label label-danger'>DESACTIVADO</label>";
+      //   $boton .= '<a class="btn btn-sm btn-default" title="Activar" onclick="activar(' . $value->id . ')"><i class="fa fa-check"></i></a> ';
+      // } else {
+      //   $estaboCategoria = "<label class='label label-success'>ACTIVADO</label>";
+      //   $boton .= '<a class="btn btn-sm btn-warning" title="Desactivar" onclick="desactivar(' . $value->id . ')"><i class="fa fa-power-off"></i></a> ';
+      // }
+
       if ($value->estado == '1') {
-        $estaboCategoria = "<label class='label label-danger'>DESACTIVADO</label>";
-        $boton .= '<a class="btn btn-sm btn-default" title="Activar" onclick="activar(' . $value->id . ')"><i class="fa fa-check"></i></a> ';
-      } else {
-        $estaboCategoria = "<label class='label label-success'>ACTIVADO</label>";
-        $boton .= '<a class="btn btn-sm btn-warning" title="Desactivar" onclick="desactivar(' . $value->id . ')"><i class="fa fa-power-off"></i></a> ';
+        $estaboCategoria = '
+        <div style="display: flex;justify-content: center;align-items: center;">
+        <div class="material-switch">
+              <input id="estado' . $value->id . '" name="estado' . $value->id . '"  type="checkbox" value="' . $value->id . '"  onchange="activa(event, ' . $value->id . ')"/>
+              <label for="estado' . $value->id . '"  class="label-success" value="' . $value->id . '"></label>
+            </div>
+        </div>
+            ';
+      } elseif ($value->estado == '0') {
+        $estaboCategoria = '
+        <div style="display: flex;justify-content: center;align-items: center;">
+        <div class="material-switch">
+           <input id="estado' . $value->id . '" name="estado' . $value->id . '" type="checkbox" checked="true" onchange="desactiva(event,' . $value->id . ')"/>
+             <label for="estado' . $value->id . '" class="label-success"></label>
+        </div>
+        </div>
+        ';
       }
+
       $boton .= '<a class="btn btn-sm btn-danger" title="Borrar" onclick="borrar(' . $value->id . ')"><i class="fa fa-trash"></i></a> ';
       
       $data[] = array(

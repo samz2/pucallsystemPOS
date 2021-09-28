@@ -23,7 +23,6 @@ class Egreso extends CI_Controller
       'titulo' => $this->titulo_controlador,
       'contenido' => $this->vista,
       'conceptos' => $this->Controlador_model->getConcepto(),
-      'caja' => $this->Controlador_model->getcaja(),
       'empresas' => $this->Controlador_model->getAll('empresa'),
       'breads' => array(array('ruta' => 'javascript:;', 'titulo' => $this->titulo_controlador))
     );
@@ -41,18 +40,19 @@ class Egreso extends CI_Controller
       foreach ($query as $key => $value) {
         $empresa = $this->Controlador_model->get($value->empresa, 'empresa');
         $caja = $this->Controlador_model->get($value->caja, 'caja');
+        $dataCajaPrincipal = $this->Controlador_model->get($caja->cajaprincipal, "cajaprincipal");
         $compra = $this->Controlador_model->get($value->compra, 'compra');
         $empleado = $this->Controlador_model->get($value->usuario, 'usuario');
         $concepto = $this->Controlador_model->get($value->concepto, 'concepto');
         $boton = '';
-        if ($this->perfil == 1 || $this->perfil == 2) {
+        if($value->modalidad == "OPERACION"){
           $boton .= '<a class="btn btn-sm btn-danger" title="Borrar" onclick="borrar(' . $value->id . ')"><i class="fa fa-trash"></i></a>';
         }
         $data[] = array(
           $key + 1,
           $empresa->ruc . " | " . $empresa->razonsocial . " | " . $empresa->nombre,
           ($empleado ? $empleado->nombre . " " . $empleado->apellido : "SIN DATOS"),
-          $caja->descripcion,
+          $dataCajaPrincipal ? $dataCajaPrincipal->nombre : "SIN DATOS",
           $concepto->concepto,
           $value->observacion,
           $value->montototal,
@@ -65,10 +65,25 @@ class Egreso extends CI_Controller
       foreach ($query as $key => $value) {
         $empresa = $this->Controlador_model->get($value->empresa, 'empresa');
         $caja = $this->Controlador_model->get($value->empresa, 'caja');
-        $compra = $this->Controlador_model->get($value->compra, 'compra');
+        if($value->modalidad == "OPERACION"){
+          $datosProveedor = "";
+        }else if($value->modalidad == "COMPRA"){
+          $compra = $this->Controlador_model->get($value->compra, "compra");
+          if($compra){
+            $proveedor = $this->Controlador_model->get($compra->proveedor, 'proveedor');
+          $datosProveedor = $proveedor ? $proveedor->ruc . " | " . $proveedor->nombre : "SIN DATOS";
+          }else{
+            $datosProveedor = "NO SE ENCONTRO PROVEEDOR EN LA COMPRA";
+          }
+          
+        }else if($value->modalidad == "FLETE"){
+          $datosProveedor = "";
+        }else{
+          $datosProveedor = "";
+        }
         $empleado = $this->Controlador_model->get($value->usuario, 'usuario');
         $concepto = $this->Controlador_model->get($value->concepto, 'concepto');
-        $proveedor = $this->Controlador_model->get($compra->proveedor, 'proveedor');
+        
         $boton = '';
         /* 
         LOS EGRESO POR EMPRESA SE GENERA CUANDO HACES UNA COMPRA Y POR ESO NO SE PUEDE ELIMINAR ALMENOS QUE 
@@ -80,8 +95,8 @@ class Egreso extends CI_Controller
         $data[] = array(
           $key + 1,
           $empresa->ruc . " | " . $empresa->razonsocial . " | " . $empresa->nombre,
+          $datosProveedor,
           ($empleado ? $empleado->nombre . " " . $empleado->apellido : "SIN DATOS"),
-          $proveedor ? $proveedor->ruc." | ".$proveedor->nombre : "SIN DATOS",
           $concepto->concepto,
           $value->observacion,
           $value->montototal,
@@ -107,8 +122,13 @@ class Egreso extends CI_Controller
     $data['error_string'] = array();
     $data['inputerror'] = array();
     $data['status'] = TRUE;
-
-    if ($this->input->post('caja') == '') {
+    $dataCaja = $this->Controlador_model->getCaja($this->input->post('caja'));
+    if($dataCaja->num_rows() == 0 && $this->input->post('tipoegresoproceso') == "CAJA"){
+      $data['inputerror'][] = 'caja';
+      $data['error_string'][] = 'La caja esta cerrada ಠ_ಠ';
+      $data['status'] = FALSE;
+    }
+    if ($this->input->post('caja') == '' && $this->input->post('tipoegresoproceso') == "CAJA") {
       $data['inputerror'][] = 'caja';
       $data['error_string'][] = 'Este campo es obligatorio.';
       $data['status'] = FALSE;
@@ -147,28 +167,45 @@ class Egreso extends CI_Controller
   public function ajax_add()
   {
     $this->_validate();
-    $data['empresa'] = $this->empresa;
+    $data['tipo'] =  $this->input->post('tipoegresoproceso') == "EMPRESA" ? "EMPRESA" : "CAJA";
+    $data['modalidad'] = "OPERACION";
+    $data['empresa'] = $this->input->post("tienda");
     $data['usuario'] = $this->usuario;
-    $data['caja'] = $this->input->post('caja');
+    $data['caja'] = $this->input->post('tipoegresoproceso') == "EMPRESA" ? NULL : $this->input->post('caja');
+    $data['tipopago'] =  $this->input->post('tipoegresoproceso') == "EMPRESA" ? $this->input->post('metodopago') : "EFECTIVO";
+    if ($this->input->post('tipoegresoproceso') == "EMPRESA") {
+      $data['tipotarjeta'] = $this->input->post('metodopago') == "TARJETA" ? $this->input->post("ztipotarjeta") : NULL;
+    } else {
+      $data['tipotarjeta'] = NULL;
+    }
+    $data['operacion'] =  $this->input->post('metodopago') <> "EFECTIVO" ? $this->input->post('operacion') : NULL;
     $data['concepto'] = $this->input->post('concepto');
     $data['montototal'] = $this->input->post('monto');
     $data['observacion'] = $this->input->post('observacion');
     $data['created'] = $this->input->post('fecha');
     $data['hora'] = date("H:i:s");
     $insert = $this->Controlador_model->save($this->controlador, $data);
-    echo json_encode(array("status" => TRUE));
+    if ($insert) {
+      echo json_encode(array("status" => TRUE));
+    }
   }
 
   public function ajax_delete($id)
   {
     $query = $this->Controlador_model->get($id, "egreso");
     $statusCaja = $this->Controlador_model->get($query->caja, "caja");
-    if($statusCaja->estado == '0'){
+    if ($statusCaja->estado == '0') {
       $this->Controlador_model->delete_by_id($id, $this->controlador);
       $respuesta = array("status" => TRUE);
-    }else{
+    } else {
       $respuesta = array("status" => FALSE);
     }
     echo json_encode($respuesta);
   }
+
+  public function ajax_operaciontienda($tienda){
+    $dataCajas = $this->db->where("tienda", $tienda)->order_by("nombre", "ASC")->get("cajaprincipal")->result();
+    echo json_encode($dataCajas);
+  }
+
 }

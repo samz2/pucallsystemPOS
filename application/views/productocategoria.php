@@ -5,10 +5,10 @@
     <div class="col-xs-12">
       <div class="panel panel-border-info">
         <div class="panel-heading">
-          <h3 class="panel-title text-title-panel">Lista de <?= $this->controlador ?>
+          <h3 class="panel-title text-title-panel">Lista de categorias
             <div class="pull-right">
-              <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-              <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" onclick="add()" title="Nuevo"><i class="fa fa-plus"></i></a>
+              <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+              <a type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" onclick="add()"><i class="fa fa-plus"></i> NUEVO</a>
             </div>
             <div class="clearfix"></div>
           </h3>
@@ -464,63 +464,119 @@
     });
   }
 
-  function desactivar(id) {
-    bootbox.confirm("Seguro desea desactivar este registro?", function(result) {
-      if (result === true) {
-        $.ajax({
-          url: "<?= $this->url ?>/ajax_desactivar/" + id,
-          type: "POST",
-          dataType: "JSON",
-          success: function(data) {
-            //if success reload ajax table
-            $('#modal_form').modal('hide');
-            reload_table();
-            Lobibox.notify('success', {
-              size: 'mini',
-              position: "top right",
-              msg: 'El registro fue desactivado exitosamente.'
-            });
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            Lobibox.notify('error', {
-              size: 'mini',
-              position: "top right",
-              msg: 'No se puede desactivar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
-            });
-          }
-        });
-      }
-    });
-  };
+  // function desactivar(id) {
+  //   bootbox.confirm("Seguro desea desactivar este registro?", function(result) {
+  //     if (result === true) {
+  //       $.ajax({
+  //         url: "<?= $this->url ?>/ajax_desactivar/" + id,
+  //         type: "POST",
+  //         dataType: "JSON",
+  //         success: function(data) {
+  //           //if success reload ajax table
+  //           $('#modal_form').modal('hide');
+  //           reload_table();
+  //           Lobibox.notify('success', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'El registro fue desactivado exitosamente.'
+  //           });
+  //         },
+  //         error: function(jqXHR, textStatus, errorThrown) {
+  //           Lobibox.notify('error', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'No se puede desactivar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+  //           });
+  //         }
+  //       });
+  //     }
+  //   });
+  // };
 
-  function activar(id) {
-    bootbox.confirm("Seguro desea activar este registro?", function(result) {
-      if (result === true) {
+  function desactiva(event, id) {
+    // if (event.currentTarget.checked) {
+
+      $.ajax({
+        url: "<?= $this->url ?>/ajax_desactivar/" + id,
+        type: "POST",
+        dataType: "JSON",
+        success: function(data) {
+          reload_table();
+          Lobibox.notify('warning', {
+            size: 'mini',
+            position: "top right",
+            msg: 'Advertencia: Producto desactivado'
+          });
+        },
+        // error: function(jqXHR, textStatus, errorThrown) {
+        //   reload_table();
+        //   Lobibox.notify('warning', {
+        //     size: 'mini',
+        //     position: "top right",
+        //     msg: 'Advertencia: Producto desactivado'
+        //   });
+        // }
+      });
+    // }
+  }
+
+  // function activar(id) {
+  //   bootbox.confirm("Seguro desea activar este registro?", function(result) {
+  //     if (result === true) {
+  //       $.ajax({
+  //         url: "<?= $this->url ?>/ajax_activar/" + id,
+  //         type: "POST",
+  //         dataType: "JSON",
+  //         success: function(data) {
+  //           //if success reload ajax table
+  //           $('#modal_form').modal('hide');
+  //           reload_table();
+  //           Lobibox.notify('success', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'El registro fue activado exitosamente.'
+  //           });
+  //         },
+  //         error: function(jqXHR, textStatus, errorThrown) {
+  //           Lobibox.notify('error', {
+  //             size: 'mini',
+  //             position: "top right",
+  //             msg: 'No se puede activar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+  //           });
+  //         }
+  //       });
+  //     }
+  //   });
+  // };
+
+  function activa(event, id) {
+    // if (event.currentTarget.checked) {
+
         $.ajax({
           url: "<?= $this->url ?>/ajax_activar/" + id,
           type: "POST",
           dataType: "JSON",
           success: function(data) {
             //if success reload ajax table
-            $('#modal_form').modal('hide');
             reload_table();
             Lobibox.notify('success', {
               size: 'mini',
               position: "top right",
-              msg: 'El registro fue activado exitosamente.'
-            });
-          },
-          error: function(jqXHR, textStatus, errorThrown) {
-            Lobibox.notify('error', {
-              size: 'mini',
-              position: "top right",
-              msg: 'No se puede activar este registro por seguridad de su base de datos, Contacte al Administrador del Sistema'
+              msg: 'Producto activado correctamente'
             });
           }
+          // error: function(jqXHR, textStatus, errorThrown) {
+          //   reload_table();
+          //   Lobibox.notify('warning', {
+          //     size: 'mini',
+          //     position: "top right",
+          //     msg: 'Advertencia: Producto desactivado'
+          //   });
+          // }
         });
-      }
-    });
-  };
+
+    // }
+  }
 
   function borrar(id) {
     bootbox.confirm("Seguro desea Eliminar este registro?", function(result) {

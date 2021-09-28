@@ -67,6 +67,12 @@ class Proveedor extends CI_Controller {
 			$data['error_string'][] = 'Este campo es obligatorio.';
 			$data['status'] = FALSE;
 		}
+    
+    if($this->input->post('ruc') == '') {
+			$data['inputerror'][] = 'ruc';
+			$data['error_string'][] = 'Este campo es obligatorio.';
+			$data['status'] = FALSE;
+		}
 
 		if($data['status'] === FALSE) {
 			echo json_encode($data);

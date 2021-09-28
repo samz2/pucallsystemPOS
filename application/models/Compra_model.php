@@ -223,19 +223,42 @@ class Compra_model extends CI_Model
 		return $this->db->where('ruc', $ruc)->get('proveedor')->row();
 	}
 
-	function dataCompra($tabla, $estado, $empresa, $finicio, $factual){
-		if($empresa != '0'){
+	function dataCompra($tabla, $estado, $empresa, $finicio, $factual)
+	{
+		if ($empresa != '0') {
 			$this->db->where('empresa', $empresa);
 		}
 		$this->db->where("created BETWEEN '" . $finicio . "' AND '" . $factual . "'");
 		$this->db->where('estado <>', $estado);
 		return $this->db->get($tabla)->result();
 	}
-	function dataPendientes($tabla, $empresa, $estado){
-		if($empresa != '0'){
+	function dataPendientes($tabla, $empresa, $estado)
+	{
+		if ($empresa != '0') {
 			$this->db->where('empresa', $empresa);
 		}
 		$this->db->where("estado", $estado);
 		return $this->db->get($tabla)->result();
+	}
+
+	public function completarproveedoresfletes($q)
+	{
+		$this->db->like('nombre', $q);
+		$this->db->or_like('ruc', $q);
+		$query = $this->db->get('proveedor');
+		if ($query->num_rows() > 0) {
+			foreach ($query->result() as $row) {
+				$row_set[] = array(
+					'label' => $row->ruc . ' | ' . $row->nombre,
+					'proveedor' => $row->id,
+				);
+			}
+		} else {
+			$row_set[] = array(
+				'label' => "SIN INFORMACION",
+				'proveedor' => NULL,
+			);
+		}
+		echo json_encode($row_set);
 	}
 }

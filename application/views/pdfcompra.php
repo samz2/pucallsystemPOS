@@ -126,6 +126,7 @@
 		<tr>
 			<td class="desart"><span style="font-size:9pt;">Item</span></td>
 			<td class="desart"><span style="font-size:9pt;">Código</span></td>
+			<td class="desart"><span style="font-size:9pt;">Destino</span></td>
 			<td class="desart"><span style="font-size:9pt;">Descripción</span></td>
 			<td class="desart"><span style="font-size:9pt;">Tipo</span></td>
 			<td class="desart"><span style="font-size:9pt;">Cant.</span></td>
@@ -136,10 +137,12 @@
 			<?php $subtotal = 0; $i = 0; 
 			foreach ($datas as $value) { $i++; ?>
 			<?php $producto = $this->Controlador_model->get($value->producto, 'producto'); ?>
+			<?php $almacen = $this->Controlador_model->get($value->almacen, 'almacen'); ?>
 			<?php $subtotal += $value->subtotal; ?>
 			<tr>
 				<td style="text-align: center;"><span style="font-size:8pt;"><?= $i ?></span></td>
 				<td><span style="font-size:8pt;"><?= $producto->codigo == '' ? $producto->codigoexterno : $producto->codigo ?></span></td>
+				<td><span style="font-size:8pt;"><?= $almacen->nombre ?></span></td>
 				<td><span style="font-size:8pt;"><?= $producto->nombre ?></span></td>
 				<td style="text-align: center;"><span style="font-size:8pt;"><?= $value->medida ?></span></td>
 				<td style="text-align: center;"><span style="font-size:8pt;"><?= $value->cantidad ?></span></td>

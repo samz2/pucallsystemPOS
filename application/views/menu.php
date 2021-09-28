@@ -5,8 +5,8 @@
         <h3 class="panel-title text-title-panel">
           Lista de <?= $this->titulo_controlador ?>
           <div class="pull-right">
-            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip" title="RECARGAR"><i class="fa fa-repeat"></i></a>
-            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip" title="Nuevo"><i class="fa fa-plus"></i></a>
+            <a onclick="location.reload()" class="btn btn-danger btn-sm" data-toggle="tooltip"><i class="fa fa-repeat"></i> RECARGAR</a>
+            <a onclick="add()" class="btn btn-primary btn-sm" data-toggle="tooltip"><i class="fa fa-plus"></i> NUEVO</a>
           </div>
         </h3>
         <div class="clearfix"></div>
@@ -86,8 +86,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" id="btnSave" onclick="save()" class="btn btn-primary">Guardar</button>
-        <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-danger" data-dismiss="modal">CANCELAR</button>
+        <button type="button" id="btnSave" onclick="save()" class="btn btn-primary">GUARDAR</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
@@ -151,7 +151,7 @@ function add() {
   $('.modal-title').text('Crear <?= $this->titulo_controlador ?>'); // Set Title to Bootstrap modal title
 };
 function save() {
-  $('#btnSave').text('guardando...'); //change button text
+  $('#btnSave').text('GUARDANDO...'); //change button text
   $('#btnSave').attr('disabled',true); //set button disable
   var url;
   if(save_method == 'add') {
@@ -185,7 +185,7 @@ function save() {
           $('[name="'+data.inputerror[i]+'"]').next().text(data.error_string[i]); //select span help-block class set text error string
         }
       }
-      $('#btnSave').text('Guardar'); //change button text
+      $('#btnSave').text('GUARDAR'); //change button text
       $('#btnSave').attr('disabled',false); //set button enable
     },
     error: function (jqXHR, textStatus, errorThrown) {
@@ -194,7 +194,7 @@ function save() {
         position:"top right",
         msg: msgerror
       });
-      $('#btnSave').text('Guardar'); //change button text
+      $('#btnSave').text('GUARDAR'); //change button text
       $('#btnSave').attr('disabled',false); //set button enable
     }
   });

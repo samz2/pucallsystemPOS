@@ -23,6 +23,23 @@ class Caja_model extends CI_Model {
     return $this->db->where('empresa', $this->empresa)->get($tabla)->last_row();
   }
 
+  public function getTotalAbono($idcaja){
+    $this->db->select_sum('monto');
+    $this->db->where("caja", $idcaja);
+    $this->db->where("tipo", "CAJA");
+    $this->db->where("modalidad !=", "VENTA");
+    $this->db->where("metodopago", "EFECTIVO");
+    return $this->db->get("ingreso")->row();
+  }
+  
+  public function getTotalGasto($idcaja){
+    $this->db->select_sum("montototal");
+    $this->db->where("caja", $idcaja);
+    $this->db->where("tipo", "CAJA");
+    $this->db->where("tipopago", "EFECTIVO");
+    return $this->db->get("egreso")->row();
+  }
+
   public function resumengasto($id) {
     return $this->db->where('caja', $id)->get('egreso')->result();
   }
@@ -168,6 +185,13 @@ class Caja_model extends CI_Model {
     if($empleado) { $this->db->where('usuario', $empleado); }
     $this->db->where("created BETWEEN '".$finicio."' AND '".$factual."'");
     $this->db->where('estado', '1');
+    $this->db->where('empresa', $empresa);
+    $query = $this->db->get('caja');
+    return $query->result();
+  }
+
+  public function getCajas($empleado, $finicio, $factual, $empresa){
+    $this->db->where("created BETWEEN '".$finicio."' AND '".$factual."'");
     $this->db->where('empresa', $empresa);
     $query = $this->db->get('caja');
     return $query->result();

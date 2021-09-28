@@ -48,14 +48,13 @@ class Caja extends CI_Controller
   {
     $idcaja = $this->input->post("idcaja");
     $empresa = $this->input->post("empresa");
-      $queryValidate = $this->db->where("empresa", $empresa)->where("estado", '0')->get("caja")->row();
-      if ($queryValidate) {
-        echo json_encode(["status" => FALSE]);
-      } else {
-        $this->Controlador_model->restaurar($idcaja, $this->controlador);
-        echo json_encode(["status" => TRUE]);
-      }
-    
+    $queryValidate = $this->db->where("empresa", $empresa)->where("estado", '0')->get("caja")->row();
+    if ($queryValidate) {
+      echo json_encode(["status" => FALSE]);
+    } else {
+      $this->Controlador_model->restaurar($idcaja, $this->controlador);
+      echo json_encode(["status" => TRUE]);
+    }
   }
 
   public function general($finicio, $factual, $empresa)
@@ -134,73 +133,90 @@ class Caja extends CI_Controller
   public function especifico($finicio, $factual, $empresa)
   {
     $empleado = $this->perfil == 1 ? FALSE : $this->usuario;
-    $datas = $this->Controlador_model->especifico($empleado, $finicio, $factual, $empresa);
-    $total = 0;
-    $contado = 0;
-    $credito = 0;
-    $efectivo = 0;
-    $tarjeta = 0;
-    $gasto = 0;
+    $datas = $this->Controlador_model->getCajas($empleado, $finicio, $factual, $empresa);
+    $totalEfectivoVentas = 0;
+    $totalAbonoCaja = 0;
+    $totalSaldoInicial = 0;
+    $totalGasto = 0;
+    $totalCaja = 0;
+    $totalCajaTodos = 0;
     $mostrar = '';
     $mostrar .= '<table id="example1" class="table table-bordered table-striped">
     <thead>
     <tr>
-      <th>#</th>
-      <th>Descripcion</th>
-      <th>Colaborador</th>
-      <th>Fecha</th>
-      <th>Restaurar</th>
-      <th>S.I.</th>
-      <th>Contado</th>
-      <th>Credito</th>
-      <th>Efectivo a contado</th>
-      <th>Tarjeta a contado</th>
-      <th>Gasto</th>
+      <th><b>#</b></th>
+      <th><b>Empresa</b></th>
+      <th><b>Descripcion</b></th>
+      <th><b>Colaborador</b></th>
+      <th><b>Fecha</b></th>
+      <th><b>Estado</b></th>
+      <th><b>Operaciones</b></th>
+      <th><b> <label class="label label-success"> + S.I.</label></b></th>
+      <th><b><label class="label label-success"> + Efectivo Ventas</label></b></th>
+      <th><b><label class="label label-success"> + Adicionales</label></b></b></th>
+      <th><b><label class="label label-danger"> - Gastos</label></b></th>
+      <th><b>Total en Caja</b></th>
     </tr>
     </thead>
     <tbody>';
     $i = 0;
     foreach ($datas as $data) {
       $i++;
+      $AbonoCaja = $this->Controlador_model->getTotalAbono($data->id);
       $empresa = $this->Controlador_model->get($data->empresa, 'empresa');
       $usuario = $this->Controlador_model->get($data->usuario, 'usuario');
-      $contado += $data->contado;
-      $credito += $data->credito;
-      $efectivo += $data->efectivocontado;
-      $tarjeta += $data->tarjetacontado;
-      $gasto += $data->gasto;
-      $total += $data->saldoinicial + $data->efectivocontado - $data->gasto;
+      $totalSaldoInicial += $data->saldoinicial;
+      $totalEfectivoVentas += $data->efectivocontado;
+      $resultAbono = !is_null($AbonoCaja->monto) ? $AbonoCaja->monto : 0;
+      $totalAbonoCaja += $resultAbono;
+      $GastoCaja = $this->Controlador_model->getTotalGasto($data->id);
+      $resultGasto = !is_null($GastoCaja->montototal) ? $GastoCaja->montototal : 0;
+      $totalGasto += $resultGasto;
+      $totalCaja = ($data->saldoinicial + $data->efectivocontado + $resultAbono) - $resultGasto;
+      $totalCajaTodos += $totalCaja;
+      if ($data->estado == "1") {
+        $estado = "<label class='label label-danger'>CERRADO</label>";
+      } else {
+        $estado = "<label class='label label-success'>ABIERTO</label>";
+      }
       $mostrar .= '
       <tr>
       <td>' . $i . '</td>
+      <td>' . $empresa->ruc . " | " . $empresa->nombre . " | " . "SERIE: " . $empresa->serie . '</td>
       <td>' . $data->descripcion . '</td>
       <td>' . $usuario->nombre . '</td>
       <td>' . $data->created . '</td>
+      <td>' . $estado . '</td>
       <td align="center">';
-      $mostrar .= '<a class="btn btn-default btn-sm" onclick="showTicket(' . $data->id . ')" title="Detalle"><i class="fa fa-ticket"></i></a> ';
-      if ($this->perfil == 1 || $this->perfil == 2) {
-        $mostrar .= '<button class="btn btn-danger btn-sm restaurar" onclick="restaurarcaja(' . $data->id . ', '.$data->empresa.')"  title="Restaurar Caja"><i class="fa fa-repeat fa-spin"></i></button> ';
+      //? Desabilitado remporalmente para luego agregar a este boton como la vista de CORTE DE CAJA "Donde podra ver el detalle de caja en tiempo real sin que cierrer caja"
+      //$mostrar .= '<a class="btn btn-default btn-sm" onclick="showTicket(' . $data->id . ')" title="Detalle"><i class="fa fa-ticket"></i></a> ';
+      if ($data->estado == "1") {
+        if ($this->perfil == 1 || $this->perfil == 2) {
+          $mostrar .= '<button class="btn btn-danger btn-sm restaurar" onclick="restaurarcaja(' . $data->id . ', ' . $data->empresa . ')"  title="Restaurar Caja"><i class="fa fa-repeat fa-spin"></i></button> ';
+        }
+        $mostrar .= '<a class="btn btn-warning btn-sm" onclick="imprimir(' . $data->id . ', ' . $empresa->tipoimpresora . ')" title="Imprimir"><i class="fa fa-print"></i></a> ';
       }
-      $mostrar .= '<a class="btn btn-warning btn-sm" onclick="imprimir(' . $data->id . ', ' . $empresa->tipoimpresora . ')" title="Imprimir"><i class="fa fa-print"></i></a> ';
-      $mostrar .= '</td>
+      $mostrar .= '<button class="btn btn-info btn-sm" onclick="stockcaja(' . $data->id . ')"  title="Stock Caja"><i class="fa fa-cubes"></i></button> ';
+
+      $mostrar .= '
+      </td>
       <td align="right">' . $data->saldoinicial . '</td>
-      <td align="right">' . $data->contado . '</td>
-      <td align="right">' . $data->credito . '</td>
       <td align="right">' . $data->efectivocontado . '</td>
-      <td align="right">' . $data->tarjetacontado . '</td>
-      <td align="right">' . $data->gasto . '</td>
+      <td align="right">' . $resultAbono . '</td>
+      <td align="right">' . $resultGasto . '</td>
+      <td align="right">' . $totalCaja . '</td>
       </tr>';
     }
     $mostrar .= '</tbody>
     <tfoot>
     <tr>
-    <td colspan="5"></td>
-    <td align="center"><b>Total:</b></td>
-    <td align="right">' . number_format($contado, 2) . '</td>
-    <td align="right">' . number_format($credito, 2) . '</td>
-    <td align="right">' . number_format($efectivo, 2) . '</td>
-    <td align="right">' . number_format($tarjeta, 2) . '</td>
-    <td align="right">'.number_format($gasto, 2).'</td>
+      <td colspan="6"></td>
+      <td align="center"><b>Total:</b></td>
+      <td align="right">' . number_format($totalSaldoInicial, 2) . '</td>
+      <td align="right">' . number_format($totalEfectivoVentas, 2) . '</td>
+      <td align="right">' . number_format($totalAbonoCaja, 2) . '</td>
+      <td align="right">' . number_format($totalGasto, 2) . '</td>
+      <td align="right">' . number_format($totalCajaTodos, 2) . '</td>
     </tr>
     </tfoot>
     </table>';
@@ -512,5 +528,67 @@ class Caja extends CI_Controller
       'posales' => $this->Controlador_model->resumenventa($id)
     );
     $this->load->view('imprimircierre', $data);
+  }
+
+  public function ajax_stockcaja($idcaja)
+  {
+    $draw = intval($this->input->get("draw"));
+    $start = intval($this->input->get("start"));
+    $length = intval($this->input->get("length"));
+    $query = $this->db->where('caja', $idcaja)->get("cajastock")->result();
+    $data = [];
+    foreach ($query as $key => $value) {
+      $producto = $this->Controlador_model->get($value->producto, "producto");
+      $categoria = $this->Controlador_model->get($value->categoria, "productocategoria");
+      $caja = $this->Controlador_model->get($value->caja, "caja");
+      $final_stock=0;
+      if($caja->estado==0){
+        if($value->final_stock==0){ 
+          $final_stock="";     
+      }else{
+      $final_stock=$value->final_stock; 
+      }}else{
+      $final_stock=$value->final_stock;
+      }
+      $data[] = array(
+        $key + 1,
+        $producto ? $producto->codigo : "SIN DATOS",
+        $value->nombre,
+        $categoria ? $categoria->nombre : "SIN DATOS",
+        $value->inicio_stock,
+        $final_stock,
+      );
+    }
+    $result = array(
+      "draw" => $draw,
+      "recordsTotal" => $start,
+      "recordsFiltered" => $length,
+      "data" => $data
+    );
+    echo json_encode($result);
+  }
+
+  public function ajax_descargarStockCaja($idcaja)
+  {
+    $data['idcaja'] =$idcaja;
+    $this->load->view('/pdfcajastock', $data);
+    // Get output html
+    $html = $this->output->get_output();
+    // Load pdf library
+    $this->load->library('pdf');
+    // Load HTML content
+    $this->dompdf->loadHtml($html);
+    // (Optional) Setup the paper size and orientation
+    $this->dompdf->setPaper('A4', 'portrait');
+    // Render the HTML as PDF
+    $this->dompdf->render();
+    // Output the generated PDF (1 = download and 0 = preview)
+    $this->dompdf->stream("cotrolstock.pdf", array("Attachment" => 0));
+  }
+  public function ajax_miniStockCaja($idcaja)
+  {
+    $data['idcaja'] =$idcaja;
+    $this->load->view('/caja_stock', $data);
+    
   }
 }
